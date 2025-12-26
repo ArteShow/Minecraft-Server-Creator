@@ -25,12 +25,19 @@ func main() {
 		log.Fatal(err)
 	}
 
+	if cfg.Port != "" && cfg.Port[0] != ':' {
+    	cfg.Port = ":" + cfg.Port
+	}
+
 	handler := http.NewServeMux()
 	handler.Handle(
 		"/api/"+cfg.APIVersion+"/api-gateway/health",
 		middleware.LoggingMiddleware(
 			http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-				w.Write([]byte("ok"))
+				_, err := w.Write([]byte("ok"))
+				if err != nil {
+					http.Error(w, "failed to write status ok", http.StatusInternalServerError)
+				}
 			}),
 		),
 	)
