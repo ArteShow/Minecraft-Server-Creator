@@ -25,6 +25,10 @@ func main() {
 		log.Fatal(err)
 	}
 
+	if cfg.Port != "" && cfg.Port[0] != ':' {
+    	cfg.Port = ":" + cfg.Port
+	}
+
 	handler := http.NewServeMux()
 	handler.Handle(
 		"/api/"+cfg.APIVersion+"/api-gateway/health",
