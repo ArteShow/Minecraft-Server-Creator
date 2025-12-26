@@ -9,7 +9,7 @@ type Config struct {
 
 func Read() (*Config, error) {
 	cfg := Config{}
-	if err := cleanenv.ReadEnv(cfg); err != nil{
+	if err := cleanenv.ReadEnv(&cfg); err != nil{
 		return nil, err
 	}
 
