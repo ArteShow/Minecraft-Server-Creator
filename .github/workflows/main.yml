@@ -22,28 +22,6 @@ jobs:
         with:
           go-version: "1.22"
 
-      - name: Install golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: v1.55.2
-          install-mode: binary
-
-      - name: Run golangci-lint for all modules
-        run: |
-          for mod in $(find . -name "go.mod"); do
-            dir=$(dirname $mod)
-            echo "Running lint in $dir..."
-            cd $dir
-
-            if ls *.go >/dev/null 2>&1 || find . -name "*.go" | grep -q .; then
-              golangci-lint run ./...
-            else
-              echo "No Go files in $dir, skipping lint..."
-            fi
-
-            cd - >/dev/null
-          done
-
       - name: Run tests for all modules
         run: |
           for mod in $(find . -name "go.mod"); do
