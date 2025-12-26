@@ -26,10 +26,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if cfg.Port != "" && cfg.Port[0] != ':' {
-    	cfg.Port = ":" + cfg.Port
-	}
-
 	authRegisterProxy := proxy.NewProxy("http://auth-service:8001", "/auth-service/register")
 	authLoginProxy := proxy.NewProxy("http://auth-service:8001", "/auth-service/login")
 
