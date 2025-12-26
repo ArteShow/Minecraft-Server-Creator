@@ -30,7 +30,7 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("api/v1/auth-service/health", func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("/auth-service/health", func(w http.ResponseWriter, _ *http.Request) {
 		_, err = w.Write([]byte("ok"))
 		if err != nil{
 			http.Error(w, err.Error(), http.StatusInternalServerError)
