@@ -29,8 +29,8 @@ func main() {
 	mux.HandleFunc("api/v1/auth-service/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.Write([]byte("ok"))
 	})
-	mux.HandleFunc("api/v1/auth-service/register", handler.RegisterHandler)
-	mux.HandleFunc("api/v1/auth-service/login", handler.LoginHandler)
+	mux.HandleFunc("/auth-service/register", handler.RegisterHandler)
+	mux.HandleFunc("/auth-service/login", handler.LoginHandler)
 
 	srv := &http.Server{
 		Addr:         cfg.Port,
