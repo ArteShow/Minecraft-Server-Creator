@@ -11,6 +11,7 @@ import (
 
 	"github.com/ArteShow/Minecraft-Server-Creator/services/api-gateway/internal/config"
 	"github.com/ArteShow/Minecraft-Server-Creator/services/api-gateway/internal/middleware"
+	"github.com/ArteShow/Minecraft-Server-Creator/services/api-gateway/internal/proxy"
 )
 
 const (
@@ -29,6 +30,9 @@ func main() {
     	cfg.Port = ":" + cfg.Port
 	}
 
+	authRegisterProxy := proxy.NewProxy("http://auth-service:8081", "/auth-service/register")
+	authLoginProxy := proxy.NewProxy("http://auth-service:8081", "/auth-service/login")
+
 	handler := http.NewServeMux()
 	handler.Handle(
 		"/api/"+cfg.APIVersion+"/api-gateway/health",
@@ -41,8 +45,8 @@ func main() {
 			}),
 		),
 	)
-
-	//here add proxy handlers TODO
+	handler.Handle("/register", authRegisterProxy)
+	handler.Handle("/login", authLoginProxy)
 
 	srv := &http.Server{
 		Addr:    cfg.Port,
