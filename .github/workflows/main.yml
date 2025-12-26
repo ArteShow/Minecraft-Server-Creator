@@ -24,15 +24,23 @@ jobs:
 
       - name: Run tests for all modules
         run: |
-          # Find all go.mod files (modules)
           for mod in $(find . -name "go.mod"); do
             dir=$(dirname $mod)
             echo "Running tests in $dir..."
             cd $dir
             go mod download
-            go test ./... -v
+
+            # Check if packages exist
+            packages=$(go list ./... 2>/dev/null)
+            if [ -z "$packages" ]; then
+              echo "No packages to test in $dir, skipping..."
+            else
+              go test ./... -v
+            fi
+
             cd -
           done
+
 
       - name: Build all modules
         run: |
