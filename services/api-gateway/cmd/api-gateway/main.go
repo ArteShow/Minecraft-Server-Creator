@@ -45,8 +45,8 @@ func main() {
 			}),
 		),
 	)
-	handler.Handle("/register",middleware.LoggingMiddleware(authRegisterProxy))
-	handler.Handle("/login", middleware.LoggingMiddleware(authLoginProxy))
+	handler.Handle("/api/"+cfg.APIVersion+"/register",middleware.LoggingMiddleware(authRegisterProxy))
+	handler.Handle("/api/"+cfg.APIVersion+"/login", middleware.LoggingMiddleware(authLoginProxy))
 
 	srv := &http.Server{
 		Addr:    cfg.Port,
