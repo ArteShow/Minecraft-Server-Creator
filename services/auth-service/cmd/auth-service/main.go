@@ -24,6 +24,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	
+	if cfg.Port != "" && cfg.Port[0] != ':' {
+    	cfg.Port = ":" + cfg.Port
+	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("api/v1/auth-service/health", func(w http.ResponseWriter, _ *http.Request) {
