@@ -3,6 +3,7 @@ module github.com/ArteShow/Minecraft-Server-Creator/services/auth-service
 go 1.24.0
 
 require (
+	golang.org/x/crypto v0.44.0
 	google.golang.org/grpc v1.78.0
 	google.golang.org/protobuf v1.36.11
 )
