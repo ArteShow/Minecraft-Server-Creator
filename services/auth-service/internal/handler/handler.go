@@ -50,7 +50,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	saveUserRes, err := userClient.SaveUser(proto.SaveUserRequest{
+	saveUserRes, err := userClient.SaveUser(&proto.SaveUserRequest{
 		Username: req.Username,
 		Password: string(hashedPassword),
 		Email: req.Email,
@@ -66,7 +66,10 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	var res models.RegisterResponse
 	res.ID = saveUserRes.GetId()
 
-	json.NewEncoder(w).Encode(res)
+	if err = json.NewEncoder(w).Encode(res); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	w.WriteHeader(http.StatusAccepted)
 }
 
@@ -90,7 +93,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	getUserPasswordRes, err := userClient.GetUserPassword(proto.GetUserPasswordRequest{
+	getUserPasswordRes, err := userClient.GetUserPassword(&proto.GetUserPasswordRequest{
 		Id: req.ID,
 		Username: req.Username,
 	})
@@ -113,6 +116,9 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	var res models.LoginResponse
 	res.Token = token
-	json.NewEncoder(w).Encode(res)
+	if err = json.NewEncoder(w).Encode(res); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	w.WriteHeader(http.StatusAccepted)
 }

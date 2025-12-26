@@ -6,6 +6,7 @@ import (
 
 	pb "github.com/ArteShow/Minecraft-Server-Creator/services/auth-service/internal/proto"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type UserClient struct{
@@ -13,11 +14,16 @@ type UserClient struct{
 }
 
 func NewUserClient() (*UserClient, error){
-	conn, err := grpc.Dial("", grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.NewClient("", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
-	defer conn.Close()
+	defer func () {
+		err = conn.Close()
+		if err != nil{
+			return
+		}
+	}()
 
 	client := pb.NewUserServiceClient(conn)
 	if client == nil {
@@ -27,8 +33,8 @@ func NewUserClient() (*UserClient, error){
 	return &UserClient{Client: client}, nil
 }
 
-func (u *UserClient)SaveUser(req pb.SaveUserRequest) (*pb.SaveUserResponse, error) {
-	res, err := u.Client.SaveUser(context.Background(), &req)
+func (u *UserClient)SaveUser(req *pb.SaveUserRequest) (*pb.SaveUserResponse, error) {
+	res, err := u.Client.SaveUser(context.Background(), req)
 	if err != nil {
 		return &pb.SaveUserResponse{}, err
 	}
@@ -36,8 +42,8 @@ func (u *UserClient)SaveUser(req pb.SaveUserRequest) (*pb.SaveUserResponse, erro
 	return res, nil
 }
 
-func (u *UserClient)GetUserPassword(req pb.GetUserPasswordRequest) (*pb.GetUserPasswordResponse, error) {
-	res, err := u.Client.GetUserPassword(context.Background(), &req)
+func (u *UserClient)GetUserPassword(req *pb.GetUserPasswordRequest) (*pb.GetUserPasswordResponse, error) {
+	res, err := u.Client.GetUserPassword(context.Background(), req)
 	if err != nil {
 		return &pb.GetUserPasswordResponse{}, err
 	}

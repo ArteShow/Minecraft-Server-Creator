@@ -3,7 +3,7 @@ package models
 type RegisterRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
-	Email    string `json:"email`
+	Email    string `json:"email"`
 }
 
 type RegisterResponse struct {
