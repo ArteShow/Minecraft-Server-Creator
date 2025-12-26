@@ -3,7 +3,7 @@ package config
 import "github.com/ilyakaznacheev/cleanenv"
 
 type Config struct {
-	Port      string `env:"AUTH_SERVICE_PORT" env-default:":8081"`
+	Port      string `env:"AUTH_SERVICE_PORT" env-default:":8001"`
 	JWTSecret string `env:"JWT_SECRET" env-default:"dev-only"`
 }
 

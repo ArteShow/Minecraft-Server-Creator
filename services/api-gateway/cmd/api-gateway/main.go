@@ -30,8 +30,8 @@ func main() {
     	cfg.Port = ":" + cfg.Port
 	}
 
-	authRegisterProxy := proxy.NewProxy("http://auth-service:8081", "/auth-service/register")
-	authLoginProxy := proxy.NewProxy("http://auth-service:8081", "/auth-service/login")
+	authRegisterProxy := proxy.NewProxy("http://auth-service:8001", "/auth-service/register")
+	authLoginProxy := proxy.NewProxy("http://auth-service:8001", "/auth-service/login")
 
 	handler := http.NewServeMux()
 	handler.Handle(
@@ -45,8 +45,8 @@ func main() {
 			}),
 		),
 	)
-	handler.Handle("/register", authRegisterProxy)
-	handler.Handle("/login", authLoginProxy)
+	handler.Handle("/register",middleware.LoggingMiddleware(authRegisterProxy))
+	handler.Handle("/login", middleware.LoggingMiddleware(authLoginProxy))
 
 	srv := &http.Server{
 		Addr:    cfg.Port,
