@@ -15,7 +15,7 @@ func NewProxy(target string, rewritePath string) *httputil.ReverseProxy {
 		r.URL.Scheme = u.Scheme
 		r.URL.Host = u.Host
 		r.Host = u.Host
-		r.URL.Path = u.Path
+		r.URL.Path = rewritePath
 	}
 
 	return proxy
