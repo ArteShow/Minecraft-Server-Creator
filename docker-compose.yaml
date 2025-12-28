@@ -14,7 +14,20 @@ services:
       start_period: 10s
     networks:
       - disknet
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    restart: unless-stopped
+    env_file:
+      - ./config/docker.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
 
 networks:
   disknet:
     driver: bridge
+
+volumes:
+  postgres_data:
