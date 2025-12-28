@@ -24,7 +24,19 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-
+  migrate:
+    image: migrate/migrate
+    volumes:
+      - ./migrations:/migrations
+    command:
+      [
+        "-path", "/migrations",
+        "-database",
+        "postgres://postgres:dev_only@postgres:5432/minecraft_server_creator_db?sslmode=disable",
+        "up"
+      ]
+    depends_on:
+      - postgres
 networks:
   disknet:
     driver: bridge
