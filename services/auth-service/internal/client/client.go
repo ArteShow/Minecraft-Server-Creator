@@ -9,18 +9,18 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-type UserClient struct{
+type UserClient struct {
 	Client pb.UserServiceClient
 }
 
-func NewUserClient() (*UserClient, error){
-	conn, err := grpc.NewClient("", grpc.WithTransportCredentials(insecure.NewCredentials()))
+func NewUserClient() (*UserClient, error) {
+	conn, err := grpc.NewClient("user-service:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
-	defer func () {
+	defer func() {
 		err = conn.Close()
-		if err != nil{
+		if err != nil {
 			return
 		}
 	}()
@@ -33,7 +33,7 @@ func NewUserClient() (*UserClient, error){
 	return &UserClient{Client: client}, nil
 }
 
-func (u *UserClient)SaveUser(req *pb.SaveUserRequest) (*pb.SaveUserResponse, error) {
+func (u *UserClient) SaveUser(req *pb.SaveUserRequest) (*pb.SaveUserResponse, error) {
 	res, err := u.Client.SaveUser(context.Background(), req)
 	if err != nil {
 		return &pb.SaveUserResponse{}, err
@@ -42,7 +42,7 @@ func (u *UserClient)SaveUser(req *pb.SaveUserRequest) (*pb.SaveUserResponse, err
 	return res, nil
 }
 
-func (u *UserClient)GetUserPassword(req *pb.GetUserPasswordRequest) (*pb.GetUserPasswordResponse, error) {
+func (u *UserClient) GetUserPassword(req *pb.GetUserPasswordRequest) (*pb.GetUserPasswordResponse, error) {
 	res, err := u.Client.GetUserPassword(context.Background(), req)
 	if err != nil {
 		return &pb.GetUserPasswordResponse{}, err
