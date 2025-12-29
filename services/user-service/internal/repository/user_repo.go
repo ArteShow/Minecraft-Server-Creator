@@ -7,10 +7,10 @@ import (
 	"github.com/ArteShow/Minecraft-Server-Creator/user-service/pkg/id"
 )
 
-func CreateUser(username, password, email string) error {
+func CreateUser(username, password, email string) (string, error) {
 	db, err := database.Connect()
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer db.Close()
 
@@ -20,7 +20,11 @@ func CreateUser(username, password, email string) error {
 		"INSERT INTO users (id, email, password, username) VALUES ($1, $2, $3, $4)",
 		userID, email, password, username,
 	)
-	return err
+	if err != nil {
+		return "", err
+	}
+
+	return userID, nil
 }
 
 func DeleteUser(userID string) error {
