@@ -28,6 +28,7 @@ jobs:
             dir=$(dirname $mod)
             echo "Running tests in $dir..."
             cd $dir
+
             go mod download
 
             packages=$(go list ./... 2>/dev/null)
@@ -37,9 +38,8 @@ jobs:
               go test ./... -v
             fi
 
-            cd -
+            cd - >/dev/null
           done
-
 
       - name: Build all modules
         run: |
@@ -48,5 +48,5 @@ jobs:
             echo "Building $dir..."
             cd $dir
             go build ./...
-            cd -
+            cd - >/dev/null
           done
