@@ -13,7 +13,7 @@ import (
 	"github.com/ArteShow/Minecraft-Server-Creator/services/auth-service/pkg/hashing"
 )
 
-const JWTTTL = 24*time.Hour
+const JWTTTL = 24 * time.Hour
 
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	bytes, err := io.ReadAll(r.Body)
@@ -39,10 +39,11 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userClient, err := client.NewUserClient()
-	if err != nil{
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	defer userClient.Close()
 
 	hashedPassword, err := hashing.HashPassword(req.Password)
 	if err != nil {
@@ -53,12 +54,12 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	saveUserRes, err := userClient.SaveUser(&proto.SaveUserRequest{
 		Username: req.Username,
 		Password: string(hashedPassword),
-		Email: req.Email,
+		Email:    req.Email,
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
-	}else if !saveUserRes.GetSuccess() {
+	} else if !saveUserRes.GetSuccess() {
 		http.Error(w, "failed to save user", http.StatusInternalServerError)
 		return
 	}
@@ -88,13 +89,14 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userClient, err := client.NewUserClient()
-	if err != nil{
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	defer userClient.Close()
 
 	getUserPasswordRes, err := userClient.GetUserPassword(&proto.GetUserPasswordRequest{
-		Id: req.ID,
+		Id:       req.ID,
 		Username: req.Username,
 	})
 	if err != nil {
