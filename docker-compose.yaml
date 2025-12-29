@@ -25,6 +25,15 @@ services:
       - postgres
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:${USER_SERVICE_PORT}/health"]
+  auth-service:
+    build: ./services/auth-service
+    container_name: auth-service
+    env_file:
+      - ./config/docker.env
+    ports:
+      - "${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:${AUTH_SERVICE_PORT}/health"]
       interval: 10s
       timeout: 5s
       retries: 3
