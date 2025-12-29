@@ -27,4 +27,8 @@ func TestRead(t *testing.T) {
 	if cfg.DBUser != "postgres" {
 		t.Fatalf("expected version v1, got: %s", cfg.DBUser)
 	}
+
+	if cfg.GRPCPort != "50052" {
+		t.Fatalf("expected version v1, got: %s", cfg.GRPCPort)
+	}
 }
