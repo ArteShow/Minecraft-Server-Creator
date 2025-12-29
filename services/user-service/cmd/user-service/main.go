@@ -36,19 +36,19 @@ func main() {
 		w.Write([]byte("OK"))
 	})
 	httpServer := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":" + cfg.UserServicePort,
 		Handler: httpMux,
 	}
 
 	go func() {
-		log.Println("gRPC server running on :50051")
+		log.Println("gRPC server running on :" + cfg.GRPCPort)
 		if err := grpcServer.Serve(grpcLis); err != nil {
 			log.Printf("gRPC server stopped: %v", err)
 		}
 	}()
 
 	go func() {
-		log.Println("HTTP server running on :8080")
+		log.Println("HTTP server running on :" + cfg.UserServicePort)
 		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Printf("HTTP server stopped: %v", err)
 		}

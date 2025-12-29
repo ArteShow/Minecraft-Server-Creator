@@ -31,4 +31,8 @@ func TestRead(t *testing.T) {
 	if cfg.GRPCPort != "50052" {
 		t.Fatalf("expected version v1, got: %s", cfg.GRPCPort)
 	}
+
+	if cfg.UserServicePort != "8002" {
+		t.Fatalf("expected version v1, got: %s", cfg.UserServicePort)
+	}
 }
