@@ -61,23 +61,22 @@ services:
 
   migrate:
     image: migrate/migrate
-    volumes:
-      - ./migrations:/migrations
-    command:
-      [
-        "-path", "/migrations",
-        "-database",
-        "postgres://postgres:dev_only@postgres:5432/minecraft_server_creator_db?sslmode=disable",
-        "up"
-      ]
+    container_name: migrate
     depends_on:
       - postgres
     networks:
       - disknet
+    volumes:
+      - ./migrations:/migrations
+    entrypoint:
+      [
+        "sh", "-c",
+        "while ! nc -z postgres 5432; do echo 'Waiting for Postgres...'; sleep 1; done; migrate -path /migrations -database postgres://postgres:dev_only@postgres:5432/minecraft_server_creator_db?sslmode=disable up"
+      ]
+
+volumes:
+  postgres_data:
 
 networks:
   disknet:
     driver: bridge
-
-volumes:
-  postgres_data:
