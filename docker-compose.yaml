@@ -14,6 +14,7 @@ services:
       start_period: 10s
     networks:
       - disknet
+      
   user-service:
     build: ./services/user-service
     container_name: user-service
@@ -26,6 +27,9 @@ services:
       - postgres
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:${USER_SERVICE_PORT}/health"]
+    networks:
+      - disknet
+
   auth-service:
     build: ./services/auth-service
     container_name: auth-service
@@ -54,6 +58,7 @@ services:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     networks:
       - disknet
+
   migrate:
     image: migrate/migrate
     volumes:
@@ -67,6 +72,7 @@ services:
       ]
     depends_on:
       - postgres
+
 networks:
   disknet:
     driver: bridge
