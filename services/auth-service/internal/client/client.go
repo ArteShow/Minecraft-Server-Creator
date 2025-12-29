@@ -11,26 +11,29 @@ import (
 
 type UserClient struct {
 	Client pb.UserServiceClient
+	Conn   *grpc.ClientConn
 }
 
 func NewUserClient() (*UserClient, error) {
-	conn, err := grpc.NewClient("user-service:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial("user-service:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		err = conn.Close()
-		if err != nil {
-			return
-		}
-	}()
 
 	client := pb.NewUserServiceClient(conn)
 	if client == nil {
+		conn.Close()
 		return nil, errors.New("failed to create NewUserClient")
 	}
 
-	return &UserClient{Client: client}, nil
+	return &UserClient{
+		Client: client,
+		Conn:   conn,
+	}, nil
+}
+
+func (u *UserClient) Close() error {
+	return u.Conn.Close()
 }
 
 func (u *UserClient) SaveUser(req *pb.SaveUserRequest) (*pb.SaveUserResponse, error) {
