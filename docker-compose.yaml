@@ -21,6 +21,7 @@ services:
       - ./config/docker.env
     ports:
       - "${USER_SERVICE_PORT}:${USER_SERVICE_PORT}"
+      - "${USER_SERVICE_GRPC_SERVER_PORT}:${USER_SERVICE_GRPC_SERVER_PORT}"
     depends_on:
       - postgres
     healthcheck:
