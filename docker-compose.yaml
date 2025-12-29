@@ -14,7 +14,7 @@ services:
       start_period: 10s
     networks:
       - disknet
-      
+
   user-service:
     build: ./services/user-service
     container_name: user-service
@@ -72,6 +72,8 @@ services:
       ]
     depends_on:
       - postgres
+    networks:
+      - disknet
 
 networks:
   disknet:
