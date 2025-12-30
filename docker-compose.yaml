@@ -32,6 +32,18 @@ services:
       up
     networks:
       - disknet
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    ports:
+      - "9000:9000" 
+    env_file:
+      - "./config/docker.env"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - disknet
 
   api-gateway:
     build: ./services/api-gateway
@@ -75,6 +87,7 @@ services:
 
 volumes:
   postgres_data:
+  minio_data:
 
 networks:
   disknet:
