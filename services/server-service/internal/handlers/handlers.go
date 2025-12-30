@@ -5,13 +5,18 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 
+	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service/internal/config"
 	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service/internal/models"
+	eulaacceptor "github.com/ArteShow/Minecraft-Server-Creator/services/server-service/pkg/eula_acceptor"
 	getjar "github.com/ArteShow/Minecraft-Server-Creator/services/server-service/pkg/get_jar"
 	idgenerator "github.com/ArteShow/Minecraft-Server-Creator/services/server-service/pkg/id_generator"
 )
 
 func CreateServer(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
 	var req models.CreateServerRequest
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -20,31 +25,95 @@ func CreateServer(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	err = json.Unmarshal(body, &req)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := json.Unmarshal(body, &req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	id := idgenerator.GenerateServerID()
+	serverPath := "./servers/" + id
 
-	err = os.Mkdir("./servers"+id, 0755)
+	if err := os.MkdirAll(serverPath, 0755); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := getjar.GetServerJar(req.Version, serverPath+"/"); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	res := models.CreateServerResponse{
+		ServerID: id,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(res); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func StartServer(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var req models.StartServerRequest
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer r.Body.Close()
+
+	if err := json.Unmarshal(body, &req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	serverPath := "./servers/" + req.ServerID
+
+	if _, err := os.Stat(serverPath); err != nil {
+		http.Error(w, "server not found", http.StatusNotFound)
+		return
+	}
+
+	cfg, err := config.Read()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	err = getjar.GetServerJar(req.Version, "./servers/"+id+"/")
-	if err != nil {
+	if err := eulaacceptor.WriteEULA(serverPath + "/"); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	var res models.CreateServerResponse
-	res.ServerID = id
+	cmd := exec.Command(
+		"java",
+		"-Xms"+cfg.StartRAM,
+		"-Xmx"+cfg.RunRAM,
+		"-jar",
+		"server.jar",
+		"nogui",
+	)
 
-	w.WriteHeader(http.StatusCreated)
-	err = json.NewEncoder(w).Encode(res)
-	if err != nil {
+	cmd.Dir = serverPath + "/"
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Start(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	res := models.StartServerResponse{
+		Status: "running",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(res); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
