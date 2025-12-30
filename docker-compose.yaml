@@ -1,4 +1,38 @@
 services:
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    restart: unless-stopped
+    env_file:
+      - ./config/docker.env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - disknet
+
+  migrate:
+    image: migrate/migrate
+    container_name: migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./migrations:/migrations
+    entrypoint: >
+      migrate
+      -path /migrations
+      -database postgres://postgres:dev_only@postgres:5432/minecraft_server_creator_db?sslmode=disable
+      up
+    networks:
+      - disknet
+
   api-gateway:
     build: ./services/api-gateway
     container_name: api-gateway
@@ -6,12 +40,9 @@ services:
       - ./config/docker.env
     ports:
       - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:${API_GATEWAY_PORT}/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     networks:
       - disknet
 
@@ -24,9 +55,8 @@ services:
       - "${USER_SERVICE_PORT}:${USER_SERVICE_PORT}"
       - "${USER_SERVICE_GRPC_SERVER_PORT}:${USER_SERVICE_GRPC_SERVER_PORT}"
     depends_on:
-      - postgres
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:${USER_SERVICE_PORT}/health"]
+      migrate:
+        condition: service_completed_successfully
     networks:
       - disknet
 
@@ -37,42 +67,11 @@ services:
       - ./config/docker.env
     ports:
       - "${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}"
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:${AUTH_SERVICE_PORT}/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-    networks:
-      - disknet
-
-  postgres:
-    image: postgres:16
-    container_name: postgres
-    restart: unless-stopped
-    env_file:
-      - ./config/docker.env
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
-    networks:
-      - disknet
-
-  migrate:
-    image: migrate/migrate
-    container_name: migrate
     depends_on:
-      - postgres
+      migrate:
+        condition: service_completed_successfully
     networks:
       - disknet
-    volumes:
-      - ./migrations:/migrations
-    entrypoint:
-      [
-        "sh", "-c",
-        "while ! nc -z postgres 5432; do echo 'Waiting for Postgres...'; sleep 1; done; migrate -path /migrations -database postgres://postgres:dev_only@postgres:5432/minecraft_server_creator_db?sslmode=disable up"
-      ]
 
 volumes:
   postgres_data:

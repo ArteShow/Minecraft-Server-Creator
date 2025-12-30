@@ -67,11 +67,11 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	var res models.RegisterResponse
 	res.ID = saveUserRes.GetId()
 
+	w.WriteHeader(http.StatusAccepted)
 	if err = json.NewEncoder(w).Encode(res); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusAccepted)
 }
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
