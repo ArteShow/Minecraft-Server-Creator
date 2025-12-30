@@ -9,7 +9,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o server-service ./cmd/s
 
 FROM alpine:latest
 WORKDIR /app
-COPY --from=builder /app/auth-service .
+COPY --from=builder /app/server-service .
 
 EXPOSE 8003
 CMD ["./server-service"]
