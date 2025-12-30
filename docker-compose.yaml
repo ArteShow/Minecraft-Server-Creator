@@ -85,6 +85,19 @@ services:
     networks:
       - disknet
 
+  server-service:
+    build: ./services/server-service
+    container_name: server-service
+    env_file:
+      - ./config/docker.env
+    ports:
+      - "${SERVER_SERVICE_PORT}:${SERVER_SERVICE_PORT}"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - disknet
+
 volumes:
   postgres_data:
   minio_data:
