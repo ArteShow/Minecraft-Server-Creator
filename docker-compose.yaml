@@ -90,11 +90,16 @@ services:
     container_name: server-service
     env_file:
       - ./config/docker.env
+    volumes:
+      - ./services/server-service/servers:/app/servers
     ports:
       - "${SERVER_SERVICE_PORT}:${SERVER_SERVICE_PORT}"
     depends_on:
       migrate:
         condition: service_completed_successfully
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     networks:
       - disknet
 

@@ -18,8 +18,7 @@ func CreateServerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	err = json.Unmarshal(body, &req)
-	if err != nil {
+	if err := json.Unmarshal(body, &req); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -33,11 +32,7 @@ func CreateServerHandler(w http.ResponseWriter, r *http.Request) {
 	res := models.CreateServerResponse{ServerID: id}
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(res)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	_ = json.NewEncoder(w).Encode(res)
 }
 
 func StartServerHandler(manager server.Manager) http.HandlerFunc {
@@ -50,27 +45,23 @@ func StartServerHandler(manager server.Manager) http.HandlerFunc {
 		}
 		defer r.Body.Close()
 
-		err = json.Unmarshal(body, &req)
+		if err := json.Unmarshal(body, &req); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		proc, err := server.StartServer(req.ServerID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		cmd, err := server.StartServer(req.ServerID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		manager.Add(req.ServerID, cmd)
+		manager.Add(req.ServerID, proc)
 
 		res := models.StartServerResponse{Status: "running"}
 		w.WriteHeader(http.StatusCreated)
 		w.Header().Set("Content-Type", "application/json")
-		err = json.NewEncoder(w).Encode(res)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		_ = json.NewEncoder(w).Encode(res)
 	}
 }
 
@@ -84,33 +75,28 @@ func StopServerHandler(manager server.Manager) http.HandlerFunc {
 		}
 		defer r.Body.Close()
 
-		err = json.Unmarshal(body, &req)
-		if err != nil {
+		if err := json.Unmarshal(body, &req); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		cmd, ok := manager.Get(req.ServerID)
-		if !ok {
-			http.Error(w, "failed to get cmd", http.StatusInternalServerError)
+		proc, ok := manager.Get(req.ServerID)
+		if !ok || proc == nil {
+			http.Error(w, "failed to get server process", http.StatusInternalServerError)
 			return
 		}
 
-		err = server.StopServer(req.ServerID, cmd)
-		if err != nil {
+		if err := server.StopServer(proc); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
 		manager.Remove(req.ServerID)
 
 		res := models.StopServerResponse{Status: "stopped"}
 		w.WriteHeader(http.StatusCreated)
 		w.Header().Set("Content-Type", "application/json")
-		err = json.NewEncoder(w).Encode(res)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		_ = json.NewEncoder(w).Encode(res)
 	}
 }
 
@@ -123,14 +109,12 @@ func DeleteServerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	err = json.Unmarshal(body, &req)
-	if err != nil {
+	if err := json.Unmarshal(body, &req); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	err = server.DeleteServer(req.ServerID)
-	if err != nil {
+	if err := server.DeleteServer(req.ServerID); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -138,9 +122,5 @@ func DeleteServerHandler(w http.ResponseWriter, r *http.Request) {
 	res := models.DeleteServerResponse{Status: "deleted"}
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(res)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	_ = json.NewEncoder(w).Encode(res)
 }

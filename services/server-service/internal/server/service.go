@@ -1,10 +1,13 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service/internal/config"
 	eulaacceptor "github.com/ArteShow/Minecraft-Server-Creator/services/server-service/pkg/eula_acceptor"
@@ -12,34 +15,64 @@ import (
 	idgenerator "github.com/ArteShow/Minecraft-Server-Creator/services/server-service/pkg/id_generator"
 )
 
+type ServerStatus struct {
+	Status string `json:"status"`
+	Error  string `json:"error,omitempty"`
+}
+
+type ServerProcess struct {
+	Cmd   *exec.Cmd
+	Stdin io.WriteCloser
+}
+
 func CreateServer(version string) (string, error) {
+	cwd, _ := os.Getwd()
+	fmt.Println("Current working directory:", cwd)
+
 	id := idgenerator.GenerateServerID()
-	err := os.MkdirAll("./servers/"+id, 0755)
-	if err != nil {
+	serverPath := filepath.Join("servers", id)
+
+	fmt.Println("Creating folder:", serverPath)
+	if err := os.MkdirAll(serverPath, 0755); err != nil {
 		return "", err
 	}
 
-	err = getjar.GetServerJar(version, "./servers/"+id+"/")
-	if err != nil {
-		return "", err
-	}
+	statusFile := filepath.Join(serverPath, "status.json")
+	status := ServerStatus{Status: "downloading"}
+	saveStatus(statusFile, status)
 
-	err = eulaacceptor.WriteEULA("./servers/" + id + "/")
-	if err != nil {
-		return "", err
-	}
+	go func() {
+		err := getjar.GetServerJar(version, serverPath)
+		if err != nil {
+			status = ServerStatus{Status: "error", Error: err.Error()}
+		} else {
+			_ = eulaacceptor.WriteEULA(serverPath)
+			status = ServerStatus{Status: "ready"}
+		}
+		saveStatus(statusFile, status)
+	}()
 
 	return id, nil
 }
 
-func StartServer(serverID string) (*exec.Cmd, error) {
+func StartServer(serverID string) (*ServerProcess, error) {
 	serverPath := filepath.Join("servers", serverID)
+	statusFile := filepath.Join(serverPath, "status.json")
 
-	if _, err := os.Stat(serverPath); err != nil {
-		return nil, fmt.Errorf("server folder not found")
+	var status ServerStatus
+	for {
+		status, _ = loadStatus(statusFile)
+		if status.Status == "ready" {
+			break
+		}
+		if status.Status == "error" {
+			return nil, fmt.Errorf("server error: %s", status.Error)
+		}
+		time.Sleep(500 * time.Millisecond)
 	}
 
-	if _, err := os.Stat(serverPath + "/server.jar"); err != nil {
+	jarPath := filepath.Join(serverPath, "server.jar")
+	if _, err := os.Stat(jarPath); err != nil {
 		return nil, fmt.Errorf("server.jar not found")
 	}
 
@@ -56,43 +89,51 @@ func StartServer(serverID string) (*exec.Cmd, error) {
 		"server.jar",
 		"nogui",
 	)
-
-	cmd.Dir = serverPath + "/"
+	cmd.Dir = serverPath
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return nil, err
+	}
 
 	if err := cmd.Start(); err != nil {
 		return nil, err
 	}
 
-	return cmd, nil
+	return &ServerProcess{Cmd: cmd, Stdin: stdin}, nil
 }
 
-func StopServer(serverID string, cmd *exec.Cmd) error {
-	if cmd == nil {
-		return fmt.Errorf("cmd is nil")
+func StopServer(p *ServerProcess) error {
+	if p == nil || p.Cmd == nil || p.Stdin == nil {
+		return fmt.Errorf("server process not running")
 	}
 
-	stdin, err := cmd.StdinPipe()
+	_, err := p.Stdin.Write([]byte("stop\n"))
 	if err != nil {
 		return err
 	}
 
-	_, err = stdin.Write([]byte("stop\n"))
-	if err != nil {
-		return err
-	}
-
-	cmd.Wait()
-	return nil
+	return p.Cmd.Wait()
 }
 
 func DeleteServer(serverID string) error {
 	serverPath := filepath.Join("servers", serverID)
-	err := os.RemoveAll(serverPath)
-	if err != nil {
-		return err
-	}
+	return os.RemoveAll(serverPath)
+}
 
-	return nil
+func saveStatus(path string, status ServerStatus) {
+	data, _ := json.Marshal(status)
+	_ = os.WriteFile(path, data, 0644)
+}
+
+func loadStatus(path string) (ServerStatus, error) {
+	var status ServerStatus
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return status, err
+	}
+	err = json.Unmarshal(data, &status)
+	return status, err
 }

@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 )
 
 type VersionManifest struct {
@@ -23,12 +24,22 @@ type VersionJSON struct {
 	} `json:"downloads"`
 }
 
-func GetServerJar(version, dest string) error {
+func GetServerJar(version, destDir string) error {
+	fmt.Println("Creating server folder:", destDir)
+	if err := os.MkdirAll(destDir, 0755); err != nil {
+		return err
+	}
+
+	fmt.Println("Downloading version_manifest.json")
 	resp, err := http.Get("https://launchermeta.mojang.com/mc/game/version_manifest.json")
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to get version_manifest.json: %s", resp.Status)
+	}
 
 	var manifest VersionManifest
 	if err := json.NewDecoder(resp.Body).Decode(&manifest); err != nil {
@@ -43,32 +54,54 @@ func GetServerJar(version, dest string) error {
 		}
 	}
 	if versionURL == "" {
-		return fmt.Errorf("version not found")
+		return fmt.Errorf("version %s not found", version)
 	}
 
+	fmt.Println("Downloading version JSON for version:", version)
 	resp2, err := http.Get(versionURL)
 	if err != nil {
 		return err
 	}
 	defer resp2.Body.Close()
 
+	if resp2.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to get version JSON: %s", resp2.Status)
+	}
+
 	var vjson VersionJSON
 	if err := json.NewDecoder(resp2.Body).Decode(&vjson); err != nil {
 		return err
 	}
 
-	resp3, err := http.Get(vjson.Downloads.Server.URL)
+	jarURL := vjson.Downloads.Server.URL
+	if jarURL == "" {
+		return fmt.Errorf("server.jar URL not found for version %s", version)
+	}
+
+	fmt.Println("Downloading server.jar from:", jarURL)
+	resp3, err := http.Get(jarURL)
 	if err != nil {
 		return err
 	}
 	defer resp3.Body.Close()
 
-	out, err := os.Create(dest)
+	if resp3.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to download server.jar: %s", resp3.Status)
+	}
+
+	jarFile := filepath.Join(destDir, "server.jar")
+	fmt.Println("Saving server.jar to:", jarFile)
+	out, err := os.Create(jarFile)
 	if err != nil {
 		return err
 	}
 	defer out.Close()
 
-	_, err = io.Copy(out, resp3.Body)
-	return err
+	n, err := io.Copy(out, resp3.Body)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Downloaded %d bytes\n", n)
+	return nil
 }
