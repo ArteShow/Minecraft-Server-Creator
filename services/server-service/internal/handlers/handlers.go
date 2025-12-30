@@ -30,12 +30,12 @@ func CreateServerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res := models.CreateServerResponse{ServerID: id}
-	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(res)
 }
 
-func StartServerHandler(manager server.Manager) http.HandlerFunc {
+func StartServerHandler(manager *server.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req models.StartServerRequest
 		body, err := io.ReadAll(r.Body)
@@ -59,13 +59,13 @@ func StartServerHandler(manager server.Manager) http.HandlerFunc {
 		manager.Add(req.ServerID, proc)
 
 		res := models.StartServerResponse{Status: "running"}
-		w.WriteHeader(http.StatusCreated)
 		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
 		_ = json.NewEncoder(w).Encode(res)
 	}
 }
 
-func StopServerHandler(manager server.Manager) http.HandlerFunc {
+func StopServerHandler(manager *server.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req models.StopServerRequest
 		body, err := io.ReadAll(r.Body)
@@ -81,8 +81,8 @@ func StopServerHandler(manager server.Manager) http.HandlerFunc {
 		}
 
 		proc, ok := manager.Get(req.ServerID)
-		if !ok || proc == nil {
-			http.Error(w, "failed to get server process", http.StatusInternalServerError)
+		if !ok {
+			http.Error(w, "server not found", http.StatusNotFound)
 			return
 		}
 
@@ -94,8 +94,8 @@ func StopServerHandler(manager server.Manager) http.HandlerFunc {
 		manager.Remove(req.ServerID)
 
 		res := models.StopServerResponse{Status: "stopped"}
-		w.WriteHeader(http.StatusCreated)
 		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(res)
 	}
 }
@@ -120,7 +120,7 @@ func DeleteServerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res := models.DeleteServerResponse{Status: "deleted"}
-	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(res)
 }

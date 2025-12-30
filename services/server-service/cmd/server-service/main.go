@@ -17,11 +17,11 @@ import (
 const (
 	readTimeout  = 10 * time.Second
 	writeTimeout = 10 * time.Second
-	idleTimeou   = 60 * time.Second
+	idleTimeout  = 60 * time.Second
 )
 
 func main() {
-	manager := server.New()
+	manager := server.NewManager()
 
 	cfg, err := config.Read()
 	if err != nil {
@@ -33,49 +33,41 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+
 	mux.HandleFunc("/server-service/health", func(w http.ResponseWriter, _ *http.Request) {
-		_, err = w.Write([]byte("ok"))
+		_, err := w.Write([]byte("ok"))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
 		}
 	})
 
 	mux.HandleFunc("/server-service/create", handlers.CreateServerHandler)
 	mux.HandleFunc("/server-service/delete", handlers.DeleteServerHandler)
-	mux.HandleFunc("/server-service/start", handlers.StartServerHandler(*manager))
-	mux.HandleFunc("/server-service/stop", handlers.StopServerHandler(*manager))
+	mux.HandleFunc("/server-service/start", handlers.StartServerHandler(manager))
+	mux.HandleFunc("/server-service/stop", handlers.StopServerHandler(manager))
 
 	srv := &http.Server{
 		Addr:         cfg.Port,
 		Handler:      mux,
 		ReadTimeout:  readTimeout,
 		WriteTimeout: writeTimeout,
-		IdleTimeout:  idleTimeou,
+		IdleTimeout:  idleTimeout,
 	}
 
-	ctx, stop := signal.NotifyContext(
-		context.Background(),
-		os.Interrupt,
-		syscall.SIGTERM,
-	)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	go func() {
-		log.Println("server running on :8003")
+		log.Printf("server running on %s\n", cfg.Port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("server error: %v", err)
 		}
 	}()
 
 	<-ctx.Done()
-
 	log.Println("graceful shutdown started")
 
-	shutdownCtx, cancel := context.WithTimeout(
-		context.Background(),
-		10*time.Second,
-	)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {

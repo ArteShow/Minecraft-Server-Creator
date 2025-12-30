@@ -31,19 +31,18 @@ func CreateServer(version string) (string, error) {
 
 	id := idgenerator.GenerateServerID()
 	serverPath := filepath.Join("servers", id)
-
 	fmt.Println("Creating folder:", serverPath)
+
 	if err := os.MkdirAll(serverPath, 0755); err != nil {
 		return "", err
 	}
 
 	statusFile := filepath.Join(serverPath, "status.json")
-	status := ServerStatus{Status: "downloading"}
-	saveStatus(statusFile, status)
+	saveStatus(statusFile, ServerStatus{Status: "downloading"})
 
 	go func() {
-		err := getjar.GetServerJar(version, serverPath)
-		if err != nil {
+		var status ServerStatus
+		if err := getjar.GetServerJar(version, serverPath); err != nil {
 			status = ServerStatus{Status: "error", Error: err.Error()}
 		} else {
 			_ = eulaacceptor.WriteEULA(serverPath)
@@ -90,10 +89,17 @@ func StartServer(serverID string) (*ServerProcess, error) {
 		"nogui",
 	)
 	cmd.Dir = serverPath
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 
-	stdin, err := cmd.StdinPipe()
+	stdoutPipe, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
+	stderrPipe, err := cmd.StderrPipe()
+	if err != nil {
+		return nil, err
+	}
+
+	stdinPipe, err := cmd.StdinPipe()
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +108,11 @@ func StartServer(serverID string) (*ServerProcess, error) {
 		return nil, err
 	}
 
-	return &ServerProcess{Cmd: cmd, Stdin: stdin}, nil
+	// Async logging
+	go io.Copy(os.Stdout, stdoutPipe)
+	go io.Copy(os.Stderr, stderrPipe)
+
+	return &ServerProcess{Cmd: cmd, Stdin: stdinPipe}, nil
 }
 
 func StopServer(p *ServerProcess) error {
