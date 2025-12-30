@@ -67,6 +67,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	var res models.RegisterResponse
 	res.ID = saveUserRes.GetId()
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)
 	if err = json.NewEncoder(w).Encode(res); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -119,6 +120,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var res models.LoginResponse
 	res.Token = token
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)
 	if err = json.NewEncoder(w).Encode(res); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
