@@ -26,12 +26,8 @@ type ServerProcess struct {
 }
 
 func CreateServer(version string) (string, error) {
-	cwd, _ := os.Getwd()
-	fmt.Println("Current working directory:", cwd)
-
 	id := idgenerator.GenerateServerID()
 	serverPath := filepath.Join("servers", id)
-	fmt.Println("Creating folder:", serverPath)
 
 	if err := os.MkdirAll(serverPath, 0755); err != nil {
 		return "", err
@@ -108,7 +104,6 @@ func StartServer(serverID string) (*ServerProcess, error) {
 		return nil, err
 	}
 
-	// Async logging
 	go io.Copy(os.Stdout, stdoutPipe)
 	go io.Copy(os.Stderr, stderrPipe)
 
