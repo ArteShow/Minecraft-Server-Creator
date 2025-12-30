@@ -9,14 +9,11 @@ import (
 
 	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service/internal/config"
 	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service/internal/models"
+	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service/internal/server"
 	eulaacceptor "github.com/ArteShow/Minecraft-Server-Creator/services/server-service/pkg/eula_acceptor"
-	getjar "github.com/ArteShow/Minecraft-Server-Creator/services/server-service/pkg/get_jar"
-	idgenerator "github.com/ArteShow/Minecraft-Server-Creator/services/server-service/pkg/id_generator"
 )
 
 func CreateServer(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	var req models.CreateServerRequest
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -30,15 +27,8 @@ func CreateServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := idgenerator.GenerateServerID()
-	serverPath := "./servers/" + id
-
-	if err := os.MkdirAll(serverPath, 0755); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if err := getjar.GetServerJar(req.Version, serverPath+"/"); err != nil {
+	id, err := server.CreateServer(req.Version)
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -48,7 +38,7 @@ func CreateServer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(res); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -56,8 +46,6 @@ func CreateServer(w http.ResponseWriter, r *http.Request) {
 }
 
 func StartServer(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	var req models.StartServerRequest
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
