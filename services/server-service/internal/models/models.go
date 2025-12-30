@@ -17,3 +17,19 @@ type StartServerRequest struct {
 type StartServerResponse struct {
 	Status string `json:"status"`
 }
+
+type StopServerRequest struct {
+	ServerID string `json:"id"`
+}
+
+type StopServerResponse struct {
+	Status string `json:"status"`
+}
+
+type DeleteServerRequest struct {
+	ServerID string `json:"id"`
+}
+
+type DeleteServerResponse struct {
+	Status string `json:"status"`
+}

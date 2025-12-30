@@ -1,29 +1,28 @@
 package server
 
 import (
-	"os"
-
-	eulaacceptor "github.com/ArteShow/Minecraft-Server-Creator/services/server-service/pkg/eula_acceptor"
-	getjar "github.com/ArteShow/Minecraft-Server-Creator/services/server-service/pkg/get_jar"
-	idgenerator "github.com/ArteShow/Minecraft-Server-Creator/services/server-service/pkg/id_generator"
+	"os/exec"
 )
 
-func CreateServer(version string) (string, error) {
-	id := idgenerator.GenerateServerID()
-	err := os.MkdirAll("./servers/"+id, 0755)
-	if err != nil {
-		return "", err
-	}
+type Manager struct {
+	running map[string]*exec.Cmd
+}
 
-	err = getjar.GetServerJar(version, "./server/"+id+"/")
-	if err != nil {
-		return "", err
+func New() *Manager {
+	return &Manager{
+		running: make(map[string]*exec.Cmd),
 	}
+}
 
-	err = eulaacceptor.WriteEULA("./server/" + id + "/")
-	if err != nil {
-		return "", err
-	}
+func (m *Manager) Add(id string, cmd *exec.Cmd) {
+	m.running[id] = cmd
+}
 
-	return id, nil
+func (m *Manager) Get(id string) (*exec.Cmd, bool) {
+	cmd, ok := m.running[id]
+	return cmd, ok
+}
+
+func (m *Manager) Remove(id string) {
+	delete(m.running, id)
 }
