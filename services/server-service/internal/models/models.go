@@ -33,3 +33,7 @@ type DeleteServerRequest struct {
 type DeleteServerResponse struct {
 	Status string `json:"status"`
 }
+
+type GetLogRequest struct {
+	ServerID string `json:"id"`
+}

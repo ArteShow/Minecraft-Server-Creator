@@ -118,6 +118,16 @@ func DeleteServer(serverID string) error {
 	return os.RemoveAll(serverPath)
 }
 
+func GetLogs(serverID string) ([]byte, error) {
+	path := filepath.Join("servers", serverID, "logs", "latest.log")
+	body, err := os.ReadFile(path)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return body, nil
+}
+
 func saveStatus(path string, status ServerStatus) {
 	data, _ := json.Marshal(status)
 	_ = os.WriteFile(path, data, 0644)

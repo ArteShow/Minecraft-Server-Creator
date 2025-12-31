@@ -37,6 +37,7 @@ func main() {
 	deleteServerProxy := proxy.NewProxy("http://server-service:8003", "/server-service/delete")
 	startServerProxy := proxy.NewProxy("http://server-service:8003", "/server-service/start")
 	stopServerProxy := proxy.NewProxy("http://server-service:8003", "/server-service/stop")
+	getServerLogProxy := proxy.NewProxy("http://server-service:8003", "/server-service/log")
 
 	handler := http.NewServeMux()
 	handler.Handle(
@@ -57,6 +58,7 @@ func main() {
 	handler.Handle("/api/"+cfg.APIVersion+"/delete", middleware.LoggingMiddleware(deleteServerProxy))
 	handler.Handle("/api/"+cfg.APIVersion+"/start", middleware.LoggingMiddleware(startServerProxy))
 	handler.Handle("/api/"+cfg.APIVersion+"/stop", middleware.LoggingMiddleware(stopServerProxy))
+	handler.Handle("/api/"+cfg.APIVersion+"/log", middleware.LoggingMiddleware(getServerLogProxy))
 
 	srv := &http.Server{
 		Addr:         cfg.Port,
