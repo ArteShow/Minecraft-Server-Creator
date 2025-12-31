@@ -15,16 +15,6 @@ import (
 	idgenerator "github.com/ArteShow/Minecraft-Server-Creator/services/server-service/pkg/id_generator"
 )
 
-type ServerStatus struct {
-	Status string `json:"status"`
-	Error  string `json:"error,omitempty"`
-}
-
-type ServerProcess struct {
-	Cmd   *exec.Cmd
-	Stdin io.WriteCloser
-}
-
 func CreateServer(version string) (string, error) {
 	id := idgenerator.GenerateServerID()
 	serverPath := filepath.Join("servers", id)

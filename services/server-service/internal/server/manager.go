@@ -1,10 +1,24 @@
 package server
 
-import "sync"
+import (
+	"io"
+	"os/exec"
+	"sync"
+)
 
 type Manager struct {
 	mu      sync.RWMutex
 	running map[string]*ServerProcess
+}
+
+type ServerStatus struct {
+	Status string `json:"status"`
+	Error  string `json:"error,omitempty"`
+}
+
+type ServerProcess struct {
+	Cmd   *exec.Cmd
+	Stdin io.WriteCloser
 }
 
 func NewManager() *Manager {
