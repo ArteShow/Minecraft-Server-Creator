@@ -1,3 +1,3 @@
 module github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2
 
-go 1.24.4
+go 1.24
