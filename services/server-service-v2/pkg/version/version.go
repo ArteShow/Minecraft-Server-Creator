@@ -1,4 +1,4 @@
-package version
+package get_version
 
 import (
 	"encoding/json"

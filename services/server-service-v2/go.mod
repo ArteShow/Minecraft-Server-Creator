@@ -2,7 +2,10 @@ module github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2
 
 go 1.24.4
 
-require github.com/docker/docker v28.5.2+incompatible
+require (
+	github.com/docker/docker v28.5.2+incompatible
+	github.com/google/uuid v1.6.0
+)
 
 require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect

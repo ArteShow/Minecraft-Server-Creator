@@ -4,11 +4,13 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"fmt"
 	"path"
 	"strings"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/go-connections/nat"
 )
 
 func (d *DockerService) UploadToVolume(
@@ -81,4 +83,65 @@ func (d *DockerService) UploadToVolume(
 		buf,
 		container.CopyToContainerOptions{},
 	)
+}
+
+func (ds *DockerService) StartServerContainer(
+	serverID string,
+	image string,
+	port int,
+) (string, error) {
+
+	ctx := context.Background()
+
+	resp, err := ds.client.ContainerCreate(
+		ctx,
+		&container.Config{
+			Image: image,
+			Cmd: []string{
+				"java",
+				"-Xms1G",
+				"-Xmx2G",
+				"-jar",
+				"server.jar",
+				"nogui",
+			},
+			WorkingDir: "/data",
+			Tty:        true,
+			ExposedPorts: nat.PortSet{
+				"25565/tcp": struct{}{},
+			},
+		},
+		&container.HostConfig{
+			Mounts: []mount.Mount{
+				{
+					Type:   mount.TypeVolume,
+					Source: "mc_" + serverID,
+					Target: "/data",
+				},
+			},
+			PortBindings: nat.PortMap{
+				"25565/tcp": []nat.PortBinding{
+					{
+						HostIP:   "0.0.0.0",
+						HostPort: fmt.Sprint(port),
+					},
+				},
+			},
+			RestartPolicy: container.RestartPolicy{
+				Name: "unless-stopped",
+			},
+		},
+		nil,
+		nil,
+		"mc_"+serverID,
+	)
+	if err != nil {
+		return "", err
+	}
+
+	if err := ds.client.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
+		return "", err
+	}
+
+	return resp.ID, nil
 }
