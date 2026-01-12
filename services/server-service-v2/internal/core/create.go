@@ -3,14 +3,15 @@ package core
 import (
 	"fmt"
 
+	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/internal/docker"
 	get_version "github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/pkg/version"
 	"github.com/google/uuid"
 )
 
-func (s *Service) CreateServer(version string) (string, error) {
+func CreateServer(version string, ds *docker.DockerService) (string, error){
 	id := uuid.NewString()
 
-	if err := s.ds.CreateVolume(id); err != nil {
+	if err := ds.CreateVolume(id); err != nil {
 		return "", err
 	}
 
@@ -19,7 +20,7 @@ func (s *Service) CreateServer(version string) (string, error) {
 		return "", fmt.Errorf("failed to download jar: %w", err)
 	}
 
-	if err := s.ds.UploadToVolume(
+	if err := ds.UploadToVolume(
 		id,
 		"/data",
 		"server.jar",

@@ -1,5 +1,11 @@
 package core
 
-func (s *Service) StartServer(id string, port int) (string, error) {
-	return s.ds.StartServerContainer(id, "eclipse-temurin:21-jre", port)
+func (s *Server) StartServer(serverID string) (string, error) {
+	conID, err := s.DockerService.StartServerContainer(serverID, "eclipse-temurin:21-jre", 25565)
+	if err != nil {
+		return "", err
+	}
+
+	s.Processes.Add(serverID, conID)
+	return conID, nil
 }
