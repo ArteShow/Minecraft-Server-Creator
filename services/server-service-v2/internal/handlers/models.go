@@ -1,11 +1,5 @@
 package handlers
 
-import "github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/internal/core"
-
-type Handler struct {
-	Server core.Server
-}
-
 type CreateServerRequest struct {
 	Version string `json:"version"`
 }

@@ -6,6 +6,6 @@ import (
 )
 
 type Server struct {
-	DockerService docker.DockerService
+	DockerService *docker.DockerService
 	Processes server.Manager
 }
