@@ -72,6 +72,19 @@ services:
         condition: service_completed_successfully
     networks:
       - disknet
+  server-service-v2:
+    build: ./services/server-service-v2
+    container_name: server-service-v2
+    env_file:
+      - ./config/docker.env
+    ports:
+      - "${SERVER_SERVICE_PORT}:${SERVER_SERVICE_PORT}"
+      - "${MINECRAFT_PORT}:${MINECRAFT_PORT}"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - disknet
 
 volumes:
   postgres_data:
