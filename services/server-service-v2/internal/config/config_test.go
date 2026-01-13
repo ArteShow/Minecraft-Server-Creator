@@ -8,7 +8,7 @@ func TestRead(t *testing.T) {
 		t.Fatal("Failed to read the config, ", err.Error())
 	}
 
-	if cfg.Port != ":8003" {
-		t.Fatalf("expected port :8001, got: %s", cfg.Port)
+	if cfg.Port != ":8002" {
+		t.Fatalf("expected port :8002, got: %s", cfg.Port)
 	}
 }

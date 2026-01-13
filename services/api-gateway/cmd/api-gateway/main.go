@@ -33,6 +33,11 @@ func main() {
 	authRegisterProxy := proxy.NewProxy("http://auth-service:8001", "/auth-service/register")
 	authLoginProxy := proxy.NewProxy("http://auth-service:8001", "/auth-service/login")
 
+	createServerProxy  := proxy.NewProxy("http://server-service:8002", "/server-service/create")
+	startServerProxy := proxy.NewProxy("http://server-service:8002", "/server-service/start")
+	stopServerProxy := proxy.NewProxy("http://server-service:8002", "/server-service/stop")
+	deleteServerProxy := proxy.NewProxy("http://server-service:8002", "/server-service/delete")
+ 
 	handler := http.NewServeMux()
 	handler.Handle(
 		"/api/"+cfg.APIVersion+"/api-gateway/health",
@@ -47,6 +52,11 @@ func main() {
 	)
 	handler.Handle("/api/"+cfg.APIVersion+"/register",middleware.LoggingMiddleware(authRegisterProxy))
 	handler.Handle("/api/"+cfg.APIVersion+"/login", middleware.LoggingMiddleware(authLoginProxy))
+
+	handler.Handle("/api/"+cfg.APIVersion+"/create", middleware.LoggingMiddleware(createServerProxy))
+	handler.Handle("/api/"+cfg.APIVersion+"/start", middleware.LoggingMiddleware(startServerProxy))
+	handler.Handle("/api/"+cfg.APIVersion+"/stop", middleware.LoggingMiddleware(stopServerProxy))
+	handler.Handle("/api/"+cfg.APIVersion+"/delete", middleware.LoggingMiddleware(deleteServerProxy))
 
 	srv := &http.Server{
 		Addr:    cfg.Port,
