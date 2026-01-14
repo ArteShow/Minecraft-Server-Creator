@@ -63,7 +63,7 @@ func main() {
 	defer stop()
 
 	go func() {
-		log.Println("server running on :8002")
+		log.Println("server running on :8003")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("server error: %v", err)
 		}

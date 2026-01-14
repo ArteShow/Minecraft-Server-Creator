@@ -33,10 +33,10 @@ func main() {
 	authRegisterProxy := proxy.NewProxy("http://auth-service:8001", "/auth-service/register")
 	authLoginProxy := proxy.NewProxy("http://auth-service:8001", "/auth-service/login")
 
-	createServerProxy  := proxy.NewProxy("http://server-service:8002", "/server-service/create")
-	startServerProxy := proxy.NewProxy("http://server-service:8002", "/server-service/start")
-	stopServerProxy := proxy.NewProxy("http://server-service:8002", "/server-service/stop")
-	deleteServerProxy := proxy.NewProxy("http://server-service:8002", "/server-service/delete")
+	createServerProxy  := proxy.NewProxy("http://server-service-v2:8003", "/server-service/create")
+	startServerProxy := proxy.NewProxy("http://server-service-v2:8003", "/server-service/start")
+	stopServerProxy := proxy.NewProxy("http://server-service-v2:8003", "/server-service/stop")
+	deleteServerProxy := proxy.NewProxy("http://server-service-v2:8003", "/server-service/delete")
  
 	handler := http.NewServeMux()
 	handler.Handle(
