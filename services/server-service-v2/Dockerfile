@@ -11,5 +11,5 @@ FROM alpine:latest
 WORKDIR /app
 COPY --from=builder /app/server-service-v2 .
 
-EXPOSE 8002
+EXPOSE 8003
 CMD ["./server-service-v2"]

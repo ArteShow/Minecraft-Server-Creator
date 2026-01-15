@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   postgres:
     image: postgres:16
@@ -43,6 +45,11 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:${API_GATEWAY_PORT}/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
     networks:
       - disknet
 
@@ -57,6 +64,11 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:${USER_SERVICE_PORT}/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
     networks:
       - disknet
 
@@ -70,8 +82,14 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:${AUTH_SERVICE_PORT}/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
     networks:
       - disknet
+
   server-service-v2:
     build: ./services/server-service-v2
     container_name: server-service-v2
@@ -80,9 +98,16 @@ services:
     ports:
       - "${SERVER_SERVICE_PORT}:${SERVER_SERVICE_PORT}"
       - "${MINECRAFT_PORT}:${MINECRAFT_PORT}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       migrate:
         condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:${SERVER_SERVICE_PORT}/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
     networks:
       - disknet
 
