@@ -5,8 +5,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"path"
-	"strings"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
@@ -21,13 +19,10 @@ func (d *DockerService) UploadToVolume(
 ) error {
 	ctx := context.Background()
 
-	targetPath = strings.TrimPrefix(targetPath, "/")
-	fullPath := path.Join(targetPath, fileName)
-
 	resp, err := d.client.ContainerCreate(
 		ctx,
 		&container.Config{
-			Image: "alpine",
+			Image: "alpine:3.19",
 			Cmd:   []string{"sleep", "20"},
 		},
 		&container.HostConfig{
@@ -62,7 +57,7 @@ func (d *DockerService) UploadToVolume(
 	tw := tar.NewWriter(buf)
 
 	hdr := &tar.Header{
-		Name: fullPath,
+		Name: fileName,
 		Mode: 0644,
 		Size: int64(len(data)),
 	}
@@ -79,7 +74,7 @@ func (d *DockerService) UploadToVolume(
 	return d.client.CopyToContainer(
 		ctx,
 		containerID,
-		"/data",
+		targetPath,
 		buf,
 		container.CopyToContainerOptions{},
 	)
@@ -115,7 +110,7 @@ func (ds *DockerService) StartServerContainer(
 			Mounts: []mount.Mount{
 				{
 					Type:   mount.TypeVolume,
-					Source: "mc_" + serverID,
+					Source: volumeName(serverID),
 					Target: "/data",
 				},
 			},
@@ -133,7 +128,7 @@ func (ds *DockerService) StartServerContainer(
 		},
 		nil,
 		nil,
-		"mc_"+serverID,
+		"mc_container_"+serverID,
 	)
 	if err != nil {
 		return "", err
