@@ -80,6 +80,19 @@ func (d *DockerService) UploadToVolume(
 	)
 }
 
+func (ds *DockerService) RemoveContainer(containerID string) error {
+	ctx := context.Background()
+
+	return ds.client.ContainerRemove(ctx, containerID, container.RemoveOptions{
+		Force: true,
+	})
+}
+
+func (ds *DockerService) StopContainer(containerID string) error {
+	ctx := context.Background()
+	return ds.client.ContainerKill(ctx, containerID, "SIGINT")
+}
+
 func (ds *DockerService) StartServerContainer(
 	serverID string,
 	image string,
@@ -92,16 +105,23 @@ func (ds *DockerService) StartServerContainer(
 		ctx,
 		&container.Config{
 			Image: image,
-			Cmd: []string{
-				"java",
-				"-Xms1G",
-				"-Xmx2G",
-				"-jar",
-				"server.jar",
-				"nogui",
-			},
 			WorkingDir: "/data",
 			Tty:        true,
+
+			Cmd: []string{
+				"sh",
+				"-c",
+				`
+				while [ ! -f server.jar ]; do
+					echo "waiting for server.jar..."
+					sleep 1
+				done
+
+				echo "starting minecraft server"
+				java -Xms1G -Xmx2G -jar server.jar nogui
+				`,
+			},
+
 			ExposedPorts: nat.PortSet{
 				"25565/tcp": struct{}{},
 			},

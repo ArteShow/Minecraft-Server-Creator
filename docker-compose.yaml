@@ -28,7 +28,7 @@ services:
     entrypoint: >
       migrate
       -path /migrations
-      -database postgres://postgres:dev_only@postgres:5432/minecraft_server_creator_db?sslmode=disable
+      -database postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable
       up
     networks:
       - disknet

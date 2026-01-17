@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"sync"
+
 	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/internal/core"
 	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/internal/docker"
 	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/internal/server"
@@ -18,7 +20,10 @@ func NewHandler() (*Handler, error) {
 	return &Handler{
 		Server: core.Server{
 			DockerService: ds,
-			Processes: server.Manager{},
+			Processes: server.Manager{
+				Mu: sync.Mutex{},
+				Containers: make(map[string]string),
+			},
 		},
 	}, nil
 }

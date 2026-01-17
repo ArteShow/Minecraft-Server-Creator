@@ -3,31 +3,31 @@ package server
 import "sync"
 
 type Manager struct {
-	mu         sync.Mutex
-	containers map[string]string 
+	Mu         sync.Mutex
+	Containers map[string]string 
 }
 
 func NewManager() *Manager {
 	return &Manager{
-		containers: make(map[string]string),
+		Containers: make(map[string]string),
 	}
 }
 
 func (m *Manager) Add(serverID, containerID string) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.containers[serverID] = containerID
+	m.Mu.Lock()
+	defer m.Mu.Unlock()
+	m.Containers[serverID] = containerID
 }
 
 func (m *Manager) Get(serverID string) (string, bool) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	id, ok := m.containers[serverID]
+	m.Mu.Lock()
+	defer m.Mu.Unlock()
+	id, ok := m.Containers[serverID]
 	return id, ok
 }
 
 func (m *Manager) Remove(serverID string) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	delete(m.containers, serverID)
+	m.Mu.Lock()
+	defer m.Mu.Unlock()
+	delete(m.Containers, serverID)
 }

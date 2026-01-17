@@ -3,6 +3,7 @@ package core
 import (
 	"fmt"
 
+	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/pkg/eula"
 	get_version "github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/pkg/version"
 	"github.com/google/uuid"
 )
@@ -24,6 +25,20 @@ func (s *Server )CreateServer(version string) (string, error){
 		"/data",
 		"server.jar",
 		jar,
+	); err != nil {
+		return "", err
+	}
+
+	eula, err := eula.Accept()
+	if err != nil {
+		return "", err
+	}
+
+	if err = s.DockerService.UploadToVolume(
+		id,
+		"/data",
+		"eula.txt",
+		eula,
 	); err != nil {
 		return "", err
 	}
