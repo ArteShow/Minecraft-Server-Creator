@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"context"
 	"net/http"
 	"strings"
 
@@ -9,17 +8,13 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type contextKey string
-
-const OwnerIDKey contextKey = "owner_id"
-
 func AuthMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			cfg, err := config.Read()
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusUnauthorized)
-				return 
+				return
 			}
 
 			auth := r.Header.Get("Authorization")
@@ -54,8 +49,8 @@ func AuthMiddleware() func(http.Handler) http.Handler {
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), OwnerIDKey, userID)
-			next.ServeHTTP(w, r.WithContext(ctx))
+			r.Header.Set("X-Owner-ID", userID)
+			next.ServeHTTP(w, r)
 		})
 	}
 }
