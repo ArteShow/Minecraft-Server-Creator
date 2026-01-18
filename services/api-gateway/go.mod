@@ -2,7 +2,10 @@ module github.com/ArteShow/Minecraft-Server-Creator/services/api-gateway
 
 go 1.24
 
-require github.com/ilyakaznacheev/cleanenv v1.5.0
+require (
+	github.com/golang-jwt/jwt/v5 v5.3.0
+	github.com/ilyakaznacheev/cleanenv v1.5.0
+)
 
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
