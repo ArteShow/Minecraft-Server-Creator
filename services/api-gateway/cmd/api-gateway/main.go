@@ -53,10 +53,10 @@ func main() {
 	handler.Handle("/api/"+cfg.APIVersion+"/register",middleware.LoggingMiddleware(authRegisterProxy))
 	handler.Handle("/api/"+cfg.APIVersion+"/login", middleware.LoggingMiddleware(authLoginProxy))
 
-	handler.Handle("/api/"+cfg.APIVersion+"/create", middleware.LoggingMiddleware(createServerProxy))
-	handler.Handle("/api/"+cfg.APIVersion+"/start", middleware.LoggingMiddleware(startServerProxy))
-	handler.Handle("/api/"+cfg.APIVersion+"/stop", middleware.LoggingMiddleware(stopServerProxy))
-	handler.Handle("/api/"+cfg.APIVersion+"/delete", middleware.LoggingMiddleware(deleteServerProxy))
+	handler.Handle("/api/"+cfg.APIVersion+"/create", middleware.LoggingMiddleware(middleware.AuthMiddleware()(createServerProxy)))
+	handler.Handle("/api/"+cfg.APIVersion+"/start", middleware.LoggingMiddleware(middleware.AuthMiddleware()(startServerProxy)))
+	handler.Handle("/api/"+cfg.APIVersion+"/stop", middleware.LoggingMiddleware(middleware.AuthMiddleware()(stopServerProxy)))
+	handler.Handle("/api/"+cfg.APIVersion+"/delete", middleware.LoggingMiddleware(middleware.AuthMiddleware()(deleteServerProxy)))
 
 	srv := &http.Server{
 		Addr:    cfg.Port,
