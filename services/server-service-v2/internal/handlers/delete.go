@@ -7,6 +7,12 @@ import (
 )
 
 func (h *Handler) DeleteServer(w http.ResponseWriter, r *http.Request) {
+	ownerID := r.Header.Get("X-Owner-ID")
+	if ownerID == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	var req DeleteServerRequest
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -20,7 +26,7 @@ func (h *Handler) DeleteServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = h.Server.DeleteServer(req.ServerID, req.OwnerID); err != nil {
+	if err = h.Server.DeleteServer(req.ServerID, ownerID); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

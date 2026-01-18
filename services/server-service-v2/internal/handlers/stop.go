@@ -7,6 +7,12 @@ import (
 )
 
 func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
+	ownerID := r.Header.Get("X-Owner-ID")
+	if ownerID == "" {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	var req StopServerRequest
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -20,7 +26,7 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = h.Server.StopServer(req.ServerID, req.ContainerID, req.OwnerID); err != nil {
+	if err = h.Server.StopServer(req.ServerID, req.ContainerID, ownerID); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}

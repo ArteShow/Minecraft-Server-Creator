@@ -16,6 +16,10 @@ func (s *Server) StopServer(serverID, containerID, ownerID string) error {
 	if err != nil || !ok {
 		return errors.New("user with id: " + ownerID + " is not the owner of this container: +" + err.Error())
 	}
+
+	if err = repository.RemoveContainerID(containerID, ownerID); err != nil {
+		return err
+	}
 	s.Processes.Remove(serverID)
 
 	if err := s.DockerService.StopContainer(containerID); err != nil {

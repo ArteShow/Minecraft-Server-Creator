@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/internal/database"
 )
@@ -86,7 +87,6 @@ func IsContainerOwnedByUser(containerID, ownerID string) (bool, error) {
 	return exists, err
 }
 
-
 func IsServerOwnedByUser(serverID, ownerID string) (bool, error) {
 	db, err := database.Connect()
 	if err != nil {
@@ -106,6 +106,34 @@ func IsServerOwnedByUser(serverID, ownerID string) (bool, error) {
 	return exists, err
 }
 
+func RemoveContainerID(containerID, ownerID string) error {
+	db, err := database.Connect()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	res, err := db.Exec(
+		`UPDATE servers
+		 SET container_id = NULL
+		 WHERE container_id = $1 AND owner_id = $2`,
+		containerID, ownerID,
+	)
+	if err != nil {
+		return err
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return fmt.Errorf("no container found with id %s for owner %s", containerID, ownerID)
+	}
+
+	return nil
+}
 
 func GetUsersContainerIDs(ownerID string) ([]string, error) {
 	db, err := database.Connect()
