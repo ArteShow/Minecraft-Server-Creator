@@ -20,7 +20,7 @@ func (h *Handler) StopServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = h.Server.StopServer(req.ServerID, req.ContainerID); err != nil {
+	if err = h.Server.StopServer(req.ServerID, req.ContainerID, req.OwnerID); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}

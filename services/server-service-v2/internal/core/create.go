@@ -3,12 +3,13 @@ package core
 import (
 	"fmt"
 
+	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/internal/repository"
 	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/pkg/eula"
 	get_version "github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/pkg/version"
 	"github.com/google/uuid"
 )
 
-func (s *Server )CreateServer(version string) (string, error){
+func (s *Server )CreateServer(version, ownerID string) (string, error){
 	id := uuid.NewString()
 
 	if err := s.DockerService.CreateVolume(id); err != nil {
@@ -40,6 +41,10 @@ func (s *Server )CreateServer(version string) (string, error){
 		"eula.txt",
 		eula,
 	); err != nil {
+		return "", err
+	}
+
+	if err = repository.CreateServer(id, ownerID, 25565); err != nil {
 		return "", err
 	}
 

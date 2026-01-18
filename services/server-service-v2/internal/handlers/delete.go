@@ -20,7 +20,7 @@ func (h *Handler) DeleteServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = h.Server.DeleteServer(req.ServerID); err != nil {
+	if err = h.Server.DeleteServer(req.ServerID, req.OwnerID); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

@@ -6,7 +6,7 @@ import (
 	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/internal/database"
 )
 
-func CreateServer(serverID, containerID, ownerID string, port int) error {
+func CreateServer(serverID, ownerID string, port int) error {
 	db, err := database.Connect()
 	if err != nil {
 		return err
@@ -14,9 +14,26 @@ func CreateServer(serverID, containerID, ownerID string, port int) error {
 	defer db.Close()
 
 	_, err = db.Exec(
-		`INSERT INTO servers (id, owner_id, container_id, port)
-		 VALUES ($1, $2, $3, $4)`,
-		serverID, ownerID, containerID, port,
+		`INSERT INTO servers (id, owner_id, port)
+		 VALUES ($1, $2, $3)`,
+		serverID, ownerID, port,
+	)
+
+	return err
+}
+
+func AddContainerIDToServer(serverID, containerID string) error {
+	db, err := database.Connect()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	_, err = db.Exec(
+		`UPDATE servers
+		 SET container_id = $1
+		 WHERE id = $2`,
+		containerID, serverID,
 	)
 
 	return err
@@ -49,6 +66,46 @@ func GetUsersServersIDs(ownerID string) ([]string, error) {
 
 	return serverIDs, rows.Err()
 }
+
+func IsContainerOwnedByUser(containerID, ownerID string) (bool, error) {
+	db, err := database.Connect()
+	if err != nil {
+		return false, err
+	}
+	defer db.Close()
+
+	var exists bool
+	err = db.QueryRow(
+		`SELECT EXISTS (
+			SELECT 1 FROM servers
+			WHERE container_id = $1 AND owner_id = $2
+		)`,
+		containerID, ownerID,
+	).Scan(&exists)
+
+	return exists, err
+}
+
+
+func IsServerOwnedByUser(serverID, ownerID string) (bool, error) {
+	db, err := database.Connect()
+	if err != nil {
+		return false, err
+	}
+	defer db.Close()
+
+	var exists bool
+	err = db.QueryRow(
+		`SELECT EXISTS (
+			SELECT 1 FROM servers
+			WHERE id = $1 AND owner_id = $2
+		)`,
+		serverID, ownerID,
+	).Scan(&exists)
+
+	return exists, err
+}
+
 
 func GetUsersContainerIDs(ownerID string) ([]string, error) {
 	db, err := database.Connect()

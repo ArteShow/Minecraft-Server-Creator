@@ -20,7 +20,7 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	containerID, err := h.Server.StartServer(req.ServerID)
+	containerID, err := h.Server.StartServer(req.ServerID, req.OwnerID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

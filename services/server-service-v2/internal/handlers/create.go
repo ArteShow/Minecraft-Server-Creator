@@ -21,7 +21,7 @@ func (h *Handler)CreateServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := h.Server.CreateServer(req.Version)
+	id, err := h.Server.CreateServer(req.Version, req.OwnerID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
