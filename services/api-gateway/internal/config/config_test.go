@@ -14,4 +14,7 @@ func TestRead(t *testing.T) {
 	if cfg.APIVersion != "v1" {
 		t.Fatalf("expected version v1, got: %s", cfg.APIVersion)
 	}
+	if cfg.JWTKey != "dev-only" {
+		t.Fatalf("expected key dev-only, got: %s", cfg.JWTKey)
+	}
 }

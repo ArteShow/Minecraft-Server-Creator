@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/ArteShow/Minecraft-Server-Creator/services/api-gateway/internal/config"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -12,9 +13,15 @@ type contextKey string
 
 const OwnerIDKey contextKey = "owner_id"
 
-func AuthMiddleware(jwtSecret string) func(http.Handler) http.Handler {
+func AuthMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			cfg, err := config.Read()
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusUnauthorized)
+				return 
+			}
+
 			auth := r.Header.Get("Authorization")
 			if auth == "" {
 				http.Error(w, "unauthorized", http.StatusUnauthorized)
@@ -28,7 +35,7 @@ func AuthMiddleware(jwtSecret string) func(http.Handler) http.Handler {
 			}
 
 			token, err := jwt.Parse(parts[1], func(t *jwt.Token) (interface{}, error) {
-				return []byte(jwtSecret), nil
+				return []byte(cfg.JWTKey), nil
 			})
 			if err != nil || !token.Valid {
 				http.Error(w, "unauthorized", http.StatusUnauthorized)
