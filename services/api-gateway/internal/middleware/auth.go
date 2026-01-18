@@ -1,14 +1,54 @@
 package middleware
 
-import "net/http"
+import (
+	"context"
+	"net/http"
+	"strings"
 
-func AuthMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//add real jwt token validation TODO
-		if r.Header.Get("Authorization") == "" {
-			http.Error(w, "unauthorized", http.StatusUnauthorized)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
+	"github.com/golang-jwt/jwt/v5"
+)
+
+type contextKey string
+
+const OwnerIDKey contextKey = "owner_id"
+
+func AuthMiddleware(jwtSecret string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			auth := r.Header.Get("Authorization")
+			if auth == "" {
+				http.Error(w, "unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			parts := strings.SplitN(auth, " ", 2)
+			if len(parts) != 2 || parts[0] != "Bearer" {
+				http.Error(w, "unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			token, err := jwt.Parse(parts[1], func(t *jwt.Token) (interface{}, error) {
+				return []byte(jwtSecret), nil
+			})
+			if err != nil || !token.Valid {
+				http.Error(w, "unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			claims, ok := token.Claims.(jwt.MapClaims)
+			if !ok {
+				http.Error(w, "unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			userID, ok := claims["user_id"].(string)
+			if !ok || userID == "" {
+				http.Error(w, "unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			ctx := context.WithValue(r.Context(), OwnerIDKey, userID)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
 }
