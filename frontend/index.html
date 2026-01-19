@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Minecraft Server Creator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <h1>Minecraft Server Creator</h1>
+
+    <section>
+        <h2>Register</h2>
+        <input id="reg-username" placeholder="Username">
+        <input id="reg-email" placeholder="Email">
+        <input id="reg-password" type="password" placeholder="Password">
+        <button onclick="register()">Register</button>
+    </section>
+
+    <section>
+        <h2>Login</h2>
+        <input id="login-username" placeholder="Username">
+        <input id="login-password" type="password" placeholder="Password">
+        <button onclick="login()">Login</button>
+    </section>
+
+    <section>
+        <h2>Create Server</h2>
+        <input id="server-version" placeholder="Version (e.g. 1.20.4)">
+        <button onclick="createServer()">Create</button>
+    </section>
+
+    <section>
+        <h2>Start Server</h2>
+        <input id="start-server-id" placeholder="Server ID">
+        <button onclick="startServer()">Start</button>
+    </section>
+
+    <section>
+        <h2>Stop Server</h2>
+        <input id="stop-server-id" placeholder="Server ID">
+        <input id="stop-container-id" placeholder="Container ID">
+        <button onclick="stopServer()">Stop</button>
+    </section>
+
+    <section>
+        <h2>Delete Server</h2>
+        <input id="delete-server-id" placeholder="Server ID">
+        <button onclick="deleteServer()">Delete</button>
+    </section>
+
+    <pre id="output"></pre>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
