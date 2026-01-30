@@ -9,9 +9,15 @@ import (
 func (s *Server) StartServer(serverID, ownerID string) (string, error) {
 	ok, err := repository.IsServerOwnedByUser(serverID, ownerID)
 	if err != nil || !ok {
-		return "", errors.New("user with id: "+ownerID+" is not the owner of this server: +"+err.Error())
+		return "", errors.New("user with id: " + ownerID + " is not the owner of this server: +" + err.Error())
 	}
-	conID, err := s.DockerService.StartServerContainer(serverID, "eclipse-temurin:21-jre-jammy", 25565)
+
+	port, err := repository.GetHighestPort()
+	if err != nil {
+		return "", err
+	}
+
+	conID, err := s.DockerService.StartServerContainer(serverID, "eclipse-temurin:21-jre-jammy", port+1, 25565)
 	if err != nil {
 		return "", err
 	}

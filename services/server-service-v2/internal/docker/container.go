@@ -96,15 +96,17 @@ func (ds *DockerService) StopContainer(containerID string) error {
 func (ds *DockerService) StartServerContainer(
 	serverID string,
 	image string,
-	port int,
+	hostPort int,
+	containerPort int,
 ) (string, error) {
 
 	ctx := context.Background()
+	port := nat.Port(fmt.Sprintf("%d/tcp", containerPort))
 
 	resp, err := ds.client.ContainerCreate(
 		ctx,
 		&container.Config{
-			Image: image,
+			Image:      image,
 			WorkingDir: "/data",
 			Tty:        true,
 
@@ -123,7 +125,7 @@ func (ds *DockerService) StartServerContainer(
 			},
 
 			ExposedPorts: nat.PortSet{
-				"25565/tcp": struct{}{},
+				port: struct{}{},
 			},
 		},
 		&container.HostConfig{
@@ -135,10 +137,10 @@ func (ds *DockerService) StartServerContainer(
 				},
 			},
 			PortBindings: nat.PortMap{
-				"25565/tcp": []nat.PortBinding{
+				port: []nat.PortBinding{
 					{
 						HostIP:   "0.0.0.0",
-						HostPort: fmt.Sprint(port),
+						HostPort: fmt.Sprint(hostPort),
 					},
 				},
 			},

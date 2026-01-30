@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *Server )CreateServer(version, ownerID string) (string, error){
+func (s *Server) CreateServer(version, ownerID string) (string, error) {
 	id := uuid.NewString()
 
 	if err := s.DockerService.CreateVolume(id); err != nil {
@@ -44,7 +44,12 @@ func (s *Server )CreateServer(version, ownerID string) (string, error){
 		return "", err
 	}
 
-	if err = repository.CreateServer(id, ownerID, 25565); err != nil {
+	port, err := repository.GetHighestPort()
+	if err != nil {
+		return "", err
+	}
+
+	if err = repository.CreateServer(id, ownerID, port+1); err != nil {
 		return "", err
 	}
 
