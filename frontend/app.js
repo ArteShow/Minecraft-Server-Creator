@@ -135,6 +135,7 @@ async function startServer() {
       server_id: startServerId.value
     })
   })
+  console.log(startServerId.value)
 
   const data = await handleResponse(res)
 

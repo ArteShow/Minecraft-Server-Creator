@@ -97,7 +97,7 @@ func GetServersPort(serverID string) (int, error) {
 
 	var port sql.NullInt64
 
-	err = db.QueryRow(`SELECT port FROM servers WHERE id = ?`, serverID).Scan(&port)
+	err = db.QueryRow(`SELECT port FROM servers WHERE id = $1`, serverID).Scan(&port)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return 0, nil

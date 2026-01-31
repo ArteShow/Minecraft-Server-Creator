@@ -17,7 +17,7 @@ func (s *Server) StartServer(serverID, ownerID string) (string, error) {
 		return "", err
 	}
 
-	conID, err := s.DockerService.StartServerContainer(serverID, "eclipse-temurin:21-jre-jammy", port+1, 25565)
+	conID, err := s.DockerService.StartServerContainer(serverID, "eclipse-temurin:21-jre-jammy", port, 25565)
 	if err != nil {
 		return "", err
 	}

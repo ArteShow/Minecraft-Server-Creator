@@ -26,6 +26,7 @@ func (d *DockerService) UploadToVolume(
 			Cmd:   []string{"sleep", "20"},
 		},
 		&container.HostConfig{
+			AutoRemove: true,
 			Mounts: []mount.Mount{
 				{
 					Type:   mount.TypeVolume,

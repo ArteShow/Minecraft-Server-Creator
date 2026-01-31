@@ -49,9 +49,13 @@ func (s *Server) CreateServer(version, ownerID string) (string, int, error) {
 		return "", 0, err
 	}
 
+	if port == 0 {
+		port = 25564
+	}
+
 	if err = repository.CreateServer(id, ownerID, port+1); err != nil {
 		return "", 0, err
 	}
 
-	return id, port, nil
+	return id, port+1, nil
 }
