@@ -27,12 +27,12 @@ func (h *Handler)CreateServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := h.Server.CreateServer(req.Version, ownerID)
+	id, port,  err := h.Server.CreateServer(req.Version, ownerID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	res := CreateServerResponse{ServerID: id}
+	res := CreateServerResponse{ServerID: id, Port: port}
 	
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

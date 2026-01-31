@@ -12,7 +12,7 @@ func (s *Server) StartServer(serverID, ownerID string) (string, error) {
 		return "", errors.New("user with id: " + ownerID + " is not the owner of this server: +" + err.Error())
 	}
 
-	port, err := repository.GetHighestPort()
+	port, err := repository.GetServersPort(serverID)
 	if err != nil {
 		return "", err
 	}

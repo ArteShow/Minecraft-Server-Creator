@@ -88,6 +88,31 @@ func GetHighestPort() (int, error) {
 	return int(port.Int64), nil
 }
 
+func GetServersPort(serverID string) (int, error) {
+	db, err := database.Connect()
+	if err != nil {
+		return 0, err
+	}
+	defer db.Close()
+
+	var port sql.NullInt64
+
+	err = db.QueryRow(`SELECT port FROM servers WHERE id = ?`, serverID).Scan(&port)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, nil
+		}
+		return 0, err
+	}
+
+	if !port.Valid {
+		return 0, nil
+	}
+
+	return int(port.Int64), nil
+}
+
+
 func IsContainerOwnedByUser(containerID, ownerID string) (bool, error) {
 	db, err := database.Connect()
 	if err != nil {
