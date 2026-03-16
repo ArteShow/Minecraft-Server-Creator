@@ -4,7 +4,10 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"io"
+	"time"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
@@ -91,7 +94,61 @@ func (ds *DockerService) RemoveContainer(containerID string) error {
 
 func (ds *DockerService) StopContainer(containerID string) error {
 	ctx := context.Background()
-	return ds.client.ContainerKill(ctx, containerID, "SIGINT")
+
+	if err := ds.sendMinecraftStopCommand(ctx, containerID); err == nil {
+		if err := ds.waitContainerStopped(ctx, containerID, 30*time.Second); err == nil {
+			return nil
+		}
+	}
+
+	timeout := 30
+	if err := ds.client.ContainerStop(ctx, containerID, container.StopOptions{Timeout: &timeout}); err != nil {
+		return ds.client.ContainerKill(ctx, containerID, "SIGINT")
+	}
+
+	return nil
+}
+
+func (ds *DockerService) sendMinecraftStopCommand(ctx context.Context, containerID string) error {
+	attached, err := ds.client.ContainerAttach(ctx, containerID, container.AttachOptions{
+		Stream: true,
+		Stdin:  true,
+		Stdout: false,
+		Stderr: false,
+		Logs:   false,
+	})
+	if err != nil {
+		return err
+	}
+	defer attached.Close()
+
+	if _, err := io.WriteString(attached.Conn, "stop\n"); err != nil {
+		return err
+	}
+
+	if c, ok := attached.Conn.(interface{ CloseWrite() error }); ok {
+		_ = c.CloseWrite()
+	}
+
+	return nil
+}
+
+func (ds *DockerService) waitContainerStopped(ctx context.Context, containerID string, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+
+	for time.Now().Before(deadline) {
+		inspect, err := ds.client.ContainerInspect(ctx, containerID)
+		if err != nil {
+			return err
+		}
+		if !inspect.State.Running {
+			return nil
+		}
+
+		time.Sleep(300 * time.Millisecond)
+	}
+
+	return errors.New("timeout waiting for container to stop gracefully")
 }
 
 func (ds *DockerService) StartServerContainer(
@@ -110,6 +167,9 @@ func (ds *DockerService) StartServerContainer(
 			Image:      image,
 			WorkingDir: "/data",
 			Tty:        true,
+			OpenStdin:  true,
+			AttachStdin: true,
+			StdinOnce:  false,
 
 			Cmd: []string{
 				"sh",
@@ -121,7 +181,7 @@ func (ds *DockerService) StartServerContainer(
 				done
 
 				echo "starting minecraft server"
-				java -Xms1G -Xmx2G -jar server.jar nogui
+				exec java -Xms1G -Xmx2G -jar server.jar nogui
 				`,
 			},
 
@@ -146,7 +206,7 @@ func (ds *DockerService) StartServerContainer(
 				},
 			},
 			RestartPolicy: container.RestartPolicy{
-				Name: "unless-stopped",
+				Name: "no",
 			},
 		},
 		nil,
