@@ -10,7 +10,6 @@ import (
 	jwtutil "github.com/ArteShow/Minecraft-Server-Creator/services/auth-service/internal/jwt"
 	"github.com/ArteShow/Minecraft-Server-Creator/services/auth-service/internal/models"
 	"github.com/ArteShow/Minecraft-Server-Creator/services/auth-service/internal/proto"
-	"github.com/ArteShow/Minecraft-Server-Creator/services/auth-service/pkg/hashing"
 )
 
 const JWTTTL = 24 * time.Hour
@@ -45,15 +44,9 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer userClient.Close()
 
-	hashedPassword, err := hashing.HashPassword(req.Password)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	saveUserRes, err := userClient.SaveUser(&proto.SaveUserRequest{
 		Username: req.Username,
-		Password: string(hashedPassword),
+		Password: req.Password,
 		Email:    req.Email,
 	})
 	if err != nil {
@@ -88,22 +81,17 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer userClient.Close()
 
-	getUserPasswordRes, err := userClient.GetUserPassword(&proto.GetUserPasswordRequest{
-		Id:       req.ID,
+	loginUserResponse, err := userClient.LoginUser(&proto.LoginUserRequest{
 		Username: req.Username,
+		Password: req.Password,
 	})
-	if err != nil {
+
+	if err != nil || !loginUserResponse.GetOk() || loginUserResponse.GetUserId() == "" {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	ok := hashing.ComparePasswords(req.Password, []byte(getUserPasswordRes.GetPassword()))
-	if !ok {
-		http.Error(w, "no user found with these username and password", http.StatusUnauthorized)
-		return
-	}
-
-	token, err := jwtutil.GenerateToken(req.ID, JWTTTL)
+	token, err := jwtutil.GenerateToken(loginUserResponse.GetUserId(), JWTTTL)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

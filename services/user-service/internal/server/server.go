@@ -27,13 +27,14 @@ func (s *Server) SaveUser(_ context.Context, req *user_pb.SaveUserRequest) (*use
 	}, nil
 }
 
-func (s *Server) GetUserPassword(_ context.Context, req *user_pb.GetUserPasswordRequest) (*user_pb.GetUserPasswordResponse, error) {
-	password, err := repository.GetPassword(req.GetId())
+func (s *Server) LoginUser(_ context.Context, req *user_pb.LoginUserRequest) (*user_pb.LoginUserResponse, error) {
+	id, err := repository.LoginUser(req.GetUsername(), req.GetPassword())
 	if err != nil {
-		return &user_pb.GetUserPasswordResponse{}, err
+		return &user_pb.LoginUserResponse{Ok: false, UserId: ""}, err
 	}
 
-	return &user_pb.GetUserPasswordResponse{
-		Password: password,
+	return &user_pb.LoginUserResponse{
+		UserId: id,
+		Ok: true,
 	}, nil
 }

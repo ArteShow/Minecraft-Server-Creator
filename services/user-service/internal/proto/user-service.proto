@@ -15,16 +15,17 @@ message SaveUserResponse {
   bool success = 2;
 }
 
-message GetUserPasswordRequest {
-  string id = 1;
-  string username = 2;
+message LoginUserRequest {
+  string username = 1;
+  string password = 2;
 }
 
-message GetUserPasswordResponse {
-  string password = 1;
+message LoginUserResponse {
+  string user_id = 1;
+  bool ok = 2;
 }
 
 service UserService {
   rpc SaveUser(SaveUserRequest) returns (SaveUserResponse);
-  rpc GetUserPassword(GetUserPasswordRequest) returns (GetUserPasswordResponse);
+  rpc LoginUser(LoginUserRequest) returns (LoginUserResponse);
 }
