@@ -13,10 +13,6 @@ type StartServerRequest struct {
 	ServerID string `json:"server_id"`
 }
 
-type StartServerResponse struct {
-	ContainerID string `json:"container_id"`
-}
-
 type StopServerRequest struct {
 	ServerID    string `json:"server_id"`
 	ContainerID string `json:"container_id"`
