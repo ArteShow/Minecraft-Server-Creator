@@ -8,8 +8,11 @@ import (
 
 func (s *Server) StartServer(serverID, ownerID string) error {
 	ok, err := repository.IsServerOwnedByUser(serverID, ownerID)
-	if err != nil || !ok {
-		return errors.New("user with id: " + ownerID + " is not the owner of this server: +" + err.Error())
+	if err != nil {
+		return errors.New("failed to verify server ownership: " + err.Error())
+	}
+	if !ok {
+		return errors.New("user with id: " + ownerID + " is not the owner of this server")
 	}
 
 	port, err := repository.GetServersPort(serverID)
