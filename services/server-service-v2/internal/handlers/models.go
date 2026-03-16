@@ -15,7 +15,6 @@ type StartServerRequest struct {
 
 type StopServerRequest struct {
 	ServerID    string `json:"server_id"`
-	ContainerID string `json:"container_id"`
 }
 
 type DeleteServerRequest struct {

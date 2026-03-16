@@ -6,7 +6,12 @@ import (
 	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/internal/repository"
 )
 
-func (s *Server) StopServer(serverID, containerID, ownerID string) error {
+func (s *Server) StopServer(serverID, ownerID string) error {
+	containerID, ok := s.Processes.Get(serverID)
+	if !ok {
+		return errors.New("failed to find the container id")
+	}
+
 	ok, err := repository.IsServerOwnedByUser(serverID, ownerID)
 	if err != nil || !ok {
 		return errors.New("user with id: " + ownerID + " is not the owner of this server: +" + err.Error())
