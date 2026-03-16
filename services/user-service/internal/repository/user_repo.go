@@ -17,10 +17,14 @@ func CreateUser(username, password, email string) (string, error) {
 	defer db.Close()
 
 	userID := id.GenerateID()
-
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	
 	_, err = db.Exec(
 		"INSERT INTO users (id, email, password, username) VALUES ($1, $2, $3, $4)",
-		userID, email, password, username,
+		userID, email, hash, username,
 	)
 	if err != nil {
 		return "", err

@@ -9,7 +9,6 @@ type RegisterRequest struct {
 type LoginRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
-	ID       string `json:"id"`
 }
 
 type LoginResponse struct {
