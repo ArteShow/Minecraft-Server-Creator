@@ -6,6 +6,7 @@ type CreateServerRequest struct {
 
 type CreateServerResponse struct {
 	ServerID string `json:"server_id"`
+	Port     int    `json:"port"`
 }
 
 type StartServerRequest struct {
