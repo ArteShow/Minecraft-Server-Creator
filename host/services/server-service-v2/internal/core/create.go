@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/internal/repository"
+	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/internal/stats"
 	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/pkg/eula"
 	get_version "github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/pkg/version"
 	"github.com/google/uuid"
@@ -40,6 +41,19 @@ func (s *Server) CreateServer(version, ownerID string) (string, int, error) {
 		"/data",
 		"eula.txt",
 		eula,
+	); err != nil {
+		return "", 0, err
+	}
+
+	templete, err := stats.CreateTemplete()
+	if err != nil {
+		return "", 0, err
+	}
+	if err = s.DockerService.UploadToVolume(
+		id,
+		"/data",
+		"stats.json",
+		templete,
 	); err != nil {
 		return "", 0, err
 	}

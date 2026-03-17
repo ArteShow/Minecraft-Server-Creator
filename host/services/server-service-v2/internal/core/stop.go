@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/internal/repository"
+	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/internal/stats"
 )
 
 func (s *Server) StopServer(serverID, ownerID string) error {
@@ -40,6 +41,24 @@ func (s *Server) StopServer(serverID, ownerID string) error {
 		return err
 	}
 	s.Processes.Remove(serverID)
+
+	file, err := s.DockerService.GetFileFromVolume(serverID, "data/", "stats.json")
+	if err != nil {
+		return err
+	}
+
+	changes := stats.SetValue("Online", false, file)
+	if err != nil {
+		return err
+	}
+
+	if err = s.DockerService.DeleteFileFromVolume(serverID, "data/", "stats.json"); err != nil {
+		return err
+	}
+
+	if err = s.DockerService.UploadToVolume(serverID, "data/", "stats.json", changes); err != nil {
+		return err
+	}
 
 	return nil
 }
