@@ -14,9 +14,18 @@ type StartServerRequest struct {
 }
 
 type StopServerRequest struct {
-	ServerID    string `json:"server_id"`
+	ServerID string `json:"server_id"`
 }
 
 type DeleteServerRequest struct {
 	ServerID string `json:"server_id"`
+}
+
+type GetServerStatsRequest struct {
+	ServerID string `json:"server_id"`
+	Key      string `json:"key"`
+}
+
+type GetServerStatsResponse struct {
+	Value string `json:"value"`
 }

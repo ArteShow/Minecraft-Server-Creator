@@ -46,6 +46,7 @@ func main() {
 	mux.HandleFunc("/server-service/start", h.StartServer)
 	mux.HandleFunc("/server-service/stop", h.StopServer)
 	mux.HandleFunc("/server-service/delete", h.DeleteServer)
+	mux.HandleFunc("/server-service/getServerStats", h.GetServerStats)
 
 	srv := &http.Server{
 		Addr:         cfg.Port,
