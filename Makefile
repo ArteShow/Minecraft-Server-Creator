@@ -1,4 +1,4 @@
-.PHONY: tests tidy build up down
+.PHONY: tests tidy build build down
 
 tests:
 	@find ./services -type f -name "go.mod" | while read gomod_file; do \
@@ -15,10 +15,7 @@ tidy:
 	done
 
 build:
-	docker-compose --env-file config/docker.env up --build -d
-
-up:
-	docker-compose --env-file config/docker.env up -d
+	docker compose -f host/docker-compose.yml up -d
 
 down:
-	docker-compose --env-file config/docker.env down
+	docker compose -f host/docker-compose.yml down
