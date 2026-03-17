@@ -13,6 +13,7 @@ WORKDIR /app
 RUN apk add --no-cache ca-certificates
 
 COPY --from=builder /app/server-service-v2 .
+COPY templete.json ./templete.json
 
 EXPOSE 8003
 CMD ["./server-service-v2"]

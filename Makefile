@@ -15,7 +15,7 @@ tidy:
 	done
 
 build:
-	docker compose -f host/docker-compose.yml up -d
+	docker compose --env-file host/config/docker.env -f host/docker-compose.yaml up -d --build
 
 down:
-	docker compose -f host/docker-compose.yml down
+	docker compose --env-file host/config/docker.env -f host/docker-compose.yaml down
