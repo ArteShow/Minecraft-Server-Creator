@@ -42,21 +42,21 @@ func (s *Server) StopServer(serverID, ownerID string) error {
 	}
 	s.Processes.Remove(serverID)
 
-	file, err := s.DockerService.GetFileFromVolume(serverID, "data/", "stats.json")
+	file, err := s.DockerService.GetFileFromVolume(serverID, "/data", "stats.json")
 	if err != nil {
 		return err
 	}
 
-	changes := stats.SetValue("Online", false, file)
+	changes, err := stats.SetValue("Online", false, file)
 	if err != nil {
 		return err
 	}
 
-	if err = s.DockerService.DeleteFileFromVolume(serverID, "data/", "stats.json"); err != nil {
+	if err = s.DockerService.DeleteFileFromVolume(serverID, "/data", "stats.json"); err != nil {
 		return err
 	}
 
-	if err = s.DockerService.UploadToVolume(serverID, "data/", "stats.json", changes); err != nil {
+	if err = s.DockerService.UploadToVolume(serverID, "/data", "stats.json", changes); err != nil {
 		return err
 	}
 
