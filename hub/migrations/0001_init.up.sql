@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS hosts (
+    id TEXT PRIMARY KEY,
+    ip TEXT PRIMARY KEY,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
