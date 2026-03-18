@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package user_service;
+
+option go_package = "/internal/proto;proto";
+
+message GetServerStatusRequest {
+  string ip = 1;
+}
+
+message GetServerStatusResponse {
+  int64 status = 1;
+}
+
+message GetServerMetadataRequest {
+  int64 server_id = 1;
+}
+
+message GetServerMetadataResponse {
+  string ip = 1;
+  int64 ping = 2;
+}
+
+service networkService {
+  rpc GetServerStatus (GetServerStatusRequest) returns (GetServerStatusResponse);
+  rpc GetServerMetadata (GetServerMetadataRequest) returns (GetServerMetadataResponse);
+}
