@@ -5,7 +5,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func CreateServerFuntion(ip string) error {
+func CreateServerFunction(ip string) error {
 	serverID := uuid.NewString()
 
 	db, err := database.Connect()
