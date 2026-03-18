@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/internal/database"
+	"github.com/ArteShow/Minecraft-Server-Creator/host/services/server-service-v2/internal/database"
 )
 
 func CreateServer(serverID, ownerID string, port int) error {
@@ -111,7 +111,6 @@ func GetServersPort(serverID string) (int, error) {
 
 	return int(port.Int64), nil
 }
-
 
 func IsContainerOwnedByUser(containerID, ownerID string) (bool, error) {
 	db, err := database.Connect()

@@ -3,8 +3,8 @@ package core
 import (
 	"errors"
 
-	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/internal/repository"
-	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/internal/stats"
+	"github.com/ArteShow/Minecraft-Server-Creator/host/services/server-service-v2/internal/repository"
+	"github.com/ArteShow/Minecraft-Server-Creator/host/services/server-service-v2/internal/stats"
 )
 
 func (s *Server) StartServer(serverID, ownerID string) error {

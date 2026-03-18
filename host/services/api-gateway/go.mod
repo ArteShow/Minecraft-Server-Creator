@@ -1,4 +1,4 @@
-module github.com/ArteShow/Minecraft-Server-Creator/services/api-gateway
+module github.com/ArteShow/Minecraft-Server-Creator/host/services/api-gateway
 
 go 1.24
 

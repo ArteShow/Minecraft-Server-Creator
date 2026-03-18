@@ -1,4 +1,4 @@
-module github.com/ArteShow/Minecraft-Server-Creator/services/auth-service
+module github.com/ArteShow/Minecraft-Server-Creator/host/services/auth-service
 
 go 1.24.0
 

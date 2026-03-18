@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"time"
 
-	client "github.com/ArteShow/Minecraft-Server-Creator/services/auth-service/internal/client"
-	jwtutil "github.com/ArteShow/Minecraft-Server-Creator/services/auth-service/internal/jwt"
-	"github.com/ArteShow/Minecraft-Server-Creator/services/auth-service/internal/models"
-	"github.com/ArteShow/Minecraft-Server-Creator/services/auth-service/internal/proto"
+	client "github.com/ArteShow/Minecraft-Server-Creator/host/services/auth-service/internal/client"
+	jwtutil "github.com/ArteShow/Minecraft-Server-Creator/host/services/auth-service/internal/jwt"
+	"github.com/ArteShow/Minecraft-Server-Creator/host/services/auth-service/internal/models"
+	"github.com/ArteShow/Minecraft-Server-Creator/host/services/auth-service/internal/proto"
 )
 
 const JWTTTL = 24 * time.Hour

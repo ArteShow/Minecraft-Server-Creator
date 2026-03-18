@@ -11,9 +11,9 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/ArteShow/Minecraft-Server-Creator/user-service/internal/config"
-	userpb "github.com/ArteShow/Minecraft-Server-Creator/user-service/internal/proto"
-	internalgrpc "github.com/ArteShow/Minecraft-Server-Creator/user-service/internal/server"
+	"github.com/ArteShow/Minecraft-Server-Creator/host/services/user-service/internal/config"
+	userpb "github.com/ArteShow/Minecraft-Server-Creator/host/services/user-service/internal/proto"
+	internalgrpc "github.com/ArteShow/Minecraft-Server-Creator/host/services/user-service/internal/server"
 )
 
 func main() {

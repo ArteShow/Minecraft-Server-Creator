@@ -4,8 +4,8 @@ import (
 	_ "database/sql"
 	"errors"
 
-	"github.com/ArteShow/Minecraft-Server-Creator/user-service/internal/database"
-	"github.com/ArteShow/Minecraft-Server-Creator/user-service/pkg/id"
+	"github.com/ArteShow/Minecraft-Server-Creator/host/services/user-service/internal/database"
+	"github.com/ArteShow/Minecraft-Server-Creator/host/services/user-service/pkg/id"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -21,7 +21,7 @@ func CreateUser(username, password, email string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	_, err = db.Exec(
 		"INSERT INTO users (id, email, password, username) VALUES ($1, $2, $3, $4)",
 		userID, email, hash, username,

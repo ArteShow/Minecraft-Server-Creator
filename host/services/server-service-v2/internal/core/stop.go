@@ -3,8 +3,8 @@ package core
 import (
 	"errors"
 
-	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/internal/repository"
-	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/internal/stats"
+	"github.com/ArteShow/Minecraft-Server-Creator/host/services/server-service-v2/internal/repository"
+	"github.com/ArteShow/Minecraft-Server-Creator/host/services/server-service-v2/internal/stats"
 )
 
 func (s *Server) StopServer(serverID, ownerID string) error {
@@ -20,7 +20,7 @@ func (s *Server) StopServer(serverID, ownerID string) error {
 	if !ok {
 		return errors.New("user with id: " + ownerID + " is not the owner of this server")
 	}
-	
+
 	ok, err = repository.IsContainerOwnedByUser(containerID, ownerID)
 	if err != nil {
 		return errors.New("failed to verify container ownership: " + err.Error())

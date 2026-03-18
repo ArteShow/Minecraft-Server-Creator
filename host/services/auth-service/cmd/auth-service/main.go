@@ -9,14 +9,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ArteShow/Minecraft-Server-Creator/services/auth-service/internal/config"
-	"github.com/ArteShow/Minecraft-Server-Creator/services/auth-service/internal/handler"
+	"github.com/ArteShow/Minecraft-Server-Creator/host/services/auth-service/internal/config"
+	"github.com/ArteShow/Minecraft-Server-Creator/host/services/auth-service/internal/handler"
 )
 
 const (
 	readTimeout  = 10 * time.Second
 	writeTimeout = 10 * time.Second
-	idleTimeou  = 60 * time.Second
+	idleTimeou   = 60 * time.Second
 )
 
 func main() {
@@ -24,15 +24,15 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	
+
 	if cfg.Port != "" && cfg.Port[0] != ':' {
-    	cfg.Port = ":" + cfg.Port
+		cfg.Port = ":" + cfg.Port
 	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/auth-service/health", func(w http.ResponseWriter, _ *http.Request) {
 		_, err = w.Write([]byte("ok"))
-		if err != nil{
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
