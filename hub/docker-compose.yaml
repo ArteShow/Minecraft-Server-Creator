@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    restart: unless-stopped
+    env_file:
+      - config/docker.env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - disknet
+
+  migrate:
+    image: migrate/migrate
+    container_name: migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./migrations:/migrations:ro
+    entrypoint: >
+      migrate
+      -path /migrations
+      -database postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable
+      up
+    networks:
+      - disknet
+  network-service:
+    build: services/network-service
+    container_name: network-service
+    env_file:
+      - config/docker.env
+    ports:
+      - "${NETWORK_SERVICE_HTTP_PORT}:${NETWORK_SERVICE_HTTP_PORT}"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:${NETWORK_SERVICE_HTTP_PORT}/network-service/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - disknet
+
+volumes:
+  postgres_data:
+
+networks:
+  disknet:
+    driver: bridge
