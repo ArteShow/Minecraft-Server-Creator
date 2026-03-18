@@ -14,12 +14,12 @@ type HostMetadata struct {
 	CreatedAt time.Time
 }
 
-func CreateServerFunction(ip string) error {
+func CreateServerFunction(ip string) (string, error) {
 	serverID := uuid.NewString()
 
 	db, err := database.Connect()
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer db.Close()
 
@@ -29,7 +29,7 @@ func CreateServerFunction(ip string) error {
 		serverID, ip,
 	)
 
-	return err
+	return serverID, err
 }
 
 func GetServerMetadataByID(serverID string) (HostMetadata, error) {
