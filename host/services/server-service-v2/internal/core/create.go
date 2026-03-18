@@ -3,10 +3,10 @@ package core
 import (
 	"fmt"
 
-	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/internal/repository"
-	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/internal/stats"
-	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/pkg/eula"
-	get_version "github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/pkg/version"
+	"github.com/ArteShow/Minecraft-Server-Creator/host/services/server-service-v2/internal/repository"
+	"github.com/ArteShow/Minecraft-Server-Creator/host/services/server-service-v2/internal/stats"
+	"github.com/ArteShow/Minecraft-Server-Creator/host/services/server-service-v2/pkg/eula"
+	get_version "github.com/ArteShow/Minecraft-Server-Creator/host/services/server-service-v2/pkg/version"
 	"github.com/google/uuid"
 )
 
@@ -71,5 +71,5 @@ func (s *Server) CreateServer(version, ownerID string) (string, int, error) {
 		return "", 0, err
 	}
 
-	return id, port+1, nil
+	return id, port + 1, nil
 }

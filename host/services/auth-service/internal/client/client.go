@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	pb "github.com/ArteShow/Minecraft-Server-Creator/services/auth-service/internal/proto"
+	pb "github.com/ArteShow/Minecraft-Server-Creator/host/services/auth-service/internal/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
