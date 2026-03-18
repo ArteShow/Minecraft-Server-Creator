@@ -111,7 +111,7 @@ func (x *GetServerStatusResponse) GetStatus() int64 {
 
 type GetServerMetadataRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ServerId      int64                  `protobuf:"varint,1,opt,name=server_id,json=serverId,proto3" json:"server_id,omitempty"`
+	ServerId      string                 `protobuf:"bytes,1,opt,name=server_id,json=serverId,proto3" json:"server_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -146,11 +146,11 @@ func (*GetServerMetadataRequest) Descriptor() ([]byte, []int) {
 	return file_internal_proto_network_service_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *GetServerMetadataRequest) GetServerId() int64 {
+func (x *GetServerMetadataRequest) GetServerId() string {
 	if x != nil {
 		return x.ServerId
 	}
-	return 0
+	return ""
 }
 
 type GetServerMetadataResponse struct {
@@ -215,7 +215,7 @@ const file_internal_proto_network_service_proto_rawDesc = "" +
 	"\x17GetServerStatusResponse\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\x03R\x06status\"7\n" +
 	"\x18GetServerMetadataRequest\x12\x1b\n" +
-	"\tserver_id\x18\x01 \x01(\x03R\bserverId\"?\n" +
+	"\tserver_id\x18\x01 \x01(\tR\bserverId\"?\n" +
 	"\x19GetServerMetadataResponse\x12\x0e\n" +
 	"\x02ip\x18\x01 \x01(\tR\x02ip\x12\x12\n" +
 	"\x04ping\x18\x02 \x01(\x03R\x04ping2\xd6\x01\n" +

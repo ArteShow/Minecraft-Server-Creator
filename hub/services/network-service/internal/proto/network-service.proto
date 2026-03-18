@@ -13,7 +13,7 @@ message GetServerStatusResponse {
 }
 
 message GetServerMetadataRequest {
-  int64 server_id = 1;
+  string server_id = 1;
 }
 
 message GetServerMetadataResponse {
