@@ -3,8 +3,8 @@ package server
 import (
 	"context"
 
-	user_pb "github.com/ArteShow/Minecraft-Server-Creator/user-service/internal/proto"
-	"github.com/ArteShow/Minecraft-Server-Creator/user-service/internal/repository"
+	user_pb "github.com/ArteShow/Minecraft-Server-Creator/host/services/user-service/internal/proto"
+	"github.com/ArteShow/Minecraft-Server-Creator/host/services/user-service/internal/repository"
 )
 
 type Server struct {
@@ -35,6 +35,6 @@ func (s *Server) LoginUser(_ context.Context, req *user_pb.LoginUserRequest) (*u
 
 	return &user_pb.LoginUserResponse{
 		UserId: id,
-		Ok: true,
+		Ok:     true,
 	}, nil
 }

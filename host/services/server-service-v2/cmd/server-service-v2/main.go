@@ -9,8 +9,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/internal/config"
-	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/internal/handlers"
+	"github.com/ArteShow/Minecraft-Server-Creator/host/services/server-service-v2/internal/config"
+	"github.com/ArteShow/Minecraft-Server-Creator/host/services/server-service-v2/internal/handlers"
 )
 
 const (

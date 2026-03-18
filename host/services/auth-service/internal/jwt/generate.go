@@ -3,7 +3,7 @@ package jwtutil
 import (
 	"time"
 
-	"github.com/ArteShow/Minecraft-Server-Creator/services/auth-service/internal/config"
+	"github.com/ArteShow/Minecraft-Server-Creator/host/services/auth-service/internal/config"
 	"github.com/golang-jwt/jwt/v5"
 )
 

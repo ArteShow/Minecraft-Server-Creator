@@ -9,15 +9,15 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ArteShow/Minecraft-Server-Creator/services/api-gateway/internal/config"
-	"github.com/ArteShow/Minecraft-Server-Creator/services/api-gateway/internal/middleware"
-	"github.com/ArteShow/Minecraft-Server-Creator/services/api-gateway/internal/proxy"
+	"github.com/ArteShow/Minecraft-Server-Creator/host/services/api-gateway/internal/config"
+	"github.com/ArteShow/Minecraft-Server-Creator/host/services/api-gateway/internal/middleware"
+	"github.com/ArteShow/Minecraft-Server-Creator/host/services/api-gateway/internal/proxy"
 )
 
 const (
 	readTimeout  = 10 * time.Second
 	writeTimeout = 10 * time.Second
-	idleTimeou  = 60 * time.Second
+	idleTimeou   = 60 * time.Second
 )
 
 func main() {
@@ -27,13 +27,13 @@ func main() {
 	}
 
 	if cfg.Port != "" && cfg.Port[0] != ':' {
-    	cfg.Port = ":" + cfg.Port
+		cfg.Port = ":" + cfg.Port
 	}
 
 	authRegisterProxy := proxy.NewProxy("http://auth-service:8001", "/auth-service/register")
 	authLoginProxy := proxy.NewProxy("http://auth-service:8001", "/auth-service/login")
 
-	createServerProxy  := proxy.NewProxy("http://server-service-v2:8003", "/server-service/create")
+	createServerProxy := proxy.NewProxy("http://server-service-v2:8003", "/server-service/create")
 	startServerProxy := proxy.NewProxy("http://server-service-v2:8003", "/server-service/start")
 	stopServerProxy := proxy.NewProxy("http://server-service-v2:8003", "/server-service/stop")
 	deleteServerProxy := proxy.NewProxy("http://server-service-v2:8003", "/server-service/delete")
@@ -51,7 +51,7 @@ func main() {
 			}),
 		),
 	)
-	handler.Handle("/api/"+cfg.APIVersion+"/register",middleware.LoggingMiddleware(authRegisterProxy))
+	handler.Handle("/api/"+cfg.APIVersion+"/register", middleware.LoggingMiddleware(authRegisterProxy))
 	handler.Handle("/api/"+cfg.APIVersion+"/login", middleware.LoggingMiddleware(authLoginProxy))
 
 	handler.Handle("/api/"+cfg.APIVersion+"/server/create", middleware.LoggingMiddleware(middleware.AuthMiddleware()(createServerProxy)))
@@ -61,8 +61,8 @@ func main() {
 	handler.Handle("/api/"+cfg.APIVersion+"/server/getServerStats", middleware.LoggingMiddleware(getServerStatsProxy))
 
 	srv := &http.Server{
-		Addr:    cfg.Port,
-		Handler: handler,
+		Addr:         cfg.Port,
+		Handler:      handler,
 		ReadTimeout:  readTimeout,
 		WriteTimeout: writeTimeout,
 		IdleTimeout:  idleTimeou,
@@ -76,7 +76,7 @@ func main() {
 	defer stop()
 
 	go func() {
-		log.Println("gateway running on "+cfg.Port)
+		log.Println("gateway running on " + cfg.Port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("server error: %v", err)
 		}

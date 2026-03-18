@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 
-	"github.com/ArteShow/Minecraft-Server-Creator/user-service/internal/config"
+	"github.com/ArteShow/Minecraft-Server-Creator/host/services/user-service/internal/config"
 	_ "github.com/lib/pq"
 )
 

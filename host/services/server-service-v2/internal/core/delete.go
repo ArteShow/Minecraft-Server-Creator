@@ -3,7 +3,7 @@ package core
 import (
 	"errors"
 
-	"github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/internal/repository"
+	"github.com/ArteShow/Minecraft-Server-Creator/host/services/server-service-v2/internal/repository"
 )
 
 func (s *Server) DeleteServer(serverID, ownerID string) error {
@@ -15,6 +15,6 @@ func (s *Server) DeleteServer(serverID, ownerID string) error {
 	if err = repository.DeleteServer(serverID); err != nil {
 		return err
 	}
-	
+
 	return s.DockerService.DeleteVolume(serverID)
 }

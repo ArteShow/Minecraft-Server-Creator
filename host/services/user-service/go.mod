@@ -1,4 +1,4 @@
-module github.com/ArteShow/Minecraft-Server-Creator/user-service
+module github.com/ArteShow/Minecraft-Server-Creator/host/services/user-service
 
 go 1.24.4
 

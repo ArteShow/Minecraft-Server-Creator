@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/ArteShow/Minecraft-Server-Creator/services/api-gateway/internal/config"
+	"github.com/ArteShow/Minecraft-Server-Creator/host/services/api-gateway/internal/config"
 	"github.com/golang-jwt/jwt/v5"
 )
 

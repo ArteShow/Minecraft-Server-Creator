@@ -1,6 +1,6 @@
 package core
 
-import "github.com/ArteShow/Minecraft-Server-Creator/services/server-service-v2/internal/stats"
+import "github.com/ArteShow/Minecraft-Server-Creator/host/services/server-service-v2/internal/stats"
 
 func (s *Server) GetStats(key, serverID string) (string, error) {
 	file, err := s.DockerService.GetFileFromVolume(serverID, "/data", "stats.json")
