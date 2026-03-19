@@ -49,6 +49,23 @@ services:
       retries: 5
     networks:
       - disknet
+  gateway:
+    build: services/gateway
+    container_name: gateway
+    env_file:
+      - config/docker.env
+    ports:
+      - "${GATEWAY_PORT}:${GATEWAY_PORT}"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:${GATEWAY_PORT}/gateway/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - disknet
 
 volumes:
   postgres_data:
