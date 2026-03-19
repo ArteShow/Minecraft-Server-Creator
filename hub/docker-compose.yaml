@@ -1,7 +1,7 @@
 services:
-  postgres:
+  postgres-hub:
     image: postgres:16
-    container_name: postgres
+    container_name: postgres-hub
     restart: unless-stopped
     env_file:
       - config/docker.env
@@ -21,7 +21,7 @@ services:
     image: migrate/migrate
     container_name: migrate
     depends_on:
-      postgres:
+      postgres-hub:
         condition: service_healthy
     volumes:
       - ./migrations:/migrations:ro
