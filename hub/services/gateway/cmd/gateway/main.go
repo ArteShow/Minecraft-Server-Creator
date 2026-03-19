@@ -31,7 +31,7 @@ func main() {
 
 	handler := http.NewServeMux()
 	handler.Handle(
-		"/api/"+cfg.APIVersion+"/api-gateway/health",
+		"/api/"+cfg.APIVersion+"/gateway/health",
 		middleware.LoggingMiddleware(
 			http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				_, err := w.Write([]byte("ok"))

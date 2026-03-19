@@ -3,7 +3,7 @@ package config
 import "github.com/ilyakaznacheev/cleanenv"
 
 type Config struct {
-	Port       string `env:"API_GATEWAY_PORT" env-default:":8000"`
+	Port       string `env:"GATEWAY_PORT" env-default:":8000"`
 	APIVersion string `env:"API_VERSION" env-default:"v1"`
 }
 
