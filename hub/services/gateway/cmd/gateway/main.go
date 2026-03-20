@@ -30,7 +30,12 @@ func main() {
 		cfg.Port = ":" + cfg.Port
 	}
 
-	createHostServer := proxy.NewProxy("http://network-service:8011", "/network-service/create")
+	createHostServerProxy := proxy.NewProxy("http://network-service:8011", "/network-service/create")
+
+	createHostServerMetadataProxy := proxy.NewProxy("http://host-metadata-service:8012", "/host-metadata-service/create")
+	deleteHostServerMetadataProxy := proxy.NewProxy("http://host-metadata-service:8012", "/host-metadata-service/delete")
+	getHostServerMetadataProxy := proxy.NewProxy("http://host-metadata-service:8012", "/host-metadata-service/get")
+	addServerToHostProxy := proxy.NewProxy("http://host-metadata-service:8012", "/host-metadata-service/add")
 
 	handler := http.NewServeMux()
 	handler.Handle(
@@ -44,7 +49,12 @@ func main() {
 			}),
 		),
 	)
-	handler.Handle("/api/"+cfg.APIVersion+"/network/create", middleware.LoggingMiddleware(createHostServer))
+	handler.Handle("/api/"+cfg.APIVersion+"/network/create", middleware.LoggingMiddleware(createHostServerProxy))
+
+	handler.Handle("/api/"+cfg.APIVersion+"/host-metadata/create", middleware.LoggingMiddleware(createHostServerMetadataProxy))
+	handler.Handle("/api/"+cfg.APIVersion+"/host-metadata/delete", middleware.LoggingMiddleware(deleteHostServerMetadataProxy))
+	handler.Handle("/api/"+cfg.APIVersion+"/host-metadata/get", middleware.LoggingMiddleware(getHostServerMetadataProxy))
+	handler.Handle("/api/"+cfg.APIVersion+"/host-metadata/add", middleware.LoggingMiddleware(addServerToHostProxy))
 
 	srv := &http.Server{
 		Addr:         cfg.Port,
