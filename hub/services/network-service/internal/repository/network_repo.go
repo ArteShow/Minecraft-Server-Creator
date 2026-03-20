@@ -24,7 +24,7 @@ func CreateServerFunction(ip string) (string, error) {
 	defer db.Close()
 
 	_, err = db.Exec(
-		`INSERT INTO hosts (id, ip)
+		`INSERT INTO network (id, ip)
 		 VALUES ($1, $2)`,
 		serverID, ip,
 	)
@@ -43,7 +43,7 @@ func GetServerMetadataByID(serverID string) (HostMetadata, error) {
 
 	err = db.QueryRow(
 		`SELECT id, ip, created_at
-		 FROM hosts
+		 FROM network
 		 WHERE id = $1`,
 		serverID,
 	).Scan(&metadata.ID, &metadata.IP, &metadata.CreatedAt)
