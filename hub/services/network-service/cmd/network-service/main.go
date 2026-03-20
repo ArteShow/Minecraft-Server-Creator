@@ -31,11 +31,11 @@ func main() {
 	proto.RegisterNetworkServiceServer(grpcServer, server.NewServer())
 
 	httpMux := http.NewServeMux()
-	httpMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	httpMux.HandleFunc("/network-service/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	})
-	httpMux.HandleFunc("/create", handler.CreateHostServer)
+	httpMux.HandleFunc("/network-service/create", handler.CreateHostServer)
 
 	httpServer := &http.Server{
 		Addr:    ":" + cfg.HTTPPort,
