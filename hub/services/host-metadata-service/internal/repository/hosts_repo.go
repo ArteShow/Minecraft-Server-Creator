@@ -7,9 +7,9 @@ import (
 )
 
 type Host struct {
-	ID        string
-	Servers   []string
-	CreatedAt string
+	ID        string   `json:"host_server_id"`
+	Servers   []string `json:"server_ids"`
+	CreatedAt string   `json:"created_at"`
 }
 
 func Get() ([]Host, error) {
@@ -72,5 +72,19 @@ func Delete(id string) error {
 	}
 
 	_, err = db.Exec(`DELETE FROM hosts WHERE id = $1`, id)
+	return err
+}
+
+func AddServer(hostID string, serverID string) error {
+	db, err := database.Connect()
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec(
+		`UPDATE hosts SET servers = array_append(servers, $1) WHERE id = $2`,
+		serverID,
+		hostID,
+	)
 	return err
 }
