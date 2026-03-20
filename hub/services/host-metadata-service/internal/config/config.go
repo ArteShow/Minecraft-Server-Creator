@@ -3,7 +3,7 @@ package config
 import "github.com/ilyakaznacheev/cleanenv"
 
 type Config struct {
-	Port       string `env:"SERVER_SERVICE_PORT" env-default:":8012"`
+	Port       string `env:"HOST_METADATA_SERVICE_PORT" env-default:":8012"`
 	DBHost     string `env:"POSTGRES_HOST" env-default:"postgres-hub"`
 	DBPort     string `env:"POSTGRES_PORT" env-default:"2345"`
 	DBUser     string `env:"POSTGRES_USER" env-default:"postgres"`

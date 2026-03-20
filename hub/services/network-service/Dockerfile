@@ -11,5 +11,5 @@ FROM alpine:latest
 WORKDIR /app
 COPY --from=builder /app/network-service .
 
-EXPOSE 8001
+EXPOSE 8011
 CMD ["./network-service"]
