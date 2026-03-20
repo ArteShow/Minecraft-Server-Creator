@@ -11,6 +11,7 @@ import (
 
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/gateway/internal/config"
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/gateway/internal/middleware"
+	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/gateway/internal/proxy"
 )
 
 const (
@@ -29,6 +30,8 @@ func main() {
 		cfg.Port = ":" + cfg.Port
 	}
 
+	createHostServer := proxy.NewProxy("http://network-service:8011", "/network-service/create")
+
 	handler := http.NewServeMux()
 	handler.Handle(
 		"/api/"+cfg.APIVersion+"/gateway/health",
@@ -41,6 +44,7 @@ func main() {
 			}),
 		),
 	)
+	handler.Handle("/api/"+cfg.APIVersion+"/network/create", middleware.LoggingMiddleware(createHostServer))
 
 	srv := &http.Server{
 		Addr:         cfg.Port,
