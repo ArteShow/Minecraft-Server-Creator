@@ -6,20 +6,20 @@ services:
     env_file:
       - config/docker.env
     ports:
-      - "5432:5432"
+      - "2345:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data_hub:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
     networks:
-      - disknet
+      - disknet-hub
 
   migrate:
     image: migrate/migrate
-    container_name: migrate
+    container_name: migrate-hub
     depends_on:
       postgres-hub:
         condition: service_healthy
@@ -28,10 +28,10 @@ services:
     entrypoint: >
       migrate
       -path /migrations
-      -database postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable
+      -database postgres://postgres:${POSTGRES_PASSWORD}@postgres-hub:5432/${POSTGRES_DB}?sslmode=disable
       up
     networks:
-      - disknet
+      - disknet-hub
   network-service:
     build: services/network-service
     container_name: network-service
@@ -48,10 +48,10 @@ services:
       timeout: 3s
       retries: 5
     networks:
-      - disknet
+      - disknet-hub
   gateway:
     build: services/gateway
-    container_name: gateway
+    container_name: gateway-hub
     env_file:
       - config/docker.env
     ports:
@@ -65,11 +65,11 @@ services:
       timeout: 3s
       retries: 5
     networks:
-      - disknet
+      - disknet-hub
 
 volumes:
-  postgres_data:
+  postgres_data_hub:
 
 networks:
-  disknet:
+  disknet-hub:
     driver: bridge
