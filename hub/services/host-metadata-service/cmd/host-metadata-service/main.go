@@ -1,22 +1,15 @@
 package main
 
 import (
-	"context"
 	"log"
-	"net/http"
+	"net"
 	"os"
 	"os/signal"
-	"syscall"
-	"time"
 
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/host-metadata-service/internal/config"
-	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/host-metadata-service/internal/handlers"
-)
-
-const (
-	readTimeout  = 10 * time.Second
-	writeTimeout = 10 * time.Second
-	idleTimeou   = 60 * time.Second
+	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/host-metadata-service/internal/proto"
+	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/host-metadata-service/internal/server"
+	"google.golang.org/grpc"
 )
 
 func main() {
@@ -25,58 +18,28 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if cfg.Port != "" && cfg.Port[0] != ':' {
-		cfg.Port = ":" + cfg.Port
+	grpcLis, err := net.Listen("tcp", ":"+cfg.GRPCPort)
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
 	}
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/host-metadata-service/health", func(w http.ResponseWriter, _ *http.Request) {
-		_, err = w.Write([]byte("ok"))
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	})
-	mux.HandleFunc("/host-metadata-service/create", handlers.CreateHostServerMetaDataEntry)
-	mux.HandleFunc("/host-metadata-service/delete", handlers.DeleteHostServerMetadata)
-	mux.HandleFunc("/host-metadata-service/get", handlers.GetHostServerMetadata)
-	mux.HandleFunc("/host-metadata-service/add", handlers.AddServerToHostServer)
+	grpcServer := grpc.NewServer()
+	proto.RegisterHostMetadataServiceServer(grpcServer, server.NewServer())
 
-	srv := &http.Server{
-		Addr:         cfg.Port,
-		Handler:      mux,
-		ReadTimeout:  readTimeout,
-		WriteTimeout: writeTimeout,
-		IdleTimeout:  idleTimeou,
-	}
-
-	ctx, stop := signal.NotifyContext(
-		context.Background(),
-		os.Interrupt,
-		syscall.SIGTERM,
-	)
-	defer stop()
+	// Signal handling for graceful shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt)
 
 	go func() {
-		log.Println("server running on :8012")
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("server error: %v", err)
+		log.Println("gRPC server running on :" + cfg.GRPCPort)
+		if err := grpcServer.Serve(grpcLis); err != nil {
+			log.Printf("gRPC server stopped: %v", err)
 		}
 	}()
 
-	<-ctx.Done()
-
-	log.Println("graceful shutdown started")
-
-	shutdownCtx, cancel := context.WithTimeout(
-		context.Background(),
-		10*time.Second,
-	)
-	defer cancel()
-
-	if err := srv.Shutdown(shutdownCtx); err != nil {
-		log.Printf("shutdown failed: %v", err)
-	}
-
-	log.Println("shutdown complete")
+	// Wait for interrupt signal
+	<-sigChan
+	log.Println("Shutting down gRPC server...")
+	grpcServer.GracefulStop()
+	log.Println("gRPC server stopped")
 }

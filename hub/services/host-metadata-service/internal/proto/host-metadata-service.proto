@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package host_metadata_service;
+
+option go_package = "/internal/proto;proto";
+
+message CreateHostServerRequest {
+}
+
+message CreateHostServerResponse {
+  string host_server_id = 1;
+}
+
+message DeleteHostServerRequest {
+  string host_server_id = 1;
+}
+
+message DeleteHostServerResponse {
+}
+
+message GetAllHostServersRequest {
+}
+
+message HostServer {
+  string id = 1;
+  repeated string servers = 2;
+  string created_at = 3;
+}
+
+message GetAllHostServersResponse {
+  repeated HostServer hosts = 1;
+}
+
+message AddServerToHostRequest {
+  string host_server_id = 1;
+  string server_id = 2;
+}
+
+message AddServerToHostResponse {
+}
+
+service HostMetadataService {
+  rpc CreateHostServer (CreateHostServerRequest) returns (CreateHostServerResponse);
+  rpc DeleteHostServer (DeleteHostServerRequest) returns (DeleteHostServerResponse);
+  rpc GetAllHostServers (GetAllHostServersRequest) returns (GetAllHostServersResponse);
+  rpc AddServerToHost (AddServerToHostRequest) returns (AddServerToHostResponse);
+}
