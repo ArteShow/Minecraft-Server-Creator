@@ -3,7 +3,8 @@ package config
 import "github.com/ilyakaznacheev/cleanenv"
 
 type Config struct {
-	Port string `env:"TASK_SERVICE_PORT" env-default:"8013"`
+	Port                  string `env:"TASK_SERVICE_PORT" env-default:"8013"`
+	DefaultHostServerPort string `env:"DEFAULT_HOST_SERVER_PORT" env-default:"8003"`
 }
 
 func Read() (*Config, error) {
