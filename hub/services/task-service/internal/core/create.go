@@ -12,7 +12,7 @@ import (
 	network "github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/proto/network-service"
 )
 
-func CreateServer(version string) (string, int, error) {
+func CreateServer(version, token string) (string, int, error) {
 	cfg, err := config.Read()
 	if err != nil {
 		return "", 0, err
@@ -54,11 +54,20 @@ func CreateServer(version string) (string, int, error) {
 		return "", 0, err
 	}
 
-	resp, err := http.Post(
+	req, err := http.NewRequest(
+		"POST",
 		"http://"+serverMetadata.Ip+":"+cfg.DefaultHostServerPort+"/server/create",
-		"application/json",
 		bytes.NewReader(jsonBody),
 	)
+	if err != nil {
+		return "", 0, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil || resp.StatusCode != http.StatusCreated {
 		return "", 0, err
 	}
