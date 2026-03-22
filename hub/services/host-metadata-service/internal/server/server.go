@@ -59,3 +59,12 @@ func (s *Server) AddServerToHost(_ context.Context, req *proto_pb.AddServerToHos
 
 	return &proto_pb.AddServerToHostResponse{}, nil
 }
+
+func (s *Server) RemoveServerFromHost(_ context.Context, req *proto_pb.RemoveServerFromHostRequest) (*proto_pb.RemoveServerFromHostResponse, error) {
+	err := repository.RemoveServer(req.GetHostServerId(), req.GetServerId())
+	if err != nil {
+		return &proto_pb.RemoveServerFromHostResponse{}, err
+	}
+
+	return &proto_pb.RemoveServerFromHostResponse{}, nil
+}

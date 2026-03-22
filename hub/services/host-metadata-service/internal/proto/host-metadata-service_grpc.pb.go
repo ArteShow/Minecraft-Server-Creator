@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.1
 // - protoc             v3.21.12
-// source: internal/proto/host-metadata-service.proto
+// source: host-metadata-service.proto
 
 package proto
 
@@ -19,10 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	HostMetadataService_CreateHostServer_FullMethodName  = "/host_metadata_service.HostMetadataService/CreateHostServer"
-	HostMetadataService_DeleteHostServer_FullMethodName  = "/host_metadata_service.HostMetadataService/DeleteHostServer"
-	HostMetadataService_GetAllHostServers_FullMethodName = "/host_metadata_service.HostMetadataService/GetAllHostServers"
-	HostMetadataService_AddServerToHost_FullMethodName   = "/host_metadata_service.HostMetadataService/AddServerToHost"
+	HostMetadataService_CreateHostServer_FullMethodName     = "/host_metadata_service.HostMetadataService/CreateHostServer"
+	HostMetadataService_DeleteHostServer_FullMethodName     = "/host_metadata_service.HostMetadataService/DeleteHostServer"
+	HostMetadataService_GetAllHostServers_FullMethodName    = "/host_metadata_service.HostMetadataService/GetAllHostServers"
+	HostMetadataService_AddServerToHost_FullMethodName      = "/host_metadata_service.HostMetadataService/AddServerToHost"
+	HostMetadataService_RemoveServerFromHost_FullMethodName = "/host_metadata_service.HostMetadataService/RemoveServerFromHost"
 )
 
 // HostMetadataServiceClient is the client API for HostMetadataService service.
@@ -33,6 +34,7 @@ type HostMetadataServiceClient interface {
 	DeleteHostServer(ctx context.Context, in *DeleteHostServerRequest, opts ...grpc.CallOption) (*DeleteHostServerResponse, error)
 	GetAllHostServers(ctx context.Context, in *GetAllHostServersRequest, opts ...grpc.CallOption) (*GetAllHostServersResponse, error)
 	AddServerToHost(ctx context.Context, in *AddServerToHostRequest, opts ...grpc.CallOption) (*AddServerToHostResponse, error)
+	RemoveServerFromHost(ctx context.Context, in *RemoveServerFromHostRequest, opts ...grpc.CallOption) (*RemoveServerFromHostResponse, error)
 }
 
 type hostMetadataServiceClient struct {
@@ -83,6 +85,16 @@ func (c *hostMetadataServiceClient) AddServerToHost(ctx context.Context, in *Add
 	return out, nil
 }
 
+func (c *hostMetadataServiceClient) RemoveServerFromHost(ctx context.Context, in *RemoveServerFromHostRequest, opts ...grpc.CallOption) (*RemoveServerFromHostResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RemoveServerFromHostResponse)
+	err := c.cc.Invoke(ctx, HostMetadataService_RemoveServerFromHost_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // HostMetadataServiceServer is the server API for HostMetadataService service.
 // All implementations must embed UnimplementedHostMetadataServiceServer
 // for forward compatibility.
@@ -91,6 +103,7 @@ type HostMetadataServiceServer interface {
 	DeleteHostServer(context.Context, *DeleteHostServerRequest) (*DeleteHostServerResponse, error)
 	GetAllHostServers(context.Context, *GetAllHostServersRequest) (*GetAllHostServersResponse, error)
 	AddServerToHost(context.Context, *AddServerToHostRequest) (*AddServerToHostResponse, error)
+	RemoveServerFromHost(context.Context, *RemoveServerFromHostRequest) (*RemoveServerFromHostResponse, error)
 	mustEmbedUnimplementedHostMetadataServiceServer()
 }
 
@@ -112,6 +125,9 @@ func (UnimplementedHostMetadataServiceServer) GetAllHostServers(context.Context,
 }
 func (UnimplementedHostMetadataServiceServer) AddServerToHost(context.Context, *AddServerToHostRequest) (*AddServerToHostResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method AddServerToHost not implemented")
+}
+func (UnimplementedHostMetadataServiceServer) RemoveServerFromHost(context.Context, *RemoveServerFromHostRequest) (*RemoveServerFromHostResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RemoveServerFromHost not implemented")
 }
 func (UnimplementedHostMetadataServiceServer) mustEmbedUnimplementedHostMetadataServiceServer() {}
 func (UnimplementedHostMetadataServiceServer) testEmbeddedByValue()                             {}
@@ -206,6 +222,24 @@ func _HostMetadataService_AddServerToHost_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _HostMetadataService_RemoveServerFromHost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveServerFromHostRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HostMetadataServiceServer).RemoveServerFromHost(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: HostMetadataService_RemoveServerFromHost_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HostMetadataServiceServer).RemoveServerFromHost(ctx, req.(*RemoveServerFromHostRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // HostMetadataService_ServiceDesc is the grpc.ServiceDesc for HostMetadataService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -229,7 +263,11 @@ var HostMetadataService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "AddServerToHost",
 			Handler:    _HostMetadataService_AddServerToHost_Handler,
 		},
+		{
+			MethodName: "RemoveServerFromHost",
+			Handler:    _HostMetadataService_RemoveServerFromHost_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "internal/proto/host-metadata-service.proto",
+	Metadata: "host-metadata-service.proto",
 }
