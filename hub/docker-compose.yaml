@@ -83,6 +83,23 @@ services:
       retries: 5
     networks:
       - disknet-hub
+  task-service:
+    build: services/task-service
+    container_name: task-service
+    env_file:
+      - config/docker.env
+    ports:
+      - "${TASK_SERVICE_PORT}:${TASK_SERVICE_PORT}"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:${TASK_SERVICE_PORT}/task-service/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - disknet-hub
 
 volumes:
   postgres_data_hub:
