@@ -88,3 +88,17 @@ func AddServer(hostID string, serverID string) error {
 	)
 	return err
 }
+
+func RemoveServer(hostID string, serverID string) error {
+	db, err := database.Connect()
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec(
+		`UPDATE hosts SET servers = array_remove(servers, $1) WHERE id = $2`,
+		serverID,
+		hostID,
+	)
+	return err
+}
