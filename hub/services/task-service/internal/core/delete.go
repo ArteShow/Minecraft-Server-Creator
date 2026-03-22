@@ -70,5 +70,10 @@ func DeleteServer(serverID, token string) error {
 		return err
 	}
 
+	_, err = hostClient.RemoveServerFromHost(&host.RemoveServerFromHostRequest{ServerId: serverID, HostServerId: hostID})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
