@@ -9,7 +9,7 @@ import (
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/core"
 )
 
-func CreateServer(w http.ResponseWriter, r *http.Request) {
+func GetServerStats(w http.ResponseWriter, r *http.Request) {
 	auth := r.Header.Get("Authorization")
 	if auth == "" {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
@@ -24,7 +24,7 @@ func CreateServer(w http.ResponseWriter, r *http.Request) {
 
 	token := parts[1]
 
-	var req CreateServerRequest
+	var req GetServerStatsRequest
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -37,15 +37,15 @@ func CreateServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	serverID, port, err := core.CreateServer(req.Version, token)
+	value, err := core.GetServerStats(req.Key, req.ServerID, token)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	resp := CreateServerResponse{ServerID: serverID, Port: port}
+	resp := core.GetServerStatsResponse{Value: value}
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 	if err = json.NewEncoder(w).Encode(resp); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
