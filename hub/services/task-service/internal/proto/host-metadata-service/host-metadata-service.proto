@@ -39,9 +39,18 @@ message AddServerToHostRequest {
 message AddServerToHostResponse {
 }
 
+message RemoveServerFromHostRequest {
+  string host_server_id = 1;
+  string server_id = 2;
+}
+
+message RemoveServerFromHostResponse {
+}
+
 service HostMetadataService {
   rpc CreateHostServer (CreateHostServerRequest) returns (CreateHostServerResponse);
   rpc DeleteHostServer (DeleteHostServerRequest) returns (DeleteHostServerResponse);
   rpc GetAllHostServers (GetAllHostServersRequest) returns (GetAllHostServersResponse);
   rpc AddServerToHost (AddServerToHostRequest) returns (AddServerToHostResponse);
+  rpc RemoveServerFromHost (RemoveServerFromHostRequest) returns (RemoveServerFromHostResponse);
 }

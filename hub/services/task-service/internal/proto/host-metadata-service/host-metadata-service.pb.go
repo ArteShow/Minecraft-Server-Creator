@@ -409,6 +409,94 @@ func (*AddServerToHostResponse) Descriptor() ([]byte, []int) {
 	return file_internal_proto_host_metadata_service_host_metadata_service_proto_rawDescGZIP(), []int{8}
 }
 
+type RemoveServerFromHostRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	HostServerId  string                 `protobuf:"bytes,1,opt,name=host_server_id,json=hostServerId,proto3" json:"host_server_id,omitempty"`
+	ServerId      string                 `protobuf:"bytes,2,opt,name=server_id,json=serverId,proto3" json:"server_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoveServerFromHostRequest) Reset() {
+	*x = RemoveServerFromHostRequest{}
+	mi := &file_internal_proto_host_metadata_service_host_metadata_service_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoveServerFromHostRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveServerFromHostRequest) ProtoMessage() {}
+
+func (x *RemoveServerFromHostRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_proto_host_metadata_service_host_metadata_service_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoveServerFromHostRequest.ProtoReflect.Descriptor instead.
+func (*RemoveServerFromHostRequest) Descriptor() ([]byte, []int) {
+	return file_internal_proto_host_metadata_service_host_metadata_service_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *RemoveServerFromHostRequest) GetHostServerId() string {
+	if x != nil {
+		return x.HostServerId
+	}
+	return ""
+}
+
+func (x *RemoveServerFromHostRequest) GetServerId() string {
+	if x != nil {
+		return x.ServerId
+	}
+	return ""
+}
+
+type RemoveServerFromHostResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RemoveServerFromHostResponse) Reset() {
+	*x = RemoveServerFromHostResponse{}
+	mi := &file_internal_proto_host_metadata_service_host_metadata_service_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RemoveServerFromHostResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RemoveServerFromHostResponse) ProtoMessage() {}
+
+func (x *RemoveServerFromHostResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_proto_host_metadata_service_host_metadata_service_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RemoveServerFromHostResponse.ProtoReflect.Descriptor instead.
+func (*RemoveServerFromHostResponse) Descriptor() ([]byte, []int) {
+	return file_internal_proto_host_metadata_service_host_metadata_service_proto_rawDescGZIP(), []int{10}
+}
+
 var File_internal_proto_host_metadata_service_host_metadata_service_proto protoreflect.FileDescriptor
 
 const file_internal_proto_host_metadata_service_host_metadata_service_proto_rawDesc = "" +
@@ -432,12 +520,17 @@ const file_internal_proto_host_metadata_service_host_metadata_service_proto_rawD
 	"\x16AddServerToHostRequest\x12$\n" +
 	"\x0ehost_server_id\x18\x01 \x01(\tR\fhostServerId\x12\x1b\n" +
 	"\tserver_id\x18\x02 \x01(\tR\bserverId\"\x19\n" +
-	"\x17AddServerToHostResponse2\xe9\x03\n" +
+	"\x17AddServerToHostResponse\"`\n" +
+	"\x1bRemoveServerFromHostRequest\x12$\n" +
+	"\x0ehost_server_id\x18\x01 \x01(\tR\fhostServerId\x12\x1b\n" +
+	"\tserver_id\x18\x02 \x01(\tR\bserverId\"\x1e\n" +
+	"\x1cRemoveServerFromHostResponse2\xea\x04\n" +
 	"\x13HostMetadataService\x12s\n" +
 	"\x10CreateHostServer\x12..host_metadata_service.CreateHostServerRequest\x1a/.host_metadata_service.CreateHostServerResponse\x12s\n" +
 	"\x10DeleteHostServer\x12..host_metadata_service.DeleteHostServerRequest\x1a/.host_metadata_service.DeleteHostServerResponse\x12v\n" +
 	"\x11GetAllHostServers\x12/.host_metadata_service.GetAllHostServersRequest\x1a0.host_metadata_service.GetAllHostServersResponse\x12p\n" +
-	"\x0fAddServerToHost\x12-.host_metadata_service.AddServerToHostRequest\x1a..host_metadata_service.AddServerToHostResponseB\x17Z\x15/internal/proto;protob\x06proto3"
+	"\x0fAddServerToHost\x12-.host_metadata_service.AddServerToHostRequest\x1a..host_metadata_service.AddServerToHostResponse\x12\x7f\n" +
+	"\x14RemoveServerFromHost\x122.host_metadata_service.RemoveServerFromHostRequest\x1a3.host_metadata_service.RemoveServerFromHostResponseB-Z+/internal/proto/host-metadata-service;protob\x06proto3"
 
 var (
 	file_internal_proto_host_metadata_service_host_metadata_service_proto_rawDescOnce sync.Once
@@ -451,33 +544,37 @@ func file_internal_proto_host_metadata_service_host_metadata_service_proto_rawDe
 	return file_internal_proto_host_metadata_service_host_metadata_service_proto_rawDescData
 }
 
-var file_internal_proto_host_metadata_service_host_metadata_service_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_internal_proto_host_metadata_service_host_metadata_service_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_internal_proto_host_metadata_service_host_metadata_service_proto_goTypes = []any{
-	(*CreateHostServerRequest)(nil),   // 0: host_metadata_service.CreateHostServerRequest
-	(*CreateHostServerResponse)(nil),  // 1: host_metadata_service.CreateHostServerResponse
-	(*DeleteHostServerRequest)(nil),   // 2: host_metadata_service.DeleteHostServerRequest
-	(*DeleteHostServerResponse)(nil),  // 3: host_metadata_service.DeleteHostServerResponse
-	(*GetAllHostServersRequest)(nil),  // 4: host_metadata_service.GetAllHostServersRequest
-	(*HostServer)(nil),                // 5: host_metadata_service.HostServer
-	(*GetAllHostServersResponse)(nil), // 6: host_metadata_service.GetAllHostServersResponse
-	(*AddServerToHostRequest)(nil),    // 7: host_metadata_service.AddServerToHostRequest
-	(*AddServerToHostResponse)(nil),   // 8: host_metadata_service.AddServerToHostResponse
+	(*CreateHostServerRequest)(nil),      // 0: host_metadata_service.CreateHostServerRequest
+	(*CreateHostServerResponse)(nil),     // 1: host_metadata_service.CreateHostServerResponse
+	(*DeleteHostServerRequest)(nil),      // 2: host_metadata_service.DeleteHostServerRequest
+	(*DeleteHostServerResponse)(nil),     // 3: host_metadata_service.DeleteHostServerResponse
+	(*GetAllHostServersRequest)(nil),     // 4: host_metadata_service.GetAllHostServersRequest
+	(*HostServer)(nil),                   // 5: host_metadata_service.HostServer
+	(*GetAllHostServersResponse)(nil),    // 6: host_metadata_service.GetAllHostServersResponse
+	(*AddServerToHostRequest)(nil),       // 7: host_metadata_service.AddServerToHostRequest
+	(*AddServerToHostResponse)(nil),      // 8: host_metadata_service.AddServerToHostResponse
+	(*RemoveServerFromHostRequest)(nil),  // 9: host_metadata_service.RemoveServerFromHostRequest
+	(*RemoveServerFromHostResponse)(nil), // 10: host_metadata_service.RemoveServerFromHostResponse
 }
 var file_internal_proto_host_metadata_service_host_metadata_service_proto_depIdxs = []int32{
-	5, // 0: host_metadata_service.GetAllHostServersResponse.hosts:type_name -> host_metadata_service.HostServer
-	0, // 1: host_metadata_service.HostMetadataService.CreateHostServer:input_type -> host_metadata_service.CreateHostServerRequest
-	2, // 2: host_metadata_service.HostMetadataService.DeleteHostServer:input_type -> host_metadata_service.DeleteHostServerRequest
-	4, // 3: host_metadata_service.HostMetadataService.GetAllHostServers:input_type -> host_metadata_service.GetAllHostServersRequest
-	7, // 4: host_metadata_service.HostMetadataService.AddServerToHost:input_type -> host_metadata_service.AddServerToHostRequest
-	1, // 5: host_metadata_service.HostMetadataService.CreateHostServer:output_type -> host_metadata_service.CreateHostServerResponse
-	3, // 6: host_metadata_service.HostMetadataService.DeleteHostServer:output_type -> host_metadata_service.DeleteHostServerResponse
-	6, // 7: host_metadata_service.HostMetadataService.GetAllHostServers:output_type -> host_metadata_service.GetAllHostServersResponse
-	8, // 8: host_metadata_service.HostMetadataService.AddServerToHost:output_type -> host_metadata_service.AddServerToHostResponse
-	5, // [5:9] is the sub-list for method output_type
-	1, // [1:5] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	5,  // 0: host_metadata_service.GetAllHostServersResponse.hosts:type_name -> host_metadata_service.HostServer
+	0,  // 1: host_metadata_service.HostMetadataService.CreateHostServer:input_type -> host_metadata_service.CreateHostServerRequest
+	2,  // 2: host_metadata_service.HostMetadataService.DeleteHostServer:input_type -> host_metadata_service.DeleteHostServerRequest
+	4,  // 3: host_metadata_service.HostMetadataService.GetAllHostServers:input_type -> host_metadata_service.GetAllHostServersRequest
+	7,  // 4: host_metadata_service.HostMetadataService.AddServerToHost:input_type -> host_metadata_service.AddServerToHostRequest
+	9,  // 5: host_metadata_service.HostMetadataService.RemoveServerFromHost:input_type -> host_metadata_service.RemoveServerFromHostRequest
+	1,  // 6: host_metadata_service.HostMetadataService.CreateHostServer:output_type -> host_metadata_service.CreateHostServerResponse
+	3,  // 7: host_metadata_service.HostMetadataService.DeleteHostServer:output_type -> host_metadata_service.DeleteHostServerResponse
+	6,  // 8: host_metadata_service.HostMetadataService.GetAllHostServers:output_type -> host_metadata_service.GetAllHostServersResponse
+	8,  // 9: host_metadata_service.HostMetadataService.AddServerToHost:output_type -> host_metadata_service.AddServerToHostResponse
+	10, // 10: host_metadata_service.HostMetadataService.RemoveServerFromHost:output_type -> host_metadata_service.RemoveServerFromHostResponse
+	6,  // [6:11] is the sub-list for method output_type
+	1,  // [1:6] is the sub-list for method input_type
+	1,  // [1:1] is the sub-list for extension type_name
+	1,  // [1:1] is the sub-list for extension extendee
+	0,  // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_internal_proto_host_metadata_service_host_metadata_service_proto_init() }
@@ -491,7 +588,7 @@ func file_internal_proto_host_metadata_service_host_metadata_service_proto_init(
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_proto_host_metadata_service_host_metadata_service_proto_rawDesc), len(file_internal_proto_host_metadata_service_host_metadata_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

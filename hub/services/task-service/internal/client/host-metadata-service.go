@@ -71,3 +71,12 @@ func (u *HostClient) AddServerToHost(req *pb.AddServerToHostRequest) (*pb.AddSer
 
 	return res, nil
 }
+
+func (u *HostClient) RemoveServerFromHost(req *pb.RemoveServerFromHostRequest) (*pb.RemoveServerFromHostResponse, error) {
+	res, err := u.Client.RemoveServerFromHost(context.Background(), req)
+	if err != nil {
+		return &pb.RemoveServerFromHostResponse{}, err
+	}
+
+	return res, nil
+}
