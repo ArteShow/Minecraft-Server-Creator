@@ -37,6 +37,12 @@ func main() {
 	getHostServerMetadataProxy := proxy.NewProxy("http://host-metadata-service:8012", "/host-metadata-service/get")
 	addServerToHostProxy := proxy.NewProxy("http://host-metadata-service:8012", "/host-metadata-service/add")
 
+	createServerProxy := proxy.NewProxy("http://task-service:8013", "/task-service/create")
+	startServerProxy := proxy.NewProxy("http://task-service:8013", "/task-service/start")
+	stopServerProxy := proxy.NewProxy("http://task-service:8013", "/task-service/stop")
+	deleteServerProxy := proxy.NewProxy("http://task-service:8013", "/task-service/delete")
+	getServerStatsProxy := proxy.NewProxy("http://task-service:8013", "/task-service/getStats")
+
 	handler := http.NewServeMux()
 	handler.Handle(
 		"/api/"+cfg.APIVersion+"/gateway/health",
@@ -55,6 +61,12 @@ func main() {
 	handler.Handle("/api/"+cfg.APIVersion+"/host-metadata/delete", middleware.LoggingMiddleware(deleteHostServerMetadataProxy))
 	handler.Handle("/api/"+cfg.APIVersion+"/host-metadata/get", middleware.LoggingMiddleware(getHostServerMetadataProxy))
 	handler.Handle("/api/"+cfg.APIVersion+"/host-metadata/add", middleware.LoggingMiddleware(addServerToHostProxy))
+
+	handler.Handle("/api/"+cfg.APIVersion+"/server/create", middleware.LoggingMiddleware(createServerProxy))
+	handler.Handle("/api/"+cfg.APIVersion+"/server/start", middleware.LoggingMiddleware(startServerProxy))
+	handler.Handle("/api/"+cfg.APIVersion+"/server/stop", middleware.LoggingMiddleware(stopServerProxy))
+	handler.Handle("/api/"+cfg.APIVersion+"/server/delete", middleware.LoggingMiddleware(deleteServerProxy))
+	handler.Handle("/api/"+cfg.APIVersion+"/server/getStats", middleware.LoggingMiddleware(getServerStatsProxy))
 
 	srv := &http.Server{
 		Addr:         cfg.Port,

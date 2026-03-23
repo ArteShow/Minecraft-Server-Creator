@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package host_metadata_service;
 
-option go_package = "/internal/proto;proto";
+option go_package = "/internal/proto/host-metadata-service;proto";
 
 message CreateHostServerRequest {
 }
