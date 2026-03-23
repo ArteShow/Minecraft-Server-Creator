@@ -2,7 +2,10 @@ module github.com/ArteShow/Minecraft-Server-Creator/hub/services/auth-service
 
 go 1.25.4
 
-require github.com/ilyakaznacheev/cleanenv v1.5.0
+require (
+	github.com/ilyakaznacheev/cleanenv v1.5.0
+	github.com/lib/pq v1.12.0
+)
 
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
