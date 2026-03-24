@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
@@ -79,15 +81,78 @@ func (ds *DockerService) waitContainerStopped(ctx context.Context, containerID s
 	return errors.New("timeout waiting for container to stop gracefully")
 }
 
+// parseRAM converts RAM string like "1G", "512M" to bytes
+func parseRAM(ramStr string) (int64, error) {
+	ramStr = strings.TrimSpace(ramStr)
+	if ramStr == "" {
+		return 0, errors.New("RAM string cannot be empty")
+	}
+
+	i := 0
+	for i < len(ramStr) && (ramStr[i] >= '0' && ramStr[i] <= '9' || ramStr[i] == '.') {
+		i++
+	}
+
+	if i == 0 {
+		return 0, errors.New("invalid RAM format")
+	}
+
+	value, err := strconv.ParseFloat(ramStr[:i], 64)
+	if err != nil {
+		return 0, err
+	}
+
+	unit := strings.ToUpper(strings.TrimSpace(ramStr[i:]))
+
+	switch unit {
+	case "B":
+		return int64(value), nil
+	case "K", "KB":
+		return int64(value * 1024), nil
+	case "M", "MB":
+		return int64(value * 1024 * 1024), nil
+	case "G", "GB":
+		return int64(value * 1024 * 1024 * 1024), nil
+	default:
+		return 0, errors.New("unsupported RAM unit: " + unit)
+	}
+}
+
 func (ds *DockerService) StartServerContainer(
 	serverID string,
 	image string,
+	RAM string,
+	cores int,
 	hostPort int,
 	containerPort int,
 ) (string, error) {
 
 	ctx := context.Background()
 	port := nat.Port(fmt.Sprintf("%d/tcp", containerPort))
+
+	// Parse RAM string to bytes
+	memoryBytes, err := parseRAM(RAM)
+	if err != nil {
+		return "", fmt.Errorf("invalid RAM value: %w", err)
+	}
+
+	// Calculate NanoCPUs (1 core = 1e9 nanoseconds)
+	nanoCPUs := int64(cores) * 1e9
+
+	// Convert memory bytes to megabytes for Java heap settings
+	memoryMB := memoryBytes / (1024 * 1024)
+	javaHeap := fmt.Sprintf("%dM", memoryMB)
+
+	// Build Java command with RAM
+	javaCmd := fmt.Sprintf(`
+				while [ ! -f server.jar ]; do
+					echo "waiting for server.jar..."
+					sleep 1
+				done
+
+				echo "starting minecraft server with %s RAM"
+				exec java -Xms%s -Xmx%s -jar server.jar nogui
+				`, javaHeap, javaHeap, javaHeap)
 
 	resp, err := ds.client.ContainerCreate(
 		ctx,
@@ -102,15 +167,7 @@ func (ds *DockerService) StartServerContainer(
 			Cmd: []string{
 				"sh",
 				"-c",
-				`
-				while [ ! -f server.jar ]; do
-					echo "waiting for server.jar..."
-					sleep 1
-				done
-
-				echo "starting minecraft server"
-				exec java -Xms1G -Xmx2G -jar server.jar nogui
-				`,
+				javaCmd,
 			},
 
 			ExposedPorts: nat.PortSet{
@@ -118,6 +175,10 @@ func (ds *DockerService) StartServerContainer(
 			},
 		},
 		&container.HostConfig{
+			Resources: container.Resources{
+				Memory:   memoryBytes,
+				NanoCPUs: nanoCPUs,
+			},
 			Mounts: []mount.Mount{
 				{
 					Type:   mount.TypeVolume,

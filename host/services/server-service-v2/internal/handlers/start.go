@@ -26,7 +26,7 @@ func (h *Handler) StartServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.Server.StartServer(req.ServerID, ownerID)
+	err = h.Server.StartServer(req.ServerID, ownerID, req.RAM, req.CPUCores)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
