@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.1
 // - protoc             v3.21.12
-// source: host-metadata-service.proto
+// source: internal/proto/host-metadata-service.proto
 
 package proto
 
@@ -269,5 +269,5 @@ var HostMetadataService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "host-metadata-service.proto",
+	Metadata: "internal/proto/host-metadata-service.proto",
 }

@@ -1,6 +1,9 @@
 package repository
 
 import (
+	"fmt"
+	"strconv"
+
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/host-metadata-service/internal/database"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -9,6 +12,8 @@ import (
 type Host struct {
 	ID        string   `json:"host_server_id"`
 	Servers   []string `json:"server_ids"`
+	RAM       string   `json:"RAM"`
+	Cores     string   `json:"cpu_cores"`
 	CreatedAt string   `json:"created_at"`
 }
 
@@ -45,7 +50,7 @@ func Get() ([]Host, error) {
 	return hosts, nil
 }
 
-func Create(servers []string) (string, error) {
+func Create(servers []string, ram, cores string) (string, error) {
 	db, err := database.Connect()
 	if err != nil {
 		return "", err
@@ -58,9 +63,11 @@ func Create(servers []string) (string, error) {
 	id := uuid.NewString()
 
 	_, err = db.Exec(
-		`INSERT INTO hosts (id, servers) VALUES ($1, $2)`,
+		`INSERT INTO hosts (id, servers, ram, cores) VALUES ($1, $2, $3, $4)`,
 		id,
 		pq.Array(servers),
+		ram,
+		cores,
 	)
 	return id, err
 }
@@ -98,6 +105,70 @@ func RemoveServer(hostID string, serverID string) error {
 	_, err = db.Exec(
 		`UPDATE hosts SET servers = array_remove(servers, $1) WHERE id = $2`,
 		serverID,
+		hostID,
+	)
+	return err
+}
+
+func SubtractRAM(hostID string, ramToSubtract string) error {
+	db, err := database.Connect()
+	if err != nil {
+		return err
+	}
+
+	var currentRAM string
+	err = db.QueryRow(`SELECT ram FROM hosts WHERE id = $1`, hostID).Scan(&currentRAM)
+	if err != nil {
+		return err
+	}
+
+	current, err := strconv.ParseInt(currentRAM, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	subtract, err := strconv.ParseInt(ramToSubtract, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	newRAM := current - subtract
+
+	_, err = db.Exec(
+		`UPDATE hosts SET ram = $1 WHERE id = $2`,
+		fmt.Sprintf("%d", newRAM),
+		hostID,
+	)
+	return err
+}
+
+func SubtractCores(hostID string, coresToSubtract string) error {
+	db, err := database.Connect()
+	if err != nil {
+		return err
+	}
+
+	var currentCores string
+	err = db.QueryRow(`SELECT cores FROM hosts WHERE id = $1`, hostID).Scan(&currentCores)
+	if err != nil {
+		return err
+	}
+
+	current, err := strconv.ParseInt(currentCores, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	subtract, err := strconv.ParseInt(coresToSubtract, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	newCores := current - subtract
+
+	_, err = db.Exec(
+		`UPDATE hosts SET cores = $1 WHERE id = $2`,
+		fmt.Sprintf("%d", newCores),
 		hostID,
 	)
 	return err

@@ -5,6 +5,8 @@ package host_metadata_service;
 option go_package = "/internal/proto;proto";
 
 message CreateHostServerRequest {
+  string ram = 1;
+  string cores = 2;
 }
 
 message CreateHostServerResponse {

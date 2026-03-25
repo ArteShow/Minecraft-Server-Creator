@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v3.21.12
-// source: host-metadata-service.proto
+// source: internal/proto/host-metadata-service.proto
 
 package proto
 
@@ -23,13 +23,15 @@ const (
 
 type CreateHostServerRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ram           string                 `protobuf:"bytes,1,opt,name=ram,proto3" json:"ram,omitempty"`
+	Cores         string                 `protobuf:"bytes,2,opt,name=cores,proto3" json:"cores,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateHostServerRequest) Reset() {
 	*x = CreateHostServerRequest{}
-	mi := &file_host_metadata_service_proto_msgTypes[0]
+	mi := &file_internal_proto_host_metadata_service_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -41,7 +43,7 @@ func (x *CreateHostServerRequest) String() string {
 func (*CreateHostServerRequest) ProtoMessage() {}
 
 func (x *CreateHostServerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_host_metadata_service_proto_msgTypes[0]
+	mi := &file_internal_proto_host_metadata_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -54,7 +56,21 @@ func (x *CreateHostServerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateHostServerRequest.ProtoReflect.Descriptor instead.
 func (*CreateHostServerRequest) Descriptor() ([]byte, []int) {
-	return file_host_metadata_service_proto_rawDescGZIP(), []int{0}
+	return file_internal_proto_host_metadata_service_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *CreateHostServerRequest) GetRam() string {
+	if x != nil {
+		return x.Ram
+	}
+	return ""
+}
+
+func (x *CreateHostServerRequest) GetCores() string {
+	if x != nil {
+		return x.Cores
+	}
+	return ""
 }
 
 type CreateHostServerResponse struct {
@@ -66,7 +82,7 @@ type CreateHostServerResponse struct {
 
 func (x *CreateHostServerResponse) Reset() {
 	*x = CreateHostServerResponse{}
-	mi := &file_host_metadata_service_proto_msgTypes[1]
+	mi := &file_internal_proto_host_metadata_service_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -78,7 +94,7 @@ func (x *CreateHostServerResponse) String() string {
 func (*CreateHostServerResponse) ProtoMessage() {}
 
 func (x *CreateHostServerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_host_metadata_service_proto_msgTypes[1]
+	mi := &file_internal_proto_host_metadata_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -91,7 +107,7 @@ func (x *CreateHostServerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateHostServerResponse.ProtoReflect.Descriptor instead.
 func (*CreateHostServerResponse) Descriptor() ([]byte, []int) {
-	return file_host_metadata_service_proto_rawDescGZIP(), []int{1}
+	return file_internal_proto_host_metadata_service_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *CreateHostServerResponse) GetHostServerId() string {
@@ -110,7 +126,7 @@ type DeleteHostServerRequest struct {
 
 func (x *DeleteHostServerRequest) Reset() {
 	*x = DeleteHostServerRequest{}
-	mi := &file_host_metadata_service_proto_msgTypes[2]
+	mi := &file_internal_proto_host_metadata_service_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -122,7 +138,7 @@ func (x *DeleteHostServerRequest) String() string {
 func (*DeleteHostServerRequest) ProtoMessage() {}
 
 func (x *DeleteHostServerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_host_metadata_service_proto_msgTypes[2]
+	mi := &file_internal_proto_host_metadata_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -135,7 +151,7 @@ func (x *DeleteHostServerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteHostServerRequest.ProtoReflect.Descriptor instead.
 func (*DeleteHostServerRequest) Descriptor() ([]byte, []int) {
-	return file_host_metadata_service_proto_rawDescGZIP(), []int{2}
+	return file_internal_proto_host_metadata_service_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *DeleteHostServerRequest) GetHostServerId() string {
@@ -153,7 +169,7 @@ type DeleteHostServerResponse struct {
 
 func (x *DeleteHostServerResponse) Reset() {
 	*x = DeleteHostServerResponse{}
-	mi := &file_host_metadata_service_proto_msgTypes[3]
+	mi := &file_internal_proto_host_metadata_service_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -165,7 +181,7 @@ func (x *DeleteHostServerResponse) String() string {
 func (*DeleteHostServerResponse) ProtoMessage() {}
 
 func (x *DeleteHostServerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_host_metadata_service_proto_msgTypes[3]
+	mi := &file_internal_proto_host_metadata_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -178,7 +194,7 @@ func (x *DeleteHostServerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteHostServerResponse.ProtoReflect.Descriptor instead.
 func (*DeleteHostServerResponse) Descriptor() ([]byte, []int) {
-	return file_host_metadata_service_proto_rawDescGZIP(), []int{3}
+	return file_internal_proto_host_metadata_service_proto_rawDescGZIP(), []int{3}
 }
 
 type GetAllHostServersRequest struct {
@@ -189,7 +205,7 @@ type GetAllHostServersRequest struct {
 
 func (x *GetAllHostServersRequest) Reset() {
 	*x = GetAllHostServersRequest{}
-	mi := &file_host_metadata_service_proto_msgTypes[4]
+	mi := &file_internal_proto_host_metadata_service_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -201,7 +217,7 @@ func (x *GetAllHostServersRequest) String() string {
 func (*GetAllHostServersRequest) ProtoMessage() {}
 
 func (x *GetAllHostServersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_host_metadata_service_proto_msgTypes[4]
+	mi := &file_internal_proto_host_metadata_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -214,7 +230,7 @@ func (x *GetAllHostServersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAllHostServersRequest.ProtoReflect.Descriptor instead.
 func (*GetAllHostServersRequest) Descriptor() ([]byte, []int) {
-	return file_host_metadata_service_proto_rawDescGZIP(), []int{4}
+	return file_internal_proto_host_metadata_service_proto_rawDescGZIP(), []int{4}
 }
 
 type HostServer struct {
@@ -228,7 +244,7 @@ type HostServer struct {
 
 func (x *HostServer) Reset() {
 	*x = HostServer{}
-	mi := &file_host_metadata_service_proto_msgTypes[5]
+	mi := &file_internal_proto_host_metadata_service_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -240,7 +256,7 @@ func (x *HostServer) String() string {
 func (*HostServer) ProtoMessage() {}
 
 func (x *HostServer) ProtoReflect() protoreflect.Message {
-	mi := &file_host_metadata_service_proto_msgTypes[5]
+	mi := &file_internal_proto_host_metadata_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -253,7 +269,7 @@ func (x *HostServer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HostServer.ProtoReflect.Descriptor instead.
 func (*HostServer) Descriptor() ([]byte, []int) {
-	return file_host_metadata_service_proto_rawDescGZIP(), []int{5}
+	return file_internal_proto_host_metadata_service_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *HostServer) GetId() string {
@@ -286,7 +302,7 @@ type GetAllHostServersResponse struct {
 
 func (x *GetAllHostServersResponse) Reset() {
 	*x = GetAllHostServersResponse{}
-	mi := &file_host_metadata_service_proto_msgTypes[6]
+	mi := &file_internal_proto_host_metadata_service_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -298,7 +314,7 @@ func (x *GetAllHostServersResponse) String() string {
 func (*GetAllHostServersResponse) ProtoMessage() {}
 
 func (x *GetAllHostServersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_host_metadata_service_proto_msgTypes[6]
+	mi := &file_internal_proto_host_metadata_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -311,7 +327,7 @@ func (x *GetAllHostServersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAllHostServersResponse.ProtoReflect.Descriptor instead.
 func (*GetAllHostServersResponse) Descriptor() ([]byte, []int) {
-	return file_host_metadata_service_proto_rawDescGZIP(), []int{6}
+	return file_internal_proto_host_metadata_service_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GetAllHostServersResponse) GetHosts() []*HostServer {
@@ -331,7 +347,7 @@ type AddServerToHostRequest struct {
 
 func (x *AddServerToHostRequest) Reset() {
 	*x = AddServerToHostRequest{}
-	mi := &file_host_metadata_service_proto_msgTypes[7]
+	mi := &file_internal_proto_host_metadata_service_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -343,7 +359,7 @@ func (x *AddServerToHostRequest) String() string {
 func (*AddServerToHostRequest) ProtoMessage() {}
 
 func (x *AddServerToHostRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_host_metadata_service_proto_msgTypes[7]
+	mi := &file_internal_proto_host_metadata_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -356,7 +372,7 @@ func (x *AddServerToHostRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddServerToHostRequest.ProtoReflect.Descriptor instead.
 func (*AddServerToHostRequest) Descriptor() ([]byte, []int) {
-	return file_host_metadata_service_proto_rawDescGZIP(), []int{7}
+	return file_internal_proto_host_metadata_service_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *AddServerToHostRequest) GetHostServerId() string {
@@ -381,7 +397,7 @@ type AddServerToHostResponse struct {
 
 func (x *AddServerToHostResponse) Reset() {
 	*x = AddServerToHostResponse{}
-	mi := &file_host_metadata_service_proto_msgTypes[8]
+	mi := &file_internal_proto_host_metadata_service_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -393,7 +409,7 @@ func (x *AddServerToHostResponse) String() string {
 func (*AddServerToHostResponse) ProtoMessage() {}
 
 func (x *AddServerToHostResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_host_metadata_service_proto_msgTypes[8]
+	mi := &file_internal_proto_host_metadata_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -406,7 +422,7 @@ func (x *AddServerToHostResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddServerToHostResponse.ProtoReflect.Descriptor instead.
 func (*AddServerToHostResponse) Descriptor() ([]byte, []int) {
-	return file_host_metadata_service_proto_rawDescGZIP(), []int{8}
+	return file_internal_proto_host_metadata_service_proto_rawDescGZIP(), []int{8}
 }
 
 type RemoveServerFromHostRequest struct {
@@ -419,7 +435,7 @@ type RemoveServerFromHostRequest struct {
 
 func (x *RemoveServerFromHostRequest) Reset() {
 	*x = RemoveServerFromHostRequest{}
-	mi := &file_host_metadata_service_proto_msgTypes[9]
+	mi := &file_internal_proto_host_metadata_service_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -431,7 +447,7 @@ func (x *RemoveServerFromHostRequest) String() string {
 func (*RemoveServerFromHostRequest) ProtoMessage() {}
 
 func (x *RemoveServerFromHostRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_host_metadata_service_proto_msgTypes[9]
+	mi := &file_internal_proto_host_metadata_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -444,7 +460,7 @@ func (x *RemoveServerFromHostRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveServerFromHostRequest.ProtoReflect.Descriptor instead.
 func (*RemoveServerFromHostRequest) Descriptor() ([]byte, []int) {
-	return file_host_metadata_service_proto_rawDescGZIP(), []int{9}
+	return file_internal_proto_host_metadata_service_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *RemoveServerFromHostRequest) GetHostServerId() string {
@@ -469,7 +485,7 @@ type RemoveServerFromHostResponse struct {
 
 func (x *RemoveServerFromHostResponse) Reset() {
 	*x = RemoveServerFromHostResponse{}
-	mi := &file_host_metadata_service_proto_msgTypes[10]
+	mi := &file_internal_proto_host_metadata_service_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -481,7 +497,7 @@ func (x *RemoveServerFromHostResponse) String() string {
 func (*RemoveServerFromHostResponse) ProtoMessage() {}
 
 func (x *RemoveServerFromHostResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_host_metadata_service_proto_msgTypes[10]
+	mi := &file_internal_proto_host_metadata_service_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -494,15 +510,17 @@ func (x *RemoveServerFromHostResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveServerFromHostResponse.ProtoReflect.Descriptor instead.
 func (*RemoveServerFromHostResponse) Descriptor() ([]byte, []int) {
-	return file_host_metadata_service_proto_rawDescGZIP(), []int{10}
+	return file_internal_proto_host_metadata_service_proto_rawDescGZIP(), []int{10}
 }
 
-var File_host_metadata_service_proto protoreflect.FileDescriptor
+var File_internal_proto_host_metadata_service_proto protoreflect.FileDescriptor
 
-const file_host_metadata_service_proto_rawDesc = "" +
+const file_internal_proto_host_metadata_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1bhost-metadata-service.proto\x12\x15host_metadata_service\"\x19\n" +
-	"\x17CreateHostServerRequest\"@\n" +
+	"*internal/proto/host-metadata-service.proto\x12\x15host_metadata_service\"A\n" +
+	"\x17CreateHostServerRequest\x12\x10\n" +
+	"\x03ram\x18\x01 \x01(\tR\x03ram\x12\x14\n" +
+	"\x05cores\x18\x02 \x01(\tR\x05cores\"@\n" +
 	"\x18CreateHostServerResponse\x12$\n" +
 	"\x0ehost_server_id\x18\x01 \x01(\tR\fhostServerId\"?\n" +
 	"\x17DeleteHostServerRequest\x12$\n" +
@@ -533,19 +551,19 @@ const file_host_metadata_service_proto_rawDesc = "" +
 	"\x14RemoveServerFromHost\x122.host_metadata_service.RemoveServerFromHostRequest\x1a3.host_metadata_service.RemoveServerFromHostResponseB\x17Z\x15/internal/proto;protob\x06proto3"
 
 var (
-	file_host_metadata_service_proto_rawDescOnce sync.Once
-	file_host_metadata_service_proto_rawDescData []byte
+	file_internal_proto_host_metadata_service_proto_rawDescOnce sync.Once
+	file_internal_proto_host_metadata_service_proto_rawDescData []byte
 )
 
-func file_host_metadata_service_proto_rawDescGZIP() []byte {
-	file_host_metadata_service_proto_rawDescOnce.Do(func() {
-		file_host_metadata_service_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_host_metadata_service_proto_rawDesc), len(file_host_metadata_service_proto_rawDesc)))
+func file_internal_proto_host_metadata_service_proto_rawDescGZIP() []byte {
+	file_internal_proto_host_metadata_service_proto_rawDescOnce.Do(func() {
+		file_internal_proto_host_metadata_service_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_internal_proto_host_metadata_service_proto_rawDesc), len(file_internal_proto_host_metadata_service_proto_rawDesc)))
 	})
-	return file_host_metadata_service_proto_rawDescData
+	return file_internal_proto_host_metadata_service_proto_rawDescData
 }
 
-var file_host_metadata_service_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
-var file_host_metadata_service_proto_goTypes = []any{
+var file_internal_proto_host_metadata_service_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_internal_proto_host_metadata_service_proto_goTypes = []any{
 	(*CreateHostServerRequest)(nil),      // 0: host_metadata_service.CreateHostServerRequest
 	(*CreateHostServerResponse)(nil),     // 1: host_metadata_service.CreateHostServerResponse
 	(*DeleteHostServerRequest)(nil),      // 2: host_metadata_service.DeleteHostServerRequest
@@ -558,7 +576,7 @@ var file_host_metadata_service_proto_goTypes = []any{
 	(*RemoveServerFromHostRequest)(nil),  // 9: host_metadata_service.RemoveServerFromHostRequest
 	(*RemoveServerFromHostResponse)(nil), // 10: host_metadata_service.RemoveServerFromHostResponse
 }
-var file_host_metadata_service_proto_depIdxs = []int32{
+var file_internal_proto_host_metadata_service_proto_depIdxs = []int32{
 	5,  // 0: host_metadata_service.GetAllHostServersResponse.hosts:type_name -> host_metadata_service.HostServer
 	0,  // 1: host_metadata_service.HostMetadataService.CreateHostServer:input_type -> host_metadata_service.CreateHostServerRequest
 	2,  // 2: host_metadata_service.HostMetadataService.DeleteHostServer:input_type -> host_metadata_service.DeleteHostServerRequest
@@ -577,26 +595,26 @@ var file_host_metadata_service_proto_depIdxs = []int32{
 	0,  // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_host_metadata_service_proto_init() }
-func file_host_metadata_service_proto_init() {
-	if File_host_metadata_service_proto != nil {
+func init() { file_internal_proto_host_metadata_service_proto_init() }
+func file_internal_proto_host_metadata_service_proto_init() {
+	if File_internal_proto_host_metadata_service_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_host_metadata_service_proto_rawDesc), len(file_host_metadata_service_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_proto_host_metadata_service_proto_rawDesc), len(file_internal_proto_host_metadata_service_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_host_metadata_service_proto_goTypes,
-		DependencyIndexes: file_host_metadata_service_proto_depIdxs,
-		MessageInfos:      file_host_metadata_service_proto_msgTypes,
+		GoTypes:           file_internal_proto_host_metadata_service_proto_goTypes,
+		DependencyIndexes: file_internal_proto_host_metadata_service_proto_depIdxs,
+		MessageInfos:      file_internal_proto_host_metadata_service_proto_msgTypes,
 	}.Build()
-	File_host_metadata_service_proto = out.File
-	file_host_metadata_service_proto_goTypes = nil
-	file_host_metadata_service_proto_depIdxs = nil
+	File_internal_proto_host_metadata_service_proto = out.File
+	file_internal_proto_host_metadata_service_proto_goTypes = nil
+	file_internal_proto_host_metadata_service_proto_depIdxs = nil
 }
