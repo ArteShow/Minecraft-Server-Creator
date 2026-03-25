@@ -51,43 +51,6 @@ services:
     networks:
       - disknet
 
-  user-service:
-    build: services/user-service
-    container_name: user-service
-    env_file:
-      - config/docker.env
-    ports:
-      - "${USER_SERVICE_PORT}:${USER_SERVICE_PORT}"
-      - "${USER_SERVICE_GRPC_SERVER_PORT}:${USER_SERVICE_GRPC_SERVER_PORT}"
-    depends_on:
-      migrate:
-        condition: service_completed_successfully
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:${USER_SERVICE_PORT}/health"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-    networks:
-      - disknet
-
-  auth-service:
-    build: services/auth-service
-    container_name: auth-service
-    env_file:
-      - config/docker.env
-    ports:
-      - "${AUTH_SERVICE_PORT}:${AUTH_SERVICE_PORT}"
-    depends_on:
-      migrate:
-        condition: service_completed_successfully
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:${AUTH_SERVICE_PORT}/auth-service/health"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-    networks:
-      - disknet
-
   server-service-v2:
     build: services/server-service-v2
     container_name: server-service-v2
