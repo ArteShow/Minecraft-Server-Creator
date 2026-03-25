@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS network (
 CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     username TEXT UNIQUE NOT NULL,
-    passwotd TEXT UNIQUE NOT NULL,
+    password TEXT UNIQUE NOT NULL,
     email TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
