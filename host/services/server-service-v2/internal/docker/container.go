@@ -151,18 +151,18 @@ func (ds *DockerService) StartServerContainer(
 				done
 
 				echo "starting minecraft server with %s RAM"
-				exec java -Xms%s -Xmx%s -jar server.jar nogui
+				exec java -Xms%sGB -Xmx%sGB -jar server.jar nogui
 				`, javaHeap, javaHeap, javaHeap)
 
 	resp, err := ds.client.ContainerCreate(
 		ctx,
 		&container.Config{
-			Image:      image,
-			WorkingDir: "/data",
-			Tty:        true,
-			OpenStdin:  true,
+			Image:       image,
+			WorkingDir:  "/data",
+			Tty:         true,
+			OpenStdin:   true,
 			AttachStdin: true,
-			StdinOnce:  false,
+			StdinOnce:   false,
 
 			Cmd: []string{
 				"sh",

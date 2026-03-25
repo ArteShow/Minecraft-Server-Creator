@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS hosts (
     id TEXT PRIMARY KEY,
     servers TEXT[] DEFAULT ARRAY[]::TEXT[],
-    ram TEXT NOT NULL,
+    ram INT NOT NULL,
     cores INT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
