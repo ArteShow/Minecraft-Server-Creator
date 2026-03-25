@@ -49,10 +49,46 @@ message RemoveServerFromHostRequest {
 message RemoveServerFromHostResponse {
 }
 
+message GetRAMRequest {
+  string host_server_id = 1;
+}
+
+message GetRAMResponse {
+  string ram = 1;
+}
+
+message GetCoresRequest {
+  string host_server_id = 1;
+}
+
+message GetCoresResponse {
+  string cores = 1;
+}
+
+message SubtractRAMRequest {
+  string host_server_id = 1;
+  string ram = 2;
+}
+
+message SubtractRAMResponse {
+}
+
+message SubtractCoresRequest {
+  string host_server_id = 1;
+  string cores = 2;
+}
+
+message SubtractCoresResponse {
+}
+
 service HostMetadataService {
   rpc CreateHostServer (CreateHostServerRequest) returns (CreateHostServerResponse);
   rpc DeleteHostServer (DeleteHostServerRequest) returns (DeleteHostServerResponse);
   rpc GetAllHostServers (GetAllHostServersRequest) returns (GetAllHostServersResponse);
   rpc AddServerToHost (AddServerToHostRequest) returns (AddServerToHostResponse);
   rpc RemoveServerFromHost (RemoveServerFromHostRequest) returns (RemoveServerFromHostResponse);
+  rpc GetRAM (GetRAMRequest) returns (GetRAMResponse);
+  rpc GetCores (GetCoresRequest) returns (GetCoresResponse);
+  rpc SubtractRAM (SubtractRAMRequest) returns (SubtractRAMResponse);
+  rpc SubtractCores (SubtractCoresRequest) returns (SubtractCoresResponse);
 }

@@ -173,3 +173,33 @@ func SubtractCores(hostID string, coresToSubtract string) error {
 	)
 	return err
 }
+
+func GetRAM(hostID string) (string, error) {
+	db, err := database.Connect()
+	if err != nil {
+		return "", err
+	}
+
+	var ram string
+	err = db.QueryRow(`SELECT ram FROM hosts WHERE id = $1`, hostID).Scan(&ram)
+	if err != nil {
+		return "", err
+	}
+
+	return ram, nil
+}
+
+func GetCores(hostID string) (string, error) {
+	db, err := database.Connect()
+	if err != nil {
+		return "", err
+	}
+
+	var cores string
+	err = db.QueryRow(`SELECT cores FROM hosts WHERE id = $1`, hostID).Scan(&cores)
+	if err != nil {
+		return "", err
+	}
+
+	return cores, nil
+}

@@ -42,7 +42,7 @@ func main() {
 	stopServerProxy := proxy.NewProxy("http://task-service:8013", "/task-service/stop")
 	deleteServerProxy := proxy.NewProxy("http://task-service:8013", "/task-service/delete")
 	getServerStatsProxy := proxy.NewProxy("http://task-service:8013", "/task-service/getStats")
-	
+
 	registerUserProxy := proxy.NewProxy("http://auth-service:8014", "/auth-service/user/register")
 	loginUserProxy := proxy.NewProxy("http://auth-service:8014", "/auth-service/user/login")
 
