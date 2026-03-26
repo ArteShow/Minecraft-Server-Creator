@@ -80,3 +80,39 @@ func (u *HostClient) RemoveServerFromHost(req *pb.RemoveServerFromHostRequest) (
 
 	return res, nil
 }
+
+func (u *HostClient) GetRAM(req *pb.GetRAMRequest) (*pb.GetRAMResponse, error) {
+	res, err := u.Client.GetRAM(context.Background(), req)
+	if err != nil {
+		return &pb.GetRAMResponse{}, err
+	}
+
+	return res, nil
+}
+
+func (u *HostClient) GetCores(req *pb.GetCoresRequest) (*pb.GetCoresResponse, error) {
+	res, err := u.Client.GetCores(context.Background(), req)
+	if err != nil {
+		return &pb.GetCoresResponse{}, err
+	}
+
+	return res, nil
+}
+
+func (u *HostClient) SubtractRAM(req *pb.SubtractRAMRequest) (*pb.SubtractRAMResponse, error) {
+	res, err := u.Client.SubtractRAM(context.Background(), req)
+	if err != nil {
+		return &pb.SubtractRAMResponse{}, err
+	}
+
+	return res, nil
+}
+
+func (u *HostClient) SubtractCores(req *pb.SubtractCoresRequest) (*pb.SubtractCoresResponse, error) {
+	res, err := u.Client.SubtractCores(context.Background(), req)
+	if err != nil {
+		return &pb.SubtractCoresResponse{}, err
+	}
+
+	return res, nil
+}
