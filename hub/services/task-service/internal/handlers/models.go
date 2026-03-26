@@ -2,6 +2,7 @@ package handlers
 
 type CreateServerRequest struct {
 	Version string `json:"version"`
+	Bundle  string `json:"bundle"`
 }
 
 type CreateServerResponse struct {

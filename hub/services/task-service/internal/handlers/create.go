@@ -37,7 +37,7 @@ func CreateServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	serverID, port, err := core.CreateServer(req.Version, token)
+	serverID, port, err := core.CreateServer(req.Version, token, req.Bundle)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
