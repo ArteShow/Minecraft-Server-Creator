@@ -42,7 +42,7 @@ func main() {
 	stopServerProxy := proxy.NewProxy("http://task-service:8013", "/task-service/stop")
 	deleteServerProxy := proxy.NewProxy("http://task-service:8013", "/task-service/delete")
 	getServerStatsProxy := proxy.NewProxy("http://task-service:8013", "/task-service/getStats")
-	
+
 	registerUserProxy := proxy.NewProxy("http://auth-service:8014", "/auth-service/user/register")
 	loginUserProxy := proxy.NewProxy("http://auth-service:8014", "/auth-service/user/login")
 
@@ -65,11 +65,11 @@ func main() {
 	handler.Handle("/api/"+cfg.APIVersion+"/host-metadata/get", middleware.LoggingMiddleware(getHostServerMetadataProxy))
 	handler.Handle("/api/"+cfg.APIVersion+"/host-metadata/add", middleware.LoggingMiddleware(addServerToHostProxy))
 
-	handler.Handle("/api/"+cfg.APIVersion+"/server/create", middleware.LoggingMiddleware(createServerProxy))
-	handler.Handle("/api/"+cfg.APIVersion+"/server/start", middleware.LoggingMiddleware(startServerProxy))
-	handler.Handle("/api/"+cfg.APIVersion+"/server/stop", middleware.LoggingMiddleware(stopServerProxy))
-	handler.Handle("/api/"+cfg.APIVersion+"/server/delete", middleware.LoggingMiddleware(deleteServerProxy))
-	handler.Handle("/api/"+cfg.APIVersion+"/server/getStats", middleware.LoggingMiddleware(getServerStatsProxy))
+	handler.Handle("/api/"+cfg.APIVersion+"/server/create", middleware.LoggingMiddleware(middleware.AuthMiddleware(createServerProxy)))
+	handler.Handle("/api/"+cfg.APIVersion+"/server/start", middleware.LoggingMiddleware(middleware.AuthMiddleware(startServerProxy)))
+	handler.Handle("/api/"+cfg.APIVersion+"/server/stop", middleware.LoggingMiddleware(middleware.AuthMiddleware(stopServerProxy)))
+	handler.Handle("/api/"+cfg.APIVersion+"/server/delete", middleware.LoggingMiddleware(middleware.AuthMiddleware(deleteServerProxy)))
+	handler.Handle("/api/"+cfg.APIVersion+"/server/getStats", middleware.LoggingMiddleware(middleware.AuthMiddleware(getServerStatsProxy)))
 
 	handler.Handle("/api/"+cfg.APIVersion+"/auth/user/register", middleware.LoggingMiddleware(registerUserProxy))
 	handler.Handle("/api/"+cfg.APIVersion+"/auth/user/login", middleware.LoggingMiddleware(loginUserProxy))

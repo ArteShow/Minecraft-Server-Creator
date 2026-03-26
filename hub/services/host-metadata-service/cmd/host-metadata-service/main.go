@@ -26,7 +26,6 @@ func main() {
 	grpcServer := grpc.NewServer()
 	proto.RegisterHostMetadataServiceServer(grpcServer, server.NewServer())
 
-	// Signal handling for graceful shutdown
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt)
 
@@ -37,7 +36,6 @@ func main() {
 		}
 	}()
 
-	// Wait for interrupt signal
 	<-sigChan
 	log.Println("Shutting down gRPC server...")
 	grpcServer.GracefulStop()

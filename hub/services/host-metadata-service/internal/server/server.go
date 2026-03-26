@@ -15,8 +15,8 @@ func NewServer() *Server {
 	return &Server{}
 }
 
-func (s *Server) CreateHostServer(_ context.Context, _ *proto_pb.CreateHostServerRequest) (*proto_pb.CreateHostServerResponse, error) {
-	id, err := repository.Create([]string{})
+func (s *Server) CreateHostServer(_ context.Context, req *proto_pb.CreateHostServerRequest) (*proto_pb.CreateHostServerResponse, error) {
+	id, err := repository.Create([]string{}, req.GetRam(), req.GetCores())
 	if err != nil {
 		return &proto_pb.CreateHostServerResponse{}, err
 	}
@@ -67,4 +67,40 @@ func (s *Server) RemoveServerFromHost(_ context.Context, req *proto_pb.RemoveSer
 	}
 
 	return &proto_pb.RemoveServerFromHostResponse{}, nil
+}
+
+func (s *Server) GetRAM(_ context.Context, req *proto_pb.GetRAMRequest) (*proto_pb.GetRAMResponse, error) {
+	ram, err := repository.GetRAM(req.GetHostServerId())
+	if err != nil {
+		return &proto_pb.GetRAMResponse{}, err
+	}
+
+	return &proto_pb.GetRAMResponse{Ram: ram}, nil
+}
+
+func (s *Server) GetCores(_ context.Context, req *proto_pb.GetCoresRequest) (*proto_pb.GetCoresResponse, error) {
+	cores, err := repository.GetCores(req.GetHostServerId())
+	if err != nil {
+		return &proto_pb.GetCoresResponse{}, err
+	}
+
+	return &proto_pb.GetCoresResponse{Cores: cores}, nil
+}
+
+func (s *Server) SubtractRAM(_ context.Context, req *proto_pb.SubtractRAMRequest) (*proto_pb.SubtractRAMResponse, error) {
+	err := repository.SubtractRAM(req.GetHostServerId(), req.GetRam())
+	if err != nil {
+		return &proto_pb.SubtractRAMResponse{}, err
+	}
+
+	return &proto_pb.SubtractRAMResponse{}, nil
+}
+
+func (s *Server) SubtractCores(_ context.Context, req *proto_pb.SubtractCoresRequest) (*proto_pb.SubtractCoresResponse, error) {
+	err := repository.SubtractCores(req.GetHostServerId(), req.GetCores())
+	if err != nil {
+		return &proto_pb.SubtractCoresResponse{}, err
+	}
+
+	return &proto_pb.SubtractCoresResponse{}, nil
 }

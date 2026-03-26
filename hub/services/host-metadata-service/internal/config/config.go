@@ -1,6 +1,8 @@
 package config
 
-import "github.com/ilyakaznacheev/cleanenv"
+import (
+	"github.com/ilyakaznacheev/cleanenv"
+)
 
 type Config struct {
 	GRPCPort   string `env:"HOST_METADATA_SERVICE_GRPC_PORT" env-default:"50052"`

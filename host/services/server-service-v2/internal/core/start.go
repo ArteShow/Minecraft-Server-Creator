@@ -7,7 +7,7 @@ import (
 	"github.com/ArteShow/Minecraft-Server-Creator/host/services/server-service-v2/internal/stats"
 )
 
-func (s *Server) StartServer(serverID, ownerID string) error {
+func (s *Server) StartServer(serverID, ownerID, RAM string, cores int) error {
 	ok, err := repository.IsServerOwnedByUser(serverID, ownerID)
 	if err != nil {
 		return errors.New("failed to verify server ownership: " + err.Error())
@@ -21,7 +21,7 @@ func (s *Server) StartServer(serverID, ownerID string) error {
 		return err
 	}
 
-	conID, err := s.DockerService.StartServerContainer(serverID, "eclipse-temurin:21-jre-jammy", port, 25565)
+	conID, err := s.DockerService.StartServerContainer(serverID, "eclipse-temurin:21-jre-jammy", RAM, cores, port, 25565)
 	if err != nil {
 		return err
 	}

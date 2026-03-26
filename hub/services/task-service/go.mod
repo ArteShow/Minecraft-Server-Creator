@@ -1,6 +1,6 @@
 module github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service
 
-go 1.24.4
+go 1.25
 
 require (
 	github.com/ilyakaznacheev/cleanenv v1.5.0

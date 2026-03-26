@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.1
 // - protoc             v3.21.12
-// source: host-metadata-service.proto
+// source: internal/proto/host-metadata-service.proto
 
 package proto
 
@@ -24,6 +24,10 @@ const (
 	HostMetadataService_GetAllHostServers_FullMethodName    = "/host_metadata_service.HostMetadataService/GetAllHostServers"
 	HostMetadataService_AddServerToHost_FullMethodName      = "/host_metadata_service.HostMetadataService/AddServerToHost"
 	HostMetadataService_RemoveServerFromHost_FullMethodName = "/host_metadata_service.HostMetadataService/RemoveServerFromHost"
+	HostMetadataService_GetRAM_FullMethodName               = "/host_metadata_service.HostMetadataService/GetRAM"
+	HostMetadataService_GetCores_FullMethodName             = "/host_metadata_service.HostMetadataService/GetCores"
+	HostMetadataService_SubtractRAM_FullMethodName          = "/host_metadata_service.HostMetadataService/SubtractRAM"
+	HostMetadataService_SubtractCores_FullMethodName        = "/host_metadata_service.HostMetadataService/SubtractCores"
 )
 
 // HostMetadataServiceClient is the client API for HostMetadataService service.
@@ -35,6 +39,10 @@ type HostMetadataServiceClient interface {
 	GetAllHostServers(ctx context.Context, in *GetAllHostServersRequest, opts ...grpc.CallOption) (*GetAllHostServersResponse, error)
 	AddServerToHost(ctx context.Context, in *AddServerToHostRequest, opts ...grpc.CallOption) (*AddServerToHostResponse, error)
 	RemoveServerFromHost(ctx context.Context, in *RemoveServerFromHostRequest, opts ...grpc.CallOption) (*RemoveServerFromHostResponse, error)
+	GetRAM(ctx context.Context, in *GetRAMRequest, opts ...grpc.CallOption) (*GetRAMResponse, error)
+	GetCores(ctx context.Context, in *GetCoresRequest, opts ...grpc.CallOption) (*GetCoresResponse, error)
+	SubtractRAM(ctx context.Context, in *SubtractRAMRequest, opts ...grpc.CallOption) (*SubtractRAMResponse, error)
+	SubtractCores(ctx context.Context, in *SubtractCoresRequest, opts ...grpc.CallOption) (*SubtractCoresResponse, error)
 }
 
 type hostMetadataServiceClient struct {
@@ -95,6 +103,46 @@ func (c *hostMetadataServiceClient) RemoveServerFromHost(ctx context.Context, in
 	return out, nil
 }
 
+func (c *hostMetadataServiceClient) GetRAM(ctx context.Context, in *GetRAMRequest, opts ...grpc.CallOption) (*GetRAMResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetRAMResponse)
+	err := c.cc.Invoke(ctx, HostMetadataService_GetRAM_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *hostMetadataServiceClient) GetCores(ctx context.Context, in *GetCoresRequest, opts ...grpc.CallOption) (*GetCoresResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetCoresResponse)
+	err := c.cc.Invoke(ctx, HostMetadataService_GetCores_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *hostMetadataServiceClient) SubtractRAM(ctx context.Context, in *SubtractRAMRequest, opts ...grpc.CallOption) (*SubtractRAMResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SubtractRAMResponse)
+	err := c.cc.Invoke(ctx, HostMetadataService_SubtractRAM_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *hostMetadataServiceClient) SubtractCores(ctx context.Context, in *SubtractCoresRequest, opts ...grpc.CallOption) (*SubtractCoresResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SubtractCoresResponse)
+	err := c.cc.Invoke(ctx, HostMetadataService_SubtractCores_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // HostMetadataServiceServer is the server API for HostMetadataService service.
 // All implementations must embed UnimplementedHostMetadataServiceServer
 // for forward compatibility.
@@ -104,6 +152,10 @@ type HostMetadataServiceServer interface {
 	GetAllHostServers(context.Context, *GetAllHostServersRequest) (*GetAllHostServersResponse, error)
 	AddServerToHost(context.Context, *AddServerToHostRequest) (*AddServerToHostResponse, error)
 	RemoveServerFromHost(context.Context, *RemoveServerFromHostRequest) (*RemoveServerFromHostResponse, error)
+	GetRAM(context.Context, *GetRAMRequest) (*GetRAMResponse, error)
+	GetCores(context.Context, *GetCoresRequest) (*GetCoresResponse, error)
+	SubtractRAM(context.Context, *SubtractRAMRequest) (*SubtractRAMResponse, error)
+	SubtractCores(context.Context, *SubtractCoresRequest) (*SubtractCoresResponse, error)
 	mustEmbedUnimplementedHostMetadataServiceServer()
 }
 
@@ -128,6 +180,18 @@ func (UnimplementedHostMetadataServiceServer) AddServerToHost(context.Context, *
 }
 func (UnimplementedHostMetadataServiceServer) RemoveServerFromHost(context.Context, *RemoveServerFromHostRequest) (*RemoveServerFromHostResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RemoveServerFromHost not implemented")
+}
+func (UnimplementedHostMetadataServiceServer) GetRAM(context.Context, *GetRAMRequest) (*GetRAMResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetRAM not implemented")
+}
+func (UnimplementedHostMetadataServiceServer) GetCores(context.Context, *GetCoresRequest) (*GetCoresResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetCores not implemented")
+}
+func (UnimplementedHostMetadataServiceServer) SubtractRAM(context.Context, *SubtractRAMRequest) (*SubtractRAMResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SubtractRAM not implemented")
+}
+func (UnimplementedHostMetadataServiceServer) SubtractCores(context.Context, *SubtractCoresRequest) (*SubtractCoresResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SubtractCores not implemented")
 }
 func (UnimplementedHostMetadataServiceServer) mustEmbedUnimplementedHostMetadataServiceServer() {}
 func (UnimplementedHostMetadataServiceServer) testEmbeddedByValue()                             {}
@@ -240,6 +304,78 @@ func _HostMetadataService_RemoveServerFromHost_Handler(srv interface{}, ctx cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _HostMetadataService_GetRAM_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRAMRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HostMetadataServiceServer).GetRAM(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: HostMetadataService_GetRAM_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HostMetadataServiceServer).GetRAM(ctx, req.(*GetRAMRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _HostMetadataService_GetCores_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCoresRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HostMetadataServiceServer).GetCores(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: HostMetadataService_GetCores_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HostMetadataServiceServer).GetCores(ctx, req.(*GetCoresRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _HostMetadataService_SubtractRAM_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubtractRAMRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HostMetadataServiceServer).SubtractRAM(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: HostMetadataService_SubtractRAM_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HostMetadataServiceServer).SubtractRAM(ctx, req.(*SubtractRAMRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _HostMetadataService_SubtractCores_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubtractCoresRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HostMetadataServiceServer).SubtractCores(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: HostMetadataService_SubtractCores_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HostMetadataServiceServer).SubtractCores(ctx, req.(*SubtractCoresRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // HostMetadataService_ServiceDesc is the grpc.ServiceDesc for HostMetadataService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -267,7 +403,23 @@ var HostMetadataService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "RemoveServerFromHost",
 			Handler:    _HostMetadataService_RemoveServerFromHost_Handler,
 		},
+		{
+			MethodName: "GetRAM",
+			Handler:    _HostMetadataService_GetRAM_Handler,
+		},
+		{
+			MethodName: "GetCores",
+			Handler:    _HostMetadataService_GetCores_Handler,
+		},
+		{
+			MethodName: "SubtractRAM",
+			Handler:    _HostMetadataService_SubtractRAM_Handler,
+		},
+		{
+			MethodName: "SubtractCores",
+			Handler:    _HostMetadataService_SubtractCores_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "host-metadata-service.proto",
+	Metadata: "internal/proto/host-metadata-service.proto",
 }
