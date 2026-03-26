@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/auth-service/internal/database"
@@ -53,4 +54,44 @@ func CheckUserLogin(username, password string) (string, bool) {
 
 	err = bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return id, err == nil
+}
+
+func AddBundle(userID string, bundleName string, value int64) error {
+	db, err := database.Connect()
+	if err != nil {
+		return err
+	}
+
+	query := `
+		UPDATE users
+		SET bundles = jsonb_set(
+			COALESCE(bundles, '{}'::jsonb),
+			ARRAY[$1],
+			to_jsonb($2::bigint),
+			true
+		)
+		WHERE id = $3
+	`
+	_, err = db.Exec(query, bundleName, value, userID)
+	return err
+}
+
+func GetBundles(userID string) (map[string]int64, error) {
+	db, err := database.Connect()
+	if err != nil {
+		return map[string]int64{}, err
+	}
+
+	var bundlesJSON []byte
+	if err = db.QueryRow(`SELECT bundles FROM users WHERE id = $1`, userID).Scan(&bundlesJSON); err != nil {
+		return nil, err
+	}
+
+	bundles := make(map[string]int64)
+	if len(bundlesJSON) == 0 {
+		return bundles, nil
+	}
+
+	err = json.Unmarshal(bundlesJSON, &bundles)
+	return bundles, err
 }
