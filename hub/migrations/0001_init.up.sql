@@ -19,3 +19,11 @@ CREATE TABLE IF NOT EXISTS users (
     email TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE TABLE bundle_keys (
+    key TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    bundle TEXT NOT NULL,
+    used BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
