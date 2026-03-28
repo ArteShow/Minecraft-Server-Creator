@@ -3,20 +3,23 @@ package main
 import (
 	"context"
 	"log"
+	"net"
 	"net/http"
-	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/bundle-service/internal/config"
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/bundle-service/internal/handlers"
+	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/bundle-service/internal/proto"
+	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/bundle-service/internal/server"
+	"google.golang.org/grpc"
 )
 
 const (
 	readTimeout  = 10 * time.Second
 	writeTimeout = 10 * time.Second
-	idleTimeou   = 60 * time.Second
+	idleTimeout  = 60 * time.Second
 )
 
 func main() {
@@ -25,53 +28,67 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if cfg.Port != "" && cfg.Port[0] != ':' {
-		cfg.Port = ":" + cfg.Port
+	httpPort := cfg.Port
+	if httpPort != "" && httpPort[0] != ':' {
+		httpPort = ":" + httpPort
 	}
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/bundle-service/health", func(w http.ResponseWriter, _ *http.Request) {
-		_, err = w.Write([]byte("ok"))
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	})
-	mux.HandleFunc("/bundle-service/get", handlers.CreateBundle)
+	grpcPort := cfg.GRPCPort
+	if grpcPort != "" && grpcPort[0] != ':' {
+		grpcPort = ":" + grpcPort
+	}
 
-	srv := &http.Server{
-		Addr:         cfg.Port,
+	grpcLis, err := net.Listen("tcp", grpcPort)
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+
+	grpcServer := grpc.NewServer()
+	proto.RegisterBundleServiceServer(grpcServer, server.NewServer())
+
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/bundle-service/health", func(w http.ResponseWriter, _ *http.Request) {
+		w.Write([]byte("ok"))
+	})
+
+	mux.HandleFunc("/bundle-service/create", handlers.CreateBundle)
+
+	httpServer := &http.Server{
+		Addr:         httpPort,
 		Handler:      mux,
 		ReadTimeout:  readTimeout,
 		WriteTimeout: writeTimeout,
-		IdleTimeout:  idleTimeou,
+		IdleTimeout:  idleTimeout,
 	}
 
-	ctx, stop := signal.NotifyContext(
-		context.Background(),
-		os.Interrupt,
-		syscall.SIGTERM,
-	)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	go func() {
-		log.Println("server running on :8013")
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("server error: %v", err)
+		log.Println("HTTP server running on", httpPort)
+		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("http server error: %v", err)
+		}
+	}()
+
+	go func() {
+		log.Println("gRPC server running on", grpcPort)
+		if err := grpcServer.Serve(grpcLis); err != nil {
+			log.Fatalf("grpc server error: %v", err)
 		}
 	}()
 
 	<-ctx.Done()
 
-	log.Println("graceful shutdown started")
+	log.Println("shutting down...")
 
-	shutdownCtx, cancel := context.WithTimeout(
-		context.Background(),
-		10*time.Second,
-	)
+	grpcServer.GracefulStop()
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	if err := srv.Shutdown(shutdownCtx); err != nil {
+	if err := httpServer.Shutdown(shutdownCtx); err != nil {
 		log.Printf("shutdown failed: %v", err)
 	}
 
