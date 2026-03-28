@@ -39,9 +39,6 @@ func main() {
 	})
 	mux.HandleFunc("/auth-service/user/register", handlers.RegisterUser)
 	mux.HandleFunc("/auth-service/user/login", handlers.LoginUser)
-	mux.HandleFunc("/auth-service/bundle/add", handlers.CreateBundle)
-	mux.HandleFunc("/auth-service/bundle/get", handlers.GetusersBundles)
-	mux.HandleFunc("/auth-service/bundle/delete", handlers.DeleteUsersBundle)
 
 	srv := &http.Server{
 		Addr:         cfg.Port,

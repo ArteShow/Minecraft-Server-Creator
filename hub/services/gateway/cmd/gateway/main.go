@@ -46,10 +46,6 @@ func main() {
 	registerUserProxy := proxy.NewProxy("http://auth-service:8014", "/auth-service/user/register")
 	loginUserProxy := proxy.NewProxy("http://auth-service:8014", "/auth-service/user/login")
 
-	createBundleProxy := proxy.NewProxy("http://auth-service:8014", "/auth-service/bundle/add")
-	deleteBundleProxy := proxy.NewProxy("http://auth-service:8014", "/auth-service/bundle/delete")
-	getBundlesProxy := proxy.NewProxy("http://auth-service:8014", "/auth-service/bundle/get")
-
 	handler := http.NewServeMux()
 	handler.Handle(
 		"/api/"+cfg.APIVersion+"/gateway/health",
@@ -77,10 +73,6 @@ func main() {
 
 	handler.Handle("/api/"+cfg.APIVersion+"/auth/user/register", middleware.LoggingMiddleware(registerUserProxy))
 	handler.Handle("/api/"+cfg.APIVersion+"/auth/user/login", middleware.LoggingMiddleware(loginUserProxy))
-
-	handler.Handle("/api/"+cfg.APIVersion+"/bundle/add", middleware.LoggingMiddleware(createBundleProxy))
-	handler.Handle("/api/"+cfg.APIVersion+"/bundle/delete", middleware.LoggingMiddleware(deleteBundleProxy))
-	handler.Handle("/api/"+cfg.APIVersion+"/bundle/get", middleware.LoggingMiddleware(getBundlesProxy))
 
 	srv := &http.Server{
 		Addr:         cfg.Port,

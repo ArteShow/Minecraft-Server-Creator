@@ -18,21 +18,3 @@ type LoginUserRequest struct {
 type LoginUserResponse struct {
 	Token string `json:"token"`
 }
-
-type CreateBundleRequest struct {
-	UserID string `json:"user_id"`
-	Bundle string `json:"bundle"`
-}
-
-type GetUsersBundlesRequest struct {
-	UserID string `json:"user_id"`
-}
-
-type GetUsersBundlesResponse struct {
-	Bundles map[string]int64 `json:"bundles"`
-}
-
-type DeleteUsersBundleRequest struct {
-	UserID string `json:"user_id"`
-	Bundle string `json:"bundle"`
-}
