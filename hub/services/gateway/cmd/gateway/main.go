@@ -76,7 +76,7 @@ func main() {
 	handler.Handle("/api/"+cfg.APIVersion+"/auth/user/register", middleware.LoggingMiddleware(registerUserProxy))
 	handler.Handle("/api/"+cfg.APIVersion+"/auth/user/login", middleware.LoggingMiddleware(loginUserProxy))
 	
-	handler.Handle("/api/"+cfg.APIVersion+"/bundle/get", middleware.LoggingMiddleware(getBundlekeyProxy))
+	handler.Handle("/api/"+cfg.APIVersion+"/bundle/get", middleware.LoggingMiddleware(middleware.AuthMiddleware(getBundlekeyProxy)))
 
 	srv := &http.Server{
 		Addr:         cfg.Port,

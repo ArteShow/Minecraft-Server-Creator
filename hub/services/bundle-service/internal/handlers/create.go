@@ -9,6 +9,12 @@ import (
 )
 
 func CreateBundle(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("X-User-ID")
+    if userID == "" {
+        http.Error(w, "userID header missing", http.StatusBadRequest)
+        return
+    }
+
 	var req CreateBundleRequest
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -22,7 +28,7 @@ func CreateBundle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	key, err := repository.CreateBundleKey(req.UserID, req.Bundle)
+	key, err := repository.CreateBundleKey(userID, req.Bundle)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
