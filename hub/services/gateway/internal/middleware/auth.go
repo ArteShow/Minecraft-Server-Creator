@@ -48,6 +48,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		}
 
 		r.Header.Set("X-User-ID", userID)
+		r.Header.Set("Authorization", "Bearer "+parts[1])
 		next.ServeHTTP(w, r)
 	})
 }
