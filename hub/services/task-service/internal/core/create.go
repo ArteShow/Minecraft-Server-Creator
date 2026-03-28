@@ -10,6 +10,7 @@ import (
 
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/client"
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/config"
+	clientBundle "github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/proto/bundle-service"
 	host "github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/proto/host-metadata-service"
 	network "github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/proto/network-service"
 )
@@ -27,7 +28,7 @@ func SelectHostWithFewestServers(servers host.GetAllHostServersResponse) string 
 	return selectedHostId
 }
 
-func CreateServer(version, token, bundle string) (string, int, error) {
+func CreateServer(version, token, bundle_key, userID string) (string, int, error) {
 	cfg, err := config.Read()
 	if err != nil {
 		return "", 0, err
@@ -44,6 +45,11 @@ func CreateServer(version, token, bundle string) (string, int, error) {
 	}
 
 	networkClient, err := client.NewNetworkClient()
+	if err != nil {
+		return "", 0, err
+	}
+
+	bundleClient, err := client.NewBundleClient()
 	if err != nil {
 		return "", 0, err
 	}
@@ -76,7 +82,14 @@ func CreateServer(version, token, bundle string) (string, int, error) {
 		return "", 0, err
 	}
 
-	bundleData, ok := bundles.Bundles[bundle]
+	bundle, err := bundleClient.DisableBundleKey(&clientBundle.DisableBundleKeyRequest{Key: bundle_key})
+	if err != nil {
+		return "", 0, err
+	}
+
+	_, err = bundleClient.RemoveBundle(&clientBundle.RemoveBundleRequest{UserID: userID, Bundle: bundle.GetBundle()})
+
+	bundleData, ok := bundles.Bundles[bundle.GetBundle()]
 	if !ok {
 		return "", 0, fmt.Errorf("unknown bundle: %s", bundle)
 	}

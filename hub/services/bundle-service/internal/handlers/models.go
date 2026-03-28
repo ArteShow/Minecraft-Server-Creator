@@ -7,3 +7,7 @@ type CreateBundleRequest struct {
 type CreateBundleResponse struct {
 	Key string `json:"key"`
 }
+
+type AddBundleRequest struct {
+	Bundle string `json:"bundle"`
+}

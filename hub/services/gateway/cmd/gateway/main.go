@@ -47,6 +47,7 @@ func main() {
 	loginUserProxy := proxy.NewProxy("http://auth-service:8014", "/auth-service/user/login")
 
 	getBundlekeyProxy := proxy.NewProxy("http://bundle-service:8015", "/bundle-service/create")
+	addBundleProxy := proxy.NewProxy("http://bundle-service:8015", "/bundle-service/add")
 
 	handler := http.NewServeMux()
 	handler.Handle(
@@ -77,6 +78,7 @@ func main() {
 	handler.Handle("/api/"+cfg.APIVersion+"/auth/user/login", middleware.LoggingMiddleware(loginUserProxy))
 	
 	handler.Handle("/api/"+cfg.APIVersion+"/bundle/create", middleware.LoggingMiddleware(middleware.AuthMiddleware(getBundlekeyProxy)))
+	handler.Handle("/api/"+cfg.APIVersion+"/bundle/add", middleware.LoggingMiddleware(middleware.AuthMiddleware(addBundleProxy)))
 
 	srv := &http.Server{
 		Addr:         cfg.Port,

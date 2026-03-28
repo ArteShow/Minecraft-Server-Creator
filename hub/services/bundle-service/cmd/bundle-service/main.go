@@ -53,6 +53,7 @@ func main() {
 	})
 
 	mux.HandleFunc("/bundle-service/create", handlers.CreateBundle)
+	mux.HandleFunc("/bundle-service/add", handlers.AddBundle)
 
 	httpServer := &http.Server{
 		Addr:         httpPort,

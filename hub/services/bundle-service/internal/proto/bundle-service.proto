@@ -9,14 +9,7 @@ message DisableBundleKeyRequest {
 }
 
 message DisableBundleKeyResponse {
-}
-
-message AddBundleRequest {
-  string UserID = 1;
-  string Bundle = 2;
-}
-
-message AddBundleResponse {
+  string Bundle = 1;
 }
 
 message RemoveBundleRequest {
@@ -25,10 +18,9 @@ message RemoveBundleRequest {
 }
 
 message RemoveBundleResponse {
-  
+
 }
 service BundleService {
   rpc DisableBundleKey (DisableBundleKeyRequest) returns (DisableBundleKeyResponse);
-  rpc AddBundle (AddBundleRequest) returns (AddBundleResponse);
   rpc RemoveBundle (RemoveBundleRequest) returns (RemoveBundleResponse);
 }

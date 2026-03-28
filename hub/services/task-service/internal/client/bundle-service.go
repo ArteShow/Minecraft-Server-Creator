@@ -45,15 +45,6 @@ func (u *BundleClient) DisableBundleKey(req *pb.DisableBundleKeyRequest) (*pb.Di
 	return res, nil
 }
 
-func (u *BundleClient) AddBundle(req *pb.AddBundleRequest) (*pb.AddBundleResponse, error) {
-	res, err := u.Client.AddBundle(context.Background(), req)
-	if err != nil {
-		return &pb.AddBundleResponse{}, err
-	}
-
-	return res, nil
-}
-
 func (u *BundleClient) RemoveBundle(req *pb.RemoveBundleRequest) (*pb.RemoveBundleResponse, error) {
 	res, err := u.Client.RemoveBundle(context.Background(), req)
 	if err != nil {

@@ -10,6 +10,12 @@ import (
 )
 
 func CreateServer(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("X-User-ID")
+    if userID == "" {
+        http.Error(w, "userID header missing", http.StatusBadRequest)
+        return
+    }
+
 	auth := r.Header.Get("Authorization")
 	if auth == "" {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
@@ -37,7 +43,7 @@ func CreateServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	serverID, port, err := core.CreateServer(req.Version, token, req.Bundle)
+	serverID, port, err := core.CreateServer(req.Version, token, req.Bundle, userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -16,20 +16,12 @@ func NewServer() *Server {
 }
 
 func (s *Server) DisableBundleKey(_ context.Context, req *proto_pb.DisableBundleKeyRequest) (*proto_pb.DisableBundleKeyResponse, error) {
-	ok, _, _, err := repository.UseBundleKey(req.GetKey())
+	ok, _, bundle, err := repository.UseBundleKey(req.GetKey())
 	if err != nil || !ok{
 		return &proto_pb.DisableBundleKeyResponse{}, err
 	}
 
-	return &proto_pb.DisableBundleKeyResponse{}, nil
-}
-
-func (s *Server) AddBundle(_ context.Context, req *proto_pb.AddBundleRequest) (*proto_pb.AddBundleResponse, error) {
-	if err := repository.AddBundle(req.GetUserID(), req.GetBundle()); err != nil{
-		return &proto_pb.AddBundleResponse{}, err
-	}
-
-	return &proto_pb.AddBundleResponse{}, nil
+	return &proto_pb.DisableBundleKeyResponse{Bundle: bundle}, nil
 }
 
 func (s *Server) RemoveBundle(_ context.Context, req *proto_pb.RemoveBundleRequest) (*proto_pb.RemoveBundleResponse, error) {
