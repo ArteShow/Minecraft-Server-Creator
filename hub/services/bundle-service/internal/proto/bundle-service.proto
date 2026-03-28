@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package host_metadata_service;
+
+option go_package = "/internal/proto;proto";
+
+message DisableBundleKeyRequest {
+  string key = 1;
+}
+
+message DisableBundleKeyResponse {
+}
+
+service BundleService {
+  rpc DisableBundleKey (DisableBundleKeyRequest) returns (DisableBundleKeyResponse);
+}
