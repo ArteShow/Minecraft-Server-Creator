@@ -3,6 +3,8 @@ package repository
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
+	"fmt"
 
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/bundle-service/internal/database"
 )
@@ -61,4 +63,60 @@ func UseBundleKey(key string) (bool, string, string, error) {
 	}
 
 	return true, userID, bundle, nil
+}
+
+func AddBundle(userID, bundleName string) error {
+	db, err := database.Connect()
+	if err != nil {
+		return err
+	}
+
+	var bundlesJSON []byte
+	err = db.QueryRow(`SELECT bundles FROM users WHERE id = $1`, userID).Scan(&bundlesJSON)
+	if err != nil {
+		return err
+	}
+
+	bundles := make(map[string]int64)
+	if len(bundlesJSON) > 0 {
+		_ = json.Unmarshal(bundlesJSON, &bundles)
+	}
+
+	bundles[bundleName]++
+	updatedJSON, _ := json.Marshal(bundles)
+
+	_, err = db.Exec(`UPDATE users SET bundles = $1 WHERE id = $2`, updatedJSON, userID)
+	return err
+}
+
+func DeleteBundle(userID, bundleName string) error {
+	db, err := database.Connect()
+	if err != nil {
+		return err
+	}
+
+	var bundlesJSON []byte
+	err = db.QueryRow(`SELECT bundles FROM users WHERE id = $1`, userID).Scan(&bundlesJSON)
+	if err != nil {
+		return err
+	}
+
+	bundles := make(map[string]int64)
+	if len(bundlesJSON) > 0 {
+		_ = json.Unmarshal(bundlesJSON, &bundles)
+	}
+
+	if count, ok := bundles[bundleName]; ok {
+		if count <= 1 {
+			delete(bundles, bundleName)
+		} else {
+			bundles[bundleName]--
+		}
+	} else {
+		return fmt.Errorf("bundle %s not found", bundleName)
+	}
+
+	updatedJSON, _ := json.Marshal(bundles)
+	_, err = db.Exec(`UPDATE users SET bundles = $1 WHERE id = $2`, updatedJSON, userID)
+	return err
 }

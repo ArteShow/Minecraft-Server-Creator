@@ -20,6 +20,8 @@ const _ = grpc.SupportPackageIsVersion7
 
 const (
 	BundleService_DisableBundleKey_FullMethodName = "/host_metadata_service.BundleService/DisableBundleKey"
+	BundleService_AddBundle_FullMethodName        = "/host_metadata_service.BundleService/AddBundle"
+	BundleService_RemoveBundle_FullMethodName     = "/host_metadata_service.BundleService/RemoveBundle"
 )
 
 // BundleServiceClient is the client API for BundleService service.
@@ -27,6 +29,8 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BundleServiceClient interface {
 	DisableBundleKey(ctx context.Context, in *DisableBundleKeyRequest, opts ...grpc.CallOption) (*DisableBundleKeyResponse, error)
+	AddBundle(ctx context.Context, in *AddBundleRequest, opts ...grpc.CallOption) (*AddBundleResponse, error)
+	RemoveBundle(ctx context.Context, in *RemoveBundleRequest, opts ...grpc.CallOption) (*RemoveBundleResponse, error)
 }
 
 type bundleServiceClient struct {
@@ -46,11 +50,31 @@ func (c *bundleServiceClient) DisableBundleKey(ctx context.Context, in *DisableB
 	return out, nil
 }
 
+func (c *bundleServiceClient) AddBundle(ctx context.Context, in *AddBundleRequest, opts ...grpc.CallOption) (*AddBundleResponse, error) {
+	out := new(AddBundleResponse)
+	err := c.cc.Invoke(ctx, BundleService_AddBundle_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *bundleServiceClient) RemoveBundle(ctx context.Context, in *RemoveBundleRequest, opts ...grpc.CallOption) (*RemoveBundleResponse, error) {
+	out := new(RemoveBundleResponse)
+	err := c.cc.Invoke(ctx, BundleService_RemoveBundle_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BundleServiceServer is the server API for BundleService service.
 // All implementations must embed UnimplementedBundleServiceServer
 // for forward compatibility
 type BundleServiceServer interface {
 	DisableBundleKey(context.Context, *DisableBundleKeyRequest) (*DisableBundleKeyResponse, error)
+	AddBundle(context.Context, *AddBundleRequest) (*AddBundleResponse, error)
+	RemoveBundle(context.Context, *RemoveBundleRequest) (*RemoveBundleResponse, error)
 	mustEmbedUnimplementedBundleServiceServer()
 }
 
@@ -60,6 +84,12 @@ type UnimplementedBundleServiceServer struct {
 
 func (UnimplementedBundleServiceServer) DisableBundleKey(context.Context, *DisableBundleKeyRequest) (*DisableBundleKeyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DisableBundleKey not implemented")
+}
+func (UnimplementedBundleServiceServer) AddBundle(context.Context, *AddBundleRequest) (*AddBundleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddBundle not implemented")
+}
+func (UnimplementedBundleServiceServer) RemoveBundle(context.Context, *RemoveBundleRequest) (*RemoveBundleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveBundle not implemented")
 }
 func (UnimplementedBundleServiceServer) mustEmbedUnimplementedBundleServiceServer() {}
 
@@ -92,6 +122,42 @@ func _BundleService_DisableBundleKey_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BundleService_AddBundle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddBundleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BundleServiceServer).AddBundle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BundleService_AddBundle_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BundleServiceServer).AddBundle(ctx, req.(*AddBundleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _BundleService_RemoveBundle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveBundleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BundleServiceServer).RemoveBundle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BundleService_RemoveBundle_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BundleServiceServer).RemoveBundle(ctx, req.(*RemoveBundleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // BundleService_ServiceDesc is the grpc.ServiceDesc for BundleService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -102,6 +168,14 @@ var BundleService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DisableBundleKey",
 			Handler:    _BundleService_DisableBundleKey_Handler,
+		},
+		{
+			MethodName: "AddBundle",
+			Handler:    _BundleService_AddBundle_Handler,
+		},
+		{
+			MethodName: "RemoveBundle",
+			Handler:    _BundleService_RemoveBundle_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
