@@ -1,1 +1,38 @@
 package handlers
+
+import (
+	"encoding/json"
+	"io"
+	"net/http"
+
+	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/bundle-service/internal/repository"
+)
+
+func CreateBundle(w http.ResponseWriter, r *http.Request) {
+	var req CreateBundleRequest
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer r.Body.Close()
+
+	if err = json.Unmarshal(body, &req); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	key, err := repository.CreateBundleKey(req.UserID, req.Bundle)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp := CreateBundleResponse{Key: key}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	if err = json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+} 
