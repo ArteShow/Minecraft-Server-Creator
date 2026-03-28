@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package host_metadata_service;
+
+option go_package = "/internal/proto/bundle-service;proto";
+
+message DisableBundleKeyRequest {
+  string key = 1;
+}
+
+message DisableBundleKeyResponse {
+}
+
+message AddBundleRequest {
+  string UserID = 1;
+  string Bundle = 2;
+}
+
+message AddBundleResponse {
+}
+
+message RemoveBundleRequest {
+  string UserID = 1;
+  string Bundle = 2;
+}
+
+message RemoveBundleResponse {
+
+}
+service BundleService {
+  rpc DisableBundleKey (DisableBundleKeyRequest) returns (DisableBundleKeyResponse);
+  rpc AddBundle (AddBundleRequest) returns (AddBundleResponse);
+  rpc RemoveBundle (RemoveBundleRequest) returns (RemoveBundleResponse);
+}
