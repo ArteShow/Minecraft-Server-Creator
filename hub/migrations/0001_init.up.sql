@@ -17,6 +17,5 @@ CREATE TABLE IF NOT EXISTS users (
     username TEXT UNIQUE NOT NULL,
     password TEXT UNIQUE NOT NULL,
     email TEXT NOT NULL,
-    bundles JSONB DEFAULT '{}'::JSONB
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
