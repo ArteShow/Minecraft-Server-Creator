@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"strconv"
 
 	proto_pb "github.com/ArteShow/Minecraft-Server-Creator/hub/services/host-metadata-service/internal/proto"
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/host-metadata-service/internal/repository"
@@ -16,7 +17,7 @@ func NewServer() *Server {
 }
 
 func (s *Server) CreateHostServer(_ context.Context, req *proto_pb.CreateHostServerRequest) (*proto_pb.CreateHostServerResponse, error) {
-	id, err := repository.Create([]string{}, req.GetRam(), req.GetCores())
+	id, err := repository.Create(map[string][]int{}, req.GetRam(), req.GetCores())
 	if err != nil {
 		return &proto_pb.CreateHostServerResponse{}, err
 	}
@@ -40,10 +41,26 @@ func (s *Server) GetAllHostServers(_ context.Context, _ *proto_pb.GetAllHostServ
 	}
 
 	pbHosts := make([]*proto_pb.HostServer, len(hosts))
+
 	for i, host := range hosts {
+		pbServers := make(map[string]*proto_pb.ServerPorts)
+
+		for serverID, ports := range host.Servers {
+			portSlice := make([]int32, len(ports))
+			for j, p := range ports {
+				portSlice[j] = int32(p)
+			}
+
+			stringSerevrID := strconv.Itoa(serverID)
+			
+			pbServers[stringSerevrID] = &proto_pb.ServerPorts{
+				Ports: portSlice,
+			}
+		}
+
 		pbHosts[i] = &proto_pb.HostServer{
 			Id:        host.ID,
-			Servers:   host.Servers,
+			Servers:   pbServers,
 			CreatedAt: host.CreatedAt,
 		}
 	}
@@ -56,7 +73,6 @@ func (s *Server) AddServerToHost(_ context.Context, req *proto_pb.AddServerToHos
 	if err != nil {
 		return &proto_pb.AddServerToHostResponse{}, err
 	}
-
 	return &proto_pb.AddServerToHostResponse{}, nil
 }
 
@@ -65,7 +81,6 @@ func (s *Server) RemoveServerFromHost(_ context.Context, req *proto_pb.RemoveSer
 	if err != nil {
 		return &proto_pb.RemoveServerFromHostResponse{}, err
 	}
-
 	return &proto_pb.RemoveServerFromHostResponse{}, nil
 }
 
@@ -74,7 +89,6 @@ func (s *Server) GetRAM(_ context.Context, req *proto_pb.GetRAMRequest) (*proto_
 	if err != nil {
 		return &proto_pb.GetRAMResponse{}, err
 	}
-
 	return &proto_pb.GetRAMResponse{Ram: ram}, nil
 }
 
@@ -83,7 +97,6 @@ func (s *Server) GetCores(_ context.Context, req *proto_pb.GetCoresRequest) (*pr
 	if err != nil {
 		return &proto_pb.GetCoresResponse{}, err
 	}
-
 	return &proto_pb.GetCoresResponse{Cores: cores}, nil
 }
 
@@ -92,7 +105,6 @@ func (s *Server) SubtractRAM(_ context.Context, req *proto_pb.SubtractRAMRequest
 	if err != nil {
 		return &proto_pb.SubtractRAMResponse{}, err
 	}
-
 	return &proto_pb.SubtractRAMResponse{}, nil
 }
 
@@ -101,6 +113,14 @@ func (s *Server) SubtractCores(_ context.Context, req *proto_pb.SubtractCoresReq
 	if err != nil {
 		return &proto_pb.SubtractCoresResponse{}, err
 	}
-
 	return &proto_pb.SubtractCoresResponse{}, nil
 }
+
+func (s *Server) AddPortToServer(ctx context.Context, req *proto_pb.AddPortToServerRequest) (*proto_pb.AddPortToServerResponse, error) {
+	err := repository.AddPortToServer(req.GetHostServerId(), req.GetServerId(), int(req.GetPort()))
+	if err != nil {
+		return &proto_pb.AddPortToServerResponse{}, err
+	}
+	return &proto_pb.AddPortToServerResponse{}, nil
+}
+

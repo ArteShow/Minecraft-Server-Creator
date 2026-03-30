@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -50,22 +52,23 @@ func Get() ([]Host, error) {
 	return hosts, nil
 }
 
-func Create(servers []string, ram, cores string) (string, error) {
+func Create(servers map[string][]int, ram, cores string) (string, error) {
 	db, err := database.Connect()
 	if err != nil {
 		return "", err
 	}
 
-	if servers == nil {
-		servers = []string{}
-	}
-
 	id := uuid.NewString()
+
+	serversJSON, err := json.Marshal(servers)
+	if err != nil {
+		return "", err
+	}
 
 	_, err = db.Exec(
 		`INSERT INTO hosts (id, servers, ram, cores) VALUES ($1, $2, $3, $4)`,
 		id,
-		pq.Array(servers),
+		serversJSON,
 		ram,
 		cores,
 	)
@@ -202,4 +205,48 @@ func GetCores(hostID string) (string, error) {
 	}
 
 	return cores, nil
+}
+
+func AddPortToServer(hostID string, serverID string, port int) error {
+	db, err := database.Connect()
+	if err != nil {
+		return err
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var serversJSON []byte
+	err = tx.QueryRow(`SELECT servers FROM hosts WHERE id = $1 FOR UPDATE`, hostID).Scan(&serversJSON)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return fmt.Errorf("host %s not found", hostID)
+		}
+		return err
+	}
+
+	servers := make(map[string][]int)
+	if len(serversJSON) > 0 {
+		err = json.Unmarshal(serversJSON, &servers)
+		if err != nil {
+			return err
+		}
+	}
+
+	servers[serverID] = append(servers[serverID], port)
+
+	newJSON, err := json.Marshal(servers)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(`UPDATE hosts SET servers = $1 WHERE id = $2`, newJSON, hostID)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
