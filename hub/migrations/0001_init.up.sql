@@ -35,3 +35,10 @@ CREATE TABLE bundle_keys (
     used BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS backups (
+    backup_id TEXT PRIMARY KEY,
+    server_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
