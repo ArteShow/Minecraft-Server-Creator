@@ -24,6 +24,7 @@ const (
 	HostMetadataService_GetAllHostServers_FullMethodName    = "/host_metadata_service.HostMetadataService/GetAllHostServers"
 	HostMetadataService_AddServerToHost_FullMethodName      = "/host_metadata_service.HostMetadataService/AddServerToHost"
 	HostMetadataService_RemoveServerFromHost_FullMethodName = "/host_metadata_service.HostMetadataService/RemoveServerFromHost"
+	HostMetadataService_AddPortToServer_FullMethodName      = "/host_metadata_service.HostMetadataService/AddPortToServer"
 	HostMetadataService_GetRAM_FullMethodName               = "/host_metadata_service.HostMetadataService/GetRAM"
 	HostMetadataService_GetCores_FullMethodName             = "/host_metadata_service.HostMetadataService/GetCores"
 	HostMetadataService_SubtractRAM_FullMethodName          = "/host_metadata_service.HostMetadataService/SubtractRAM"
@@ -39,6 +40,7 @@ type HostMetadataServiceClient interface {
 	GetAllHostServers(ctx context.Context, in *GetAllHostServersRequest, opts ...grpc.CallOption) (*GetAllHostServersResponse, error)
 	AddServerToHost(ctx context.Context, in *AddServerToHostRequest, opts ...grpc.CallOption) (*AddServerToHostResponse, error)
 	RemoveServerFromHost(ctx context.Context, in *RemoveServerFromHostRequest, opts ...grpc.CallOption) (*RemoveServerFromHostResponse, error)
+	AddPortToServer(ctx context.Context, in *AddPortToServerRequest, opts ...grpc.CallOption) (*AddPortToServerResponse, error)
 	GetRAM(ctx context.Context, in *GetRAMRequest, opts ...grpc.CallOption) (*GetRAMResponse, error)
 	GetCores(ctx context.Context, in *GetCoresRequest, opts ...grpc.CallOption) (*GetCoresResponse, error)
 	SubtractRAM(ctx context.Context, in *SubtractRAMRequest, opts ...grpc.CallOption) (*SubtractRAMResponse, error)
@@ -103,6 +105,16 @@ func (c *hostMetadataServiceClient) RemoveServerFromHost(ctx context.Context, in
 	return out, nil
 }
 
+func (c *hostMetadataServiceClient) AddPortToServer(ctx context.Context, in *AddPortToServerRequest, opts ...grpc.CallOption) (*AddPortToServerResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AddPortToServerResponse)
+	err := c.cc.Invoke(ctx, HostMetadataService_AddPortToServer_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *hostMetadataServiceClient) GetRAM(ctx context.Context, in *GetRAMRequest, opts ...grpc.CallOption) (*GetRAMResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetRAMResponse)
@@ -152,6 +164,7 @@ type HostMetadataServiceServer interface {
 	GetAllHostServers(context.Context, *GetAllHostServersRequest) (*GetAllHostServersResponse, error)
 	AddServerToHost(context.Context, *AddServerToHostRequest) (*AddServerToHostResponse, error)
 	RemoveServerFromHost(context.Context, *RemoveServerFromHostRequest) (*RemoveServerFromHostResponse, error)
+	AddPortToServer(context.Context, *AddPortToServerRequest) (*AddPortToServerResponse, error)
 	GetRAM(context.Context, *GetRAMRequest) (*GetRAMResponse, error)
 	GetCores(context.Context, *GetCoresRequest) (*GetCoresResponse, error)
 	SubtractRAM(context.Context, *SubtractRAMRequest) (*SubtractRAMResponse, error)
@@ -180,6 +193,9 @@ func (UnimplementedHostMetadataServiceServer) AddServerToHost(context.Context, *
 }
 func (UnimplementedHostMetadataServiceServer) RemoveServerFromHost(context.Context, *RemoveServerFromHostRequest) (*RemoveServerFromHostResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RemoveServerFromHost not implemented")
+}
+func (UnimplementedHostMetadataServiceServer) AddPortToServer(context.Context, *AddPortToServerRequest) (*AddPortToServerResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AddPortToServer not implemented")
 }
 func (UnimplementedHostMetadataServiceServer) GetRAM(context.Context, *GetRAMRequest) (*GetRAMResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetRAM not implemented")
@@ -304,6 +320,24 @@ func _HostMetadataService_RemoveServerFromHost_Handler(srv interface{}, ctx cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _HostMetadataService_AddPortToServer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddPortToServerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HostMetadataServiceServer).AddPortToServer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: HostMetadataService_AddPortToServer_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HostMetadataServiceServer).AddPortToServer(ctx, req.(*AddPortToServerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _HostMetadataService_GetRAM_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetRAMRequest)
 	if err := dec(in); err != nil {
@@ -402,6 +436,10 @@ var HostMetadataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RemoveServerFromHost",
 			Handler:    _HostMetadataService_RemoveServerFromHost_Handler,
+		},
+		{
+			MethodName: "AddPortToServer",
+			Handler:    _HostMetadataService_AddPortToServer_Handler,
 		},
 		{
 			MethodName: "GetRAM",
