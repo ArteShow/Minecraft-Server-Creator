@@ -134,6 +134,23 @@ services:
       retries: 5
     networks:
       - disknet-hub
+  backup-service:
+    build: services/backup-service
+    container_name: backup-service
+    env_file:
+      - config/docker.env
+    ports:
+      - "${BACKUP_SERVICE_PORT}:${BACKUP_SERVICE_PORT}"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "-qO-"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - disknet-hub
 
 volumes:
   postgres_data_hub:
