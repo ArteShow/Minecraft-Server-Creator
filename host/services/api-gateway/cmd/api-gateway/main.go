@@ -30,18 +30,19 @@ func main() {
 		cfg.Port = ":" + cfg.Port
 	}
 
-	authRegisterProxy := proxy.NewProxy("http://auth-service:8001", "/auth-service/register")
-	authLoginProxy := proxy.NewProxy("http://auth-service:8001", "/auth-service/login")
-
 	createServerProxy := proxy.NewProxy("http://server-service-v2:8003", "/server-service/create")
 	startServerProxy := proxy.NewProxy("http://server-service-v2:8003", "/server-service/start")
 	stopServerProxy := proxy.NewProxy("http://server-service-v2:8003", "/server-service/stop")
 	deleteServerProxy := proxy.NewProxy("http://server-service-v2:8003", "/server-service/delete")
 	getServerStatsProxy := proxy.NewProxy("http://server-service-v2:8003", "/server-service/getServerStats")
 
+	createBackupProxy := proxy.NewProxy("http://server-service-v2:8003", "/server-service/backup/create")
+	getBackupProxy := proxy.NewProxy("http://server-service-v2:8003", "/server-service/backup/get")
+	deleteBackupProxy := proxy.NewProxy("http://server-service-v2:8003", "/server-service/backup/delete")
+
 	handler := http.NewServeMux()
 	handler.Handle(
-		"/api/"+cfg.APIVersion+"/api-gateway/health",
+		"/api-gateway/health",
 		middleware.LoggingMiddleware(
 			http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				_, err := w.Write([]byte("ok"))
@@ -51,14 +52,15 @@ func main() {
 			}),
 		),
 	)
-	handler.Handle("/api/"+cfg.APIVersion+"/register", middleware.LoggingMiddleware(authRegisterProxy))
-	handler.Handle("/api/"+cfg.APIVersion+"/login", middleware.LoggingMiddleware(authLoginProxy))
+	handler.Handle("/server/create", middleware.LoggingMiddleware(middleware.AuthMiddleware()(createServerProxy)))
+	handler.Handle("/server/start", middleware.LoggingMiddleware(middleware.AuthMiddleware()(startServerProxy)))
+	handler.Handle("/server/stop", middleware.LoggingMiddleware(middleware.AuthMiddleware()(stopServerProxy)))
+	handler.Handle("/server/delete", middleware.LoggingMiddleware(middleware.AuthMiddleware()(deleteServerProxy)))
+	handler.Handle("/server/getServerStats", middleware.LoggingMiddleware(getServerStatsProxy))
 
-	handler.Handle("/api/"+cfg.APIVersion+"/server/create", middleware.LoggingMiddleware(middleware.AuthMiddleware()(createServerProxy)))
-	handler.Handle("/api/"+cfg.APIVersion+"/server/start", middleware.LoggingMiddleware(middleware.AuthMiddleware()(startServerProxy)))
-	handler.Handle("/api/"+cfg.APIVersion+"/server/stop", middleware.LoggingMiddleware(middleware.AuthMiddleware()(stopServerProxy)))
-	handler.Handle("/api/"+cfg.APIVersion+"/server/delete", middleware.LoggingMiddleware(middleware.AuthMiddleware()(deleteServerProxy)))
-	handler.Handle("/api/"+cfg.APIVersion+"/server/getServerStats", middleware.LoggingMiddleware(getServerStatsProxy))
+	handler.Handle("/server/backup/create", middleware.LoggingMiddleware(createBackupProxy))
+	handler.Handle("/server/backup/get", middleware.LoggingMiddleware(getBackupProxy))
+	handler.Handle("/server/backup/delete", middleware.LoggingMiddleware(deleteBackupProxy))
 
 	srv := &http.Server{
 		Addr:         cfg.Port,

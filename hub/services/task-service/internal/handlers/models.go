@@ -26,3 +26,15 @@ type GetServerStatsRequest struct {
 	Key      string `json:"key"`
 	ServerID string `json:"server_id"`
 }
+
+type CreateBackupRequest struct {
+	ServerID string `json:"server_id"`
+}
+
+type GetBackupRequest struct {
+	ServerID string `json:"server_id"`
+}
+
+type DeleteBackupRequest struct {
+	ServerID string `json:"server_id"`
+}

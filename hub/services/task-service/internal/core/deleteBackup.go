@@ -11,7 +11,7 @@ import (
 	network "github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/proto/network-service"
 )
 
-func StopServer(serverID, token string) error {
+func DeleteBackup(serverID, token string) error {
 	cfg, err := config.Read()
 	if err != nil {
 		return err
@@ -47,7 +47,7 @@ func StopServer(serverID, token string) error {
 
 	req, err := http.NewRequest(
 		"POST",
-		"http://"+ip.Ip+":"+cfg.DefaultHostServerPort+"/server/stop",
+		"http://"+ip.Ip+":"+cfg.DefaultHostServerPort+"/server/backup/delete",
 		bytes.NewReader(jsonBody),
 	)
 	if err != nil {
@@ -62,6 +62,6 @@ func StopServer(serverID, token string) error {
 	if err != nil {
 		return err
 	}
-
+	
 	return nil
 }

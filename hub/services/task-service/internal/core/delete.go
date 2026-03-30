@@ -27,7 +27,7 @@ func DeleteServer(serverID, token string) error {
 		return err
 	}
 
-	hostID := SelectHostWithFewestServers(*hosts)
+	hostID := SelecthostIdByServerID(serverID, *hosts)
 
 	networkClient, err := client.NewNetworkClient()
 	if err != nil {
