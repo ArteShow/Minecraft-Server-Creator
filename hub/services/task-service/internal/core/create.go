@@ -28,6 +28,18 @@ func SelectHostWithFewestServers(servers host.GetAllHostServersResponse) string 
 	return selectedHostId
 }
 
+func GetHighestPort(servers host.GetAllHostServersResponse) int {
+	var HighestPort int
+	for _, host := range servers.GetHosts() {
+		for _, value := range host.GetServers() {
+			if HighestPort < int(value) {
+				HighestPort = int(value)
+			}
+		}
+	}
+	return HighestPort
+}
+
 func CreateServer(version, token, bundle_key, userID string) (string, int, error) {
 	cfg, err := config.Read()
 	if err != nil {
@@ -106,7 +118,7 @@ func CreateServer(version, token, bundle_key, userID string) (string, int, error
 		return "", 0, err
 	}
 
-	bodyBytes, err := json.Marshal(map[string]string{"version": version})
+	bodyBytes, err := json.Marshal(map[string]string{"version": version, "port": strconv.Itoa(GetHighestPort(*serversResp))})
 	if err != nil {
 		return "", 0, err
 	}

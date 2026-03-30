@@ -25,16 +25,11 @@ message GetAllHostServersRequest {
 
 message HostServer {
   string id = 1;
-  map<string, ServerPorts> servers = 2;
+  map<string, int32> servers = 2;
   string ram = 3;
   string cores = 4;
   string created_at = 5;
 }
-
-message ServerPorts {
-  repeated int32 ports = 1;
-}
-
 message GetAllHostServersResponse {
   repeated HostServer hosts = 1;
 }

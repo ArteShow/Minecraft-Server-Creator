@@ -58,10 +58,10 @@ func syncAndUpdate() {
 
 		ip := ipResp.GetIp()
 
-		for _, ports := range h.GetServers() {
-			for _, p := range ports.GetPorts() {
-				newMap[int(p)] = ip + ":" + strconv.Itoa(int(p))
-			}
+		// ✅ FIX HERE
+		for _, port := range h.GetServers() {
+			p := int(port)
+			newMap[p] = ip + ":" + strconv.Itoa(p)
 		}
 	}
 

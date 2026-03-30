@@ -43,19 +43,15 @@ func (s *Server) GetAllHostServers(_ context.Context, _ *proto_pb.GetAllHostServ
 	pbHosts := make([]*proto_pb.HostServer, len(hosts))
 
 	for i, host := range hosts {
-		pbServers := make(map[string]*proto_pb.ServerPorts)
+		pbServers := make(map[string]int32)
 
-		for serverID, ports := range host.Servers {
-			portSlice := make([]int32, len(ports))
-			for j, p := range ports {
-				portSlice[j] = int32(p)
+		for serverID, port := range host.Servers {
+			intPort, err := strconv.Atoi(port)
+			if err != nil{
+				return &proto_pb.GetAllHostServersResponse{},  err
 			}
 
-			stringSerevrID := strconv.Itoa(serverID)
-			
-			pbServers[stringSerevrID] = &proto_pb.ServerPorts{
-				Ports: portSlice,
-			}
+			pbServers[strconv.Itoa(serverID)] = int32(intPort)
 		}
 
 		pbHosts[i] = &proto_pb.HostServer{
