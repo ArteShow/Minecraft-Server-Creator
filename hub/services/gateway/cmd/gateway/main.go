@@ -18,6 +18,7 @@ const (
 	readTimeout  = 10 * time.Second
 	writeTimeout = 10 * time.Second
 	idleTimeou   = 60 * time.Second
+	hubTCPPort   = "8010" // Minecraft TCP proxy hub port
 )
 
 func main() {
@@ -30,6 +31,7 @@ func main() {
 		cfg.Port = ":" + cfg.Port
 	}
 
+	// ---- HTTP proxies ----
 	createHostServerProxy := proxy.NewProxy("http://network-service:8011", "/network-service/create")
 
 	createHostServerMetadataProxy := proxy.NewProxy("http://host-metadata-service:8012", "/host-metadata-service/create")
@@ -76,9 +78,12 @@ func main() {
 
 	handler.Handle("/api/"+cfg.APIVersion+"/auth/user/register", middleware.LoggingMiddleware(registerUserProxy))
 	handler.Handle("/api/"+cfg.APIVersion+"/auth/user/login", middleware.LoggingMiddleware(loginUserProxy))
-	
+
 	handler.Handle("/api/"+cfg.APIVersion+"/bundle/create", middleware.LoggingMiddleware(middleware.AuthMiddleware(getBundlekeyProxy)))
 	handler.Handle("/api/"+cfg.APIVersion+"/bundle/add", middleware.LoggingMiddleware(middleware.AuthMiddleware(addBundleProxy)))
+
+	// ---- TCP proxy for Minecraft ----
+	go proxy.StartDynamicTCPProxy(hubTCPPort)
 
 	srv := &http.Server{
 		Addr:         cfg.Port,
