@@ -5,88 +5,130 @@ import (
 	"log"
 	"net"
 	"strconv"
+	"sync"
+	"time"
 
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/gateway/internal/client"
 	host "github.com/ArteShow/Minecraft-Server-Creator/hub/services/gateway/internal/proto/host-metadata-service"
 	network "github.com/ArteShow/Minecraft-Server-Creator/hub/services/gateway/internal/proto/network-service"
 )
 
-func StartDynamicTCPProxy(hubPort string) {
-	ln, err := net.Listen("tcp", ":"+hubPort)
-	if err != nil {
-		log.Fatal("Failed to listen on hub port:", err)
-	}
-	log.Printf("Dynamic TCP proxy listening on hub port %s\n", hubPort)
+var (
+	portMap   = map[int]string{}
+	listeners = map[int]net.Listener{}
+	mu        sync.RWMutex
+)
 
-	for {
-		clientConn, err := ln.Accept()
-		if err != nil {
-			log.Println("Failed to accept connection:", err)
-			continue
+func StartProxy(_ []int) {
+	go func() {
+		for {
+			syncAndUpdate()
+			time.Sleep(3 * time.Second)
 		}
-
-		go handleConnection(clientConn)
-	}
+	}()
 }
 
-func handleConnection(clientConn net.Conn) {
-	defer clientConn.Close()
-
-	clientPort := clientConn.LocalAddr().(*net.TCPAddr).Port
-	port := int32(clientPort) 
-
+func syncAndUpdate() {
 	hostClient, err := client.NewHostClient()
 	if err != nil {
-		log.Println("Failed to create host client:", err)
 		return
 	}
 	defer hostClient.Close()
 
-	hostsResp, err := hostClient.GetAllHostServers(&host.GetAllHostServersRequest{})
+	networkClient, err := client.NewNetworkClient()
 	if err != nil {
-		log.Println("Failed to get hosts from gRPC:", err)
+		return
+	}
+	defer networkClient.Close()
+
+	hosts, err := hostClient.GetAllHostServers(&host.GetAllHostServersRequest{})
+	if err != nil {
 		return
 	}
 
-	var targetHostID, targetServerID string
-FOUND:
-	for _, h := range hostsResp.GetHosts() {
-		for serverID, serverPorts := range h.GetServers() {
-			for _, p := range serverPorts.GetPorts() {
-				if p == port {
-					targetHostID = h.GetId()
-					targetServerID = serverID
-					break FOUND
-				}
+	newMap := map[int]string{}
+
+	for _, h := range hosts.GetHosts() {
+		ipResp, err := networkClient.GetServerMetadata(
+			&network.GetServerMetadataRequest{ServerId: h.GetId()},
+		)
+		if err != nil {
+			continue
+		}
+
+		ip := ipResp.GetIp()
+
+		for _, ports := range h.GetServers() {
+			for _, p := range ports.GetPorts() {
+				newMap[int(p)] = ip + ":" + strconv.Itoa(int(p))
 			}
 		}
 	}
 
-	if targetHostID == "" {
-		log.Printf("No server found for port %d\n", port)
+	mu.Lock()
+	portMap = newMap
+	updateListenersLocked()
+	mu.Unlock()
+}
+
+func updateListenersLocked() {
+	for port := range portMap {
+		if _, exists := listeners[port]; !exists {
+			go startListener(port)
+		}
+	}
+
+	for port, ln := range listeners {
+		if _, exists := portMap[port]; !exists {
+			ln.Close()
+			delete(listeners, port)
+			log.Println("closed listener on port", port)
+		}
+	}
+}
+
+func startListener(port int) {
+	ln, err := net.Listen("tcp", ":"+strconv.Itoa(port))
+	if err != nil {
+		log.Println("listen error:", err)
 		return
 	}
 
-	networkClient, err := client.NewNetworkClient()
-	if err != nil {
-		log.Println("Failed to create network client:", err)
+	mu.Lock()
+	listeners[port] = ln
+	mu.Unlock()
+
+	log.Println("listening on port", port)
+
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			return
+		}
+
+		go handleConn(conn, port)
+	}
+}
+
+func handleConn(c net.Conn, port int) {
+	defer c.Close()
+
+	mu.RLock()
+	target, ok := portMap[port]
+	mu.RUnlock()
+
+	if !ok {
+		log.Println("no backend for port", port)
 		return
 	}
 
-	metaResp, err := networkClient.GetServerMetadata(&network.GetServerMetadataRequest{ServerId: targetServerID})
+	serverConn, err := net.Dial("tcp", target)
 	if err != nil {
-		log.Println("Failed to get server metadata:", err)
-		return
-	}
-
-	hostAddr := metaResp.GetIp() + ":" + strconv.Itoa(int(port))
-	serverConn, err := net.Dial("tcp", hostAddr)
-	if err != nil {
-		log.Println("Failed to connect to host server:", err)
+		log.Println("dial error:", err)
 		return
 	}
 	defer serverConn.Close()
 
-	go io.Copy(serverConn, clientConn)
-	io.Copy(clientConn, serverConn)
+	go io.Copy(serverConn, c)
+	io.Copy(c, serverConn)
 }

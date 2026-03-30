@@ -82,7 +82,7 @@ func main() {
 	handler.Handle("/api/"+cfg.APIVersion+"/bundle/create", middleware.LoggingMiddleware(middleware.AuthMiddleware(getBundlekeyProxy)))
 	handler.Handle("/api/"+cfg.APIVersion+"/bundle/add", middleware.LoggingMiddleware(middleware.AuthMiddleware(addBundleProxy)))
 
-	proxy.StartDynamicTCPProxy("8010")
+	proxy.StartProxy(nil)
 
 	srv := &http.Server{
 		Addr:         cfg.Port,
