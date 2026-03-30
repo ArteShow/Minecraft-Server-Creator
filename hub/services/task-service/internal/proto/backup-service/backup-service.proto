@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package backup_service;
+
+option go_package = "/internal/proto;proto";
+
+message BackupList {
+  string UserID = 1;
+  string ServerID = 2;
+  string Backup = 3;
+}
+message DeleteBackupRequest {
+  string BackupID = 1;
+}
+
+message DeleteBackupResponse {
+
+}
+message CreateBackupRequest {
+  string UserID = 1;
+  string ServerID = 2;
+}
+
+message CreateBackupResponse {
+}
+
+message GetBackupRequest {
+  string ServerID = 1;
+}
+message GetBackupResponse {
+  repeated BackupList backups = 1;
+}
+
+service BundleService {
+  rpc CreateBackup (CreateBackupRequest) returns (CreateBackupResponse);
+  rpc DeleteBackup (DeleteBackupRequest) returns (DeleteBackupResponse);
+  rpc GetBackup (GetBackupRequest) returns (GetBackupResponse);
+}
