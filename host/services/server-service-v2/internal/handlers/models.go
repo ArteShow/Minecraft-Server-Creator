@@ -2,11 +2,11 @@ package handlers
 
 type CreateServerRequest struct {
 	Version string `json:"version"`
+	Port    int `json:"port"`
 }
 
 type CreateServerResponse struct {
 	ServerID string `json:"server_id"`
-	Port     int    `json:"port"`
 }
 
 type StartServerRequest struct {

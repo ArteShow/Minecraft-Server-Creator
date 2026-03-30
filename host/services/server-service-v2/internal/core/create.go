@@ -10,16 +10,16 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *Server) CreateServer(version, ownerID string) (string, int, error) {
+func (s *Server) CreateServer(version, ownerID string, port int) (string, error) {
 	id := uuid.NewString()
 
 	if err := s.DockerService.CreateVolume(id); err != nil {
-		return "", 0, err
+		return "", err
 	}
 
 	jar, err := get_version.GetServerJar(version)
 	if err != nil {
-		return "", 0, fmt.Errorf("failed to download jar: %w", err)
+		return "", fmt.Errorf("failed to download jar: %w", err)
 	}
 
 	if err := s.DockerService.UploadToVolume(
@@ -28,12 +28,12 @@ func (s *Server) CreateServer(version, ownerID string) (string, int, error) {
 		"server.jar",
 		jar,
 	); err != nil {
-		return "", 0, err
+		return "", err
 	}
 
 	eula, err := eula.Accept()
 	if err != nil {
-		return "", 0, err
+		return "", err
 	}
 
 	if err = s.DockerService.UploadToVolume(
@@ -42,12 +42,12 @@ func (s *Server) CreateServer(version, ownerID string) (string, int, error) {
 		"eula.txt",
 		eula,
 	); err != nil {
-		return "", 0, err
+		return "", err
 	}
 
 	templete, err := stats.CreateTemplete()
 	if err != nil {
-		return "", 0, err
+		return "", err
 	}
 	if err = s.DockerService.UploadToVolume(
 		id,
@@ -55,21 +55,12 @@ func (s *Server) CreateServer(version, ownerID string) (string, int, error) {
 		"stats.json",
 		templete,
 	); err != nil {
-		return "", 0, err
+		return "", err
 	}
 
-	port, err := repository.GetHighestPort()
-	if err != nil {
-		return "", 0, err
+	if err = repository.CreateServer(id, ownerID, port); err != nil {
+		return "", err
 	}
 
-	if port == 0 {
-		port = 25564
-	}
-
-	if err = repository.CreateServer(id, ownerID, port+1); err != nil {
-		return "", 0, err
-	}
-
-	return id, port + 1, nil
+	return id, nil
 }
