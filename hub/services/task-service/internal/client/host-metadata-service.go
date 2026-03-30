@@ -116,3 +116,12 @@ func (u *HostClient) SubtractCores(req *pb.SubtractCoresRequest) (*pb.SubtractCo
 
 	return res, nil
 }
+
+func (u *HostClient) AddPortToServer(req *pb.AddPortToServerRequest) (*pb.AddPortToServerResponse, error) {
+	res, err := u.Client.AddPortToServer(context.Background(), req)
+	if err != nil {
+		return &pb.AddPortToServerResponse{}, err
+	}
+
+	return res, nil
+}

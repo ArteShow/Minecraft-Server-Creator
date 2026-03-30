@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package host_metadata_service;
 
-option go_package = "/internal/host-metadata-service/proto;proto";
+option go_package = "/internal/proto;proto";
 
 message CreateHostServerRequest {
   string ram = 1;
@@ -25,8 +25,14 @@ message GetAllHostServersRequest {
 
 message HostServer {
   string id = 1;
-  repeated string servers = 2;
-  string created_at = 3;
+  map<string, ServerPorts> servers = 2;
+  string ram = 3;
+  string cores = 4;
+  string created_at = 5;
+}
+
+message ServerPorts {
+  repeated int32 ports = 1;
 }
 
 message GetAllHostServersResponse {
@@ -47,6 +53,15 @@ message RemoveServerFromHostRequest {
 }
 
 message RemoveServerFromHostResponse {
+}
+
+message AddPortToServerRequest {
+  string host_server_id = 1;
+  string server_id = 2;
+  int32 port = 3;
+}
+
+message AddPortToServerResponse {
 }
 
 message GetRAMRequest {
@@ -82,13 +97,14 @@ message SubtractCoresResponse {
 }
 
 service HostMetadataService {
-  rpc CreateHostServer (CreateHostServerRequest) returns (CreateHostServerResponse);
-  rpc DeleteHostServer (DeleteHostServerRequest) returns (DeleteHostServerResponse);
-  rpc GetAllHostServers (GetAllHostServersRequest) returns (GetAllHostServersResponse);
-  rpc AddServerToHost (AddServerToHostRequest) returns (AddServerToHostResponse);
-  rpc RemoveServerFromHost (RemoveServerFromHostRequest) returns (RemoveServerFromHostResponse);
-  rpc GetRAM (GetRAMRequest) returns (GetRAMResponse);
-  rpc GetCores (GetCoresRequest) returns (GetCoresResponse);
-  rpc SubtractRAM (SubtractRAMRequest) returns (SubtractRAMResponse);
-  rpc SubtractCores (SubtractCoresRequest) returns (SubtractCoresResponse);
+  rpc CreateHostServer(CreateHostServerRequest) returns (CreateHostServerResponse);
+  rpc DeleteHostServer(DeleteHostServerRequest) returns (DeleteHostServerResponse);
+  rpc GetAllHostServers(GetAllHostServersRequest) returns (GetAllHostServersResponse);
+  rpc AddServerToHost(AddServerToHostRequest) returns (AddServerToHostResponse);
+  rpc RemoveServerFromHost(RemoveServerFromHostRequest) returns (RemoveServerFromHostResponse);
+  rpc AddPortToServer(AddPortToServerRequest) returns (AddPortToServerResponse);
+  rpc GetRAM(GetRAMRequest) returns (GetRAMResponse);
+  rpc GetCores(GetCoresRequest) returns (GetCoresResponse);
+  rpc SubtractRAM(SubtractRAMRequest) returns (SubtractRAMResponse);
+  rpc SubtractCores(SubtractCoresRequest) returns (SubtractCoresResponse);
 }
