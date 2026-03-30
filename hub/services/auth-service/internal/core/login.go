@@ -13,7 +13,10 @@ const JWTTTL = time.Hour*24
 func LoginUser(username, password string) (string, error) {
 	userID, ok := repository.CheckUserLogin(username, password)
 	if !ok {
-		return "", errors.New("no user found with username: " + username + " and password: " + password)
+		userID, ok = repository.CheckAdminLogin(username, password)
+		if !ok {
+			return "", errors.New("no user found with username: " + username + " and password: " + password)
+		}
 	}
 
 	token, err := jwt.GenerateToken(userID, JWTTTL)

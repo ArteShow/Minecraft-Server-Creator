@@ -22,7 +22,7 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, err := core.RegisterUser(req.Username, req.Password, req.Email)
+	userID, err := core.RegisterUser(req.Username, req.Password, req.Email, req.JWT, req.Type)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
