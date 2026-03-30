@@ -82,8 +82,7 @@ func main() {
 	handler.Handle("/api/"+cfg.APIVersion+"/bundle/create", middleware.LoggingMiddleware(middleware.AuthMiddleware(getBundlekeyProxy)))
 	handler.Handle("/api/"+cfg.APIVersion+"/bundle/add", middleware.LoggingMiddleware(middleware.AuthMiddleware(addBundleProxy)))
 
-	// ---- TCP proxy for Minecraft ----
-	go proxy.StartDynamicTCPProxy(hubTCPPort)
+	proxy.StartDynamicTCPProxy("25565", proxy.LookupHostByPort)
 
 	srv := &http.Server{
 		Addr:         cfg.Port,
