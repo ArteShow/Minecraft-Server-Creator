@@ -28,14 +28,7 @@ func GetServerStats(key, serverID, token string) (string, error) {
 		return "", err
 	}
 
-	var hostID string
-	for _, host := range hosts.Hosts {
-		for _, mcServerID := range host.Servers {
-			if mcServerID == serverID {
-				hostID = mcServerID
-			}
-		}
-	}
+	hostID := SelectHostWithFewestServers(*hosts)
 
 	networkClient, err := client.NewNetworkClient()
 	if err != nil {

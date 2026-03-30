@@ -88,10 +88,13 @@ func CreateServer(version, token, bundle_key, userID string) (string, int, error
 	}
 
 	_, err = bundleClient.RemoveBundle(&clientBundle.RemoveBundleRequest{UserID: userID, Bundle: bundle.GetBundle()})
+	if err != nil {
+		return "", 0, err
+	}
 
 	bundleData, ok := bundles.Bundles[bundle.GetBundle()]
 	if !ok {
-		return "", 0, fmt.Errorf("unknown bundle: %s", bundle)
+		return "", 0, fmt.Errorf("unknown bundle: %s", bundle.GetBundle())
 	}
 
 	if bundleData.RAM > availableRAM || bundleData.Cores > availableCores {
@@ -137,9 +140,10 @@ func CreateServer(version, token, bundle_key, userID string) (string, int, error
 		return "", 0, err
 	}
 
-	_, err = hostClient.AddServerToHost(&host.AddServerToHostRequest{
+	_, err = hostClient.AddPortToServer(&host.AddPortToServerRequest{
 		HostServerId: hostID,
 		ServerId:     respData.ServerID,
+		Port:         int32(respData.Port), 
 	})
 	if err != nil {
 		return "", 0, err
