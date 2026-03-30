@@ -24,3 +24,21 @@ func GenerateToken(userID string, ttl time.Duration) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(cfg.JWTSecret))
 }
+
+func GenerateAdminToken(admin string, ttl time.Duration) (string, error) {
+	cfg, err := config.Read()
+	if err != nil {
+		return "", err
+	}
+
+	claims := Claims{
+		AdminID: admin,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(ttl)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(cfg.JWTSecret))
+}
