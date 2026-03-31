@@ -43,7 +43,7 @@ func CreateBackup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = core.CreateBackup(req.ServerID, token); err != nil {
+	if err = core.CreateBackup(req.ServerID, token, userID, req.Bundle); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

@@ -20,6 +20,7 @@ type BundleConfig struct {
 type Bundle struct {
 	RAM   int `json:"RAM"`
 	Cores int `json:"Cores"`
+	Backups int `json:"Backups"`
 }
 
 func Read() (*Config, error) {

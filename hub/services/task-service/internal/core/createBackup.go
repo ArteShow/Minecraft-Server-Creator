@@ -3,18 +3,45 @@ package core
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/client"
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/config"
+	backup "github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/proto/backup-service"
 	host "github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/proto/host-metadata-service"
 	network "github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/proto/network-service"
 )
 
-func CreateBackup(serverID, token string) error {
+func CreateBackup(serverID, token, userID, bundle string) error {
+	bundles, err := config.GetBundles()
+	if err != nil {
+		return err
+	}
+
 	cfg, err := config.Read()
 	if err != nil {
 		return err
+	}
+
+	backupClient, err := client.NewBackupClient()
+	if err != nil {
+		return err
+	}
+
+	backups, err := backupClient.GetBackup(&backup.GetBackupRequest{ServerID: serverID})
+	if err != nil {
+		return err
+	}
+
+	var backupCounter int
+	for _, backup := range backups.GetBackups() {
+		if backup.GetUserID() == userID {
+			backupCounter++
+		}
+	}
+	if backupCounter > bundles.Bundles[bundle].Backups {
+		return fmt.Errorf("You are not allowed to have this amount of backups in this bundle %s", bundle)
 	}
 
 	hostClient, err := client.NewHostClient()
@@ -39,7 +66,7 @@ func CreateBackup(serverID, token string) error {
 		return err
 	}
 
-	requestBody := map[string]string{"server_id": hostID}
+	requestBody := map[string]string{"server_id": serverID}
 	jsonBody, err := json.Marshal(requestBody)
 	if err != nil {
 		return err
@@ -59,6 +86,10 @@ func CreateBackup(serverID, token string) error {
 
 	client := &http.Client{}
 	_, err = client.Do(req)
+	if err != nil {
+		return err
+	}
+	_, err = backupClient.CreateBackup(&backup.CreateBackupRequest{ServerID: serverID, UserID: userID})
 	if err != nil {
 		return err
 	}

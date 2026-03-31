@@ -30,7 +30,7 @@ func DeleteBackup(w http.ResponseWriter, r *http.Request) {
 
 	token := parts[1]
 
-	var req CreateBackupRequest
+	var req DeleteBackupRequest
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -43,7 +43,7 @@ func DeleteBackup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = core.DeleteBackup(req.ServerID, token); err != nil {
+	if err = core.DeleteBackup(req.ServerID, token, req.BackupID); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

@@ -40,7 +40,7 @@ func GetBackup(serverID, token string) ([]byte, error) {
 		return []byte{}, err
 	}
 
-	requestBody := map[string]string{"server_id": hostID}
+	requestBody := map[string]string{"server_id": serverID}
 	jsonBody, err := json.Marshal(requestBody)
 	if err != nil {
 		return []byte{}, err

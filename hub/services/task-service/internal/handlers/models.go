@@ -29,6 +29,7 @@ type GetServerStatsRequest struct {
 
 type CreateBackupRequest struct {
 	ServerID string `json:"server_id"`
+	Bundle   string `json:"bundle"`
 }
 
 type GetBackupRequest struct {
@@ -37,4 +38,5 @@ type GetBackupRequest struct {
 
 type DeleteBackupRequest struct {
 	ServerID string `json:"server_id"`
+	BackupID string `json:"backup_id"`
 }

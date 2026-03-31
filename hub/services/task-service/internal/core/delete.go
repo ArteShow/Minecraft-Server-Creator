@@ -39,7 +39,7 @@ func DeleteServer(serverID, token string) error {
 		return err
 	}
 
-	requestBody := map[string]string{"server_id": hostID}
+	requestBody := map[string]string{"server_id": serverID}
 	jsonBody, err := json.Marshal(requestBody)
 	if err != nil {
 		return err

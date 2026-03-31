@@ -7,17 +7,23 @@ import (
 
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/client"
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/config"
+	backup "github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/proto/backup-service"
 	host "github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/proto/host-metadata-service"
 	network "github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/proto/network-service"
 )
 
-func DeleteBackup(serverID, token string) error {
+func DeleteBackup(serverID, token, backupID string) error {
 	cfg, err := config.Read()
 	if err != nil {
 		return err
 	}
 
 	hostClient, err := client.NewHostClient()
+	if err != nil {
+		return err
+	}
+
+	backupClient, err := client.NewBackupClient()
 	if err != nil {
 		return err
 	}
@@ -39,7 +45,7 @@ func DeleteBackup(serverID, token string) error {
 		return err
 	}
 
-	requestBody := map[string]string{"server_id": hostID}
+	requestBody := map[string]string{"server_id": serverID}
 	jsonBody, err := json.Marshal(requestBody)
 	if err != nil {
 		return err
@@ -59,6 +65,11 @@ func DeleteBackup(serverID, token string) error {
 
 	client := &http.Client{}
 	_, err = client.Do(req)
+	if err != nil {
+		return err
+	}
+	
+	_, err = backupClient.DeleteBackup(&backup.DeleteBackupRequest{BackupID: backupID})
 	if err != nil {
 		return err
 	}
