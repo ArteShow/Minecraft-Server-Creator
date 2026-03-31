@@ -2,7 +2,7 @@ package handlers
 
 type CreateServerRequest struct {
 	Version string `json:"version"`
-	Port    int `json:"port"`
+	Port    int    `json:"port"`
 }
 
 type CreateServerResponse struct {
@@ -30,4 +30,16 @@ type GetServerStatsRequest struct {
 
 type GetServerStatsResponse struct {
 	Value string `json:"value"`
+}
+
+type CreateBackupRequest struct {
+	ServerID string `json:"server_id"`
+}
+
+type GetBackupRequest struct {
+	ServerID string `json:"server_id"`
+}
+
+type DeleteBackupRequest struct {
+	ServerID string `json:"server_id"`
 }

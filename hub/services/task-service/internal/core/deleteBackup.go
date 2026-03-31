@@ -7,17 +7,23 @@ import (
 
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/client"
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/config"
+	backup "github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/proto/backup-service"
 	host "github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/proto/host-metadata-service"
 	network "github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/proto/network-service"
 )
 
-func DeleteServer(serverID, token string) error {
+func DeleteBackup(serverID, token, backupID string) error {
 	cfg, err := config.Read()
 	if err != nil {
 		return err
 	}
 
 	hostClient, err := client.NewHostClient()
+	if err != nil {
+		return err
+	}
+
+	backupClient, err := client.NewBackupClient()
 	if err != nil {
 		return err
 	}
@@ -47,7 +53,7 @@ func DeleteServer(serverID, token string) error {
 
 	req, err := http.NewRequest(
 		"POST",
-		"http://"+ip.Ip+":"+cfg.DefaultHostServerPort+"/server/delete",
+		"http://"+ip.Ip+":"+cfg.DefaultHostServerPort+"/server/backup/delete",
 		bytes.NewReader(jsonBody),
 	)
 	if err != nil {
@@ -62,11 +68,11 @@ func DeleteServer(serverID, token string) error {
 	if err != nil {
 		return err
 	}
-
-	_, err = hostClient.RemoveServerFromHost(&host.RemoveServerFromHostRequest{ServerId: serverID, HostServerId: hostID})
+	
+	_, err = backupClient.DeleteBackup(&backup.DeleteBackupRequest{BackupID: backupID})
 	if err != nil {
 		return err
 	}
-
+	
 	return nil
 }

@@ -27,7 +27,7 @@ func StopServer(serverID, token string) error {
 		return err
 	}
 
-	hostID := SelectHostWithFewestServers(*hosts)
+	hostID := SelecthostIdByServerID(serverID, *hosts)
 
 	networkClient, err := client.NewNetworkClient()
 	if err != nil {
@@ -39,7 +39,7 @@ func StopServer(serverID, token string) error {
 		return err
 	}
 
-	requestBody := map[string]string{"server_id": hostID}
+	requestBody := map[string]string{"server_id": serverID}
 	jsonBody, err := json.Marshal(requestBody)
 	if err != nil {
 		return err

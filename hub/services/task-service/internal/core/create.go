@@ -28,6 +28,18 @@ func SelectHostWithFewestServers(servers host.GetAllHostServersResponse) string 
 	return selectedHostId
 }
 
+func SelecthostIdByServerID(serverID string, servers host.GetAllHostServersResponse) string {
+	var hostID string
+	for _, host := range servers.GetHosts() {
+		for key, _ := range host.GetServers() {
+			if key == serverID {
+				hostID = host.GetId()
+			}
+		}
+	}
+	return hostID
+}
+
 func GetHighestPort(servers host.GetAllHostServersResponse) int {
 	var HighestPort int
 	for _, host := range servers.GetHosts() {

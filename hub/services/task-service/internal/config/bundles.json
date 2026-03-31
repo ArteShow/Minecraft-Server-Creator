@@ -2,15 +2,18 @@
     "bundles": {
         "Starter": {
             "RAM": 2,
-            "Cores": 2
+            "Cores": 2,
+            "Backups": 0
         },
         "Standard": {
             "RAM": 4,
-            "Cores": 3
+            "Cores": 3,
+            "Backups": 1
         },
         "Premium": {
             "RAM": 5,
-            "Cores": 4
+            "Cores": 4,
+            "Backups": 2
         }
     }
 }
