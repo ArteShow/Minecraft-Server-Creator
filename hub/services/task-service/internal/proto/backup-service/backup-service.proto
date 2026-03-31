@@ -31,7 +31,7 @@ message GetBackupResponse {
   repeated BackupList backups = 1;
 }
 
-service BundleService {
+service BackupService {
   rpc CreateBackup (CreateBackupRequest) returns (CreateBackupResponse);
   rpc DeleteBackup (DeleteBackupRequest) returns (DeleteBackupResponse);
   rpc GetBackup (GetBackupRequest) returns (GetBackupResponse);

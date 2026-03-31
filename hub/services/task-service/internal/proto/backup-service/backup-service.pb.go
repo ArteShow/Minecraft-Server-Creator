@@ -358,7 +358,7 @@ const file_hub_services_task_service_internal_proto_backup_service_backup_servic
 	"\bServerID\x18\x01 \x01(\tR\bServerID\"I\n" +
 	"\x11GetBackupResponse\x124\n" +
 	"\abackups\x18\x01 \x03(\v2\x1a.backup_service.BackupListR\abackups2\x97\x02\n" +
-	"\rBundleService\x12Y\n" +
+	"\rBackupService\x12Y\n" +
 	"\fCreateBackup\x12#.backup_service.CreateBackupRequest\x1a$.backup_service.CreateBackupResponse\x12Y\n" +
 	"\fDeleteBackup\x12#.backup_service.DeleteBackupRequest\x1a$.backup_service.DeleteBackupResponse\x12P\n" +
 	"\tGetBackup\x12 .backup_service.GetBackupRequest\x1a!.backup_service.GetBackupResponseB\x17Z\x15/internal/proto;protob\x06proto3"
@@ -387,12 +387,12 @@ var file_hub_services_task_service_internal_proto_backup_service_backup_service_
 }
 var file_hub_services_task_service_internal_proto_backup_service_backup_service_proto_depIdxs = []int32{
 	0, // 0: backup_service.GetBackupResponse.backups:type_name -> backup_service.BackupList
-	3, // 1: backup_service.BundleService.CreateBackup:input_type -> backup_service.CreateBackupRequest
-	1, // 2: backup_service.BundleService.DeleteBackup:input_type -> backup_service.DeleteBackupRequest
-	5, // 3: backup_service.BundleService.GetBackup:input_type -> backup_service.GetBackupRequest
-	4, // 4: backup_service.BundleService.CreateBackup:output_type -> backup_service.CreateBackupResponse
-	2, // 5: backup_service.BundleService.DeleteBackup:output_type -> backup_service.DeleteBackupResponse
-	6, // 6: backup_service.BundleService.GetBackup:output_type -> backup_service.GetBackupResponse
+	3, // 1: backup_service.BackupService.CreateBackup:input_type -> backup_service.CreateBackupRequest
+	1, // 2: backup_service.BackupService.DeleteBackup:input_type -> backup_service.DeleteBackupRequest
+	5, // 3: backup_service.BackupService.GetBackup:input_type -> backup_service.GetBackupRequest
+	4, // 4: backup_service.BackupService.CreateBackup:output_type -> backup_service.CreateBackupResponse
+	2, // 5: backup_service.BackupService.DeleteBackup:output_type -> backup_service.DeleteBackupResponse
+	6, // 6: backup_service.BackupService.GetBackup:output_type -> backup_service.GetBackupResponse
 	4, // [4:7] is the sub-list for method output_type
 	1, // [1:4] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name

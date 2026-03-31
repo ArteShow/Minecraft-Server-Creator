@@ -19,177 +19,177 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	BundleService_CreateBackup_FullMethodName = "/backup_service.BundleService/CreateBackup"
-	BundleService_DeleteBackup_FullMethodName = "/backup_service.BundleService/DeleteBackup"
-	BundleService_GetBackup_FullMethodName    = "/backup_service.BundleService/GetBackup"
+	BackupService_CreateBackup_FullMethodName = "/backup_service.BackupService/CreateBackup"
+	BackupService_DeleteBackup_FullMethodName = "/backup_service.BackupService/DeleteBackup"
+	BackupService_GetBackup_FullMethodName    = "/backup_service.BackupService/GetBackup"
 )
 
-// BundleServiceClient is the client API for BundleService service.
+// BackupServiceClient is the client API for BackupService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type BundleServiceClient interface {
+type BackupServiceClient interface {
 	CreateBackup(ctx context.Context, in *CreateBackupRequest, opts ...grpc.CallOption) (*CreateBackupResponse, error)
 	DeleteBackup(ctx context.Context, in *DeleteBackupRequest, opts ...grpc.CallOption) (*DeleteBackupResponse, error)
 	GetBackup(ctx context.Context, in *GetBackupRequest, opts ...grpc.CallOption) (*GetBackupResponse, error)
 }
 
-type bundleServiceClient struct {
+type backupServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewBundleServiceClient(cc grpc.ClientConnInterface) BundleServiceClient {
-	return &bundleServiceClient{cc}
+func NewBackupServiceClient(cc grpc.ClientConnInterface) BackupServiceClient {
+	return &backupServiceClient{cc}
 }
 
-func (c *bundleServiceClient) CreateBackup(ctx context.Context, in *CreateBackupRequest, opts ...grpc.CallOption) (*CreateBackupResponse, error) {
+func (c *backupServiceClient) CreateBackup(ctx context.Context, in *CreateBackupRequest, opts ...grpc.CallOption) (*CreateBackupResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateBackupResponse)
-	err := c.cc.Invoke(ctx, BundleService_CreateBackup_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, BackupService_CreateBackup_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *bundleServiceClient) DeleteBackup(ctx context.Context, in *DeleteBackupRequest, opts ...grpc.CallOption) (*DeleteBackupResponse, error) {
+func (c *backupServiceClient) DeleteBackup(ctx context.Context, in *DeleteBackupRequest, opts ...grpc.CallOption) (*DeleteBackupResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteBackupResponse)
-	err := c.cc.Invoke(ctx, BundleService_DeleteBackup_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, BackupService_DeleteBackup_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *bundleServiceClient) GetBackup(ctx context.Context, in *GetBackupRequest, opts ...grpc.CallOption) (*GetBackupResponse, error) {
+func (c *backupServiceClient) GetBackup(ctx context.Context, in *GetBackupRequest, opts ...grpc.CallOption) (*GetBackupResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetBackupResponse)
-	err := c.cc.Invoke(ctx, BundleService_GetBackup_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, BackupService_GetBackup_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// BundleServiceServer is the server API for BundleService service.
-// All implementations must embed UnimplementedBundleServiceServer
+// BackupServiceServer is the server API for BackupService service.
+// All implementations must embed UnimplementedBackupServiceServer
 // for forward compatibility.
-type BundleServiceServer interface {
+type BackupServiceServer interface {
 	CreateBackup(context.Context, *CreateBackupRequest) (*CreateBackupResponse, error)
 	DeleteBackup(context.Context, *DeleteBackupRequest) (*DeleteBackupResponse, error)
 	GetBackup(context.Context, *GetBackupRequest) (*GetBackupResponse, error)
-	mustEmbedUnimplementedBundleServiceServer()
+	mustEmbedUnimplementedBackupServiceServer()
 }
 
-// UnimplementedBundleServiceServer must be embedded to have
+// UnimplementedBackupServiceServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedBundleServiceServer struct{}
+type UnimplementedBackupServiceServer struct{}
 
-func (UnimplementedBundleServiceServer) CreateBackup(context.Context, *CreateBackupRequest) (*CreateBackupResponse, error) {
+func (UnimplementedBackupServiceServer) CreateBackup(context.Context, *CreateBackupRequest) (*CreateBackupResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateBackup not implemented")
 }
-func (UnimplementedBundleServiceServer) DeleteBackup(context.Context, *DeleteBackupRequest) (*DeleteBackupResponse, error) {
+func (UnimplementedBackupServiceServer) DeleteBackup(context.Context, *DeleteBackupRequest) (*DeleteBackupResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteBackup not implemented")
 }
-func (UnimplementedBundleServiceServer) GetBackup(context.Context, *GetBackupRequest) (*GetBackupResponse, error) {
+func (UnimplementedBackupServiceServer) GetBackup(context.Context, *GetBackupRequest) (*GetBackupResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetBackup not implemented")
 }
-func (UnimplementedBundleServiceServer) mustEmbedUnimplementedBundleServiceServer() {}
-func (UnimplementedBundleServiceServer) testEmbeddedByValue()                       {}
+func (UnimplementedBackupServiceServer) mustEmbedUnimplementedBackupServiceServer() {}
+func (UnimplementedBackupServiceServer) testEmbeddedByValue()                       {}
 
-// UnsafeBundleServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to BundleServiceServer will
+// UnsafeBackupServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to BackupServiceServer will
 // result in compilation errors.
-type UnsafeBundleServiceServer interface {
-	mustEmbedUnimplementedBundleServiceServer()
+type UnsafeBackupServiceServer interface {
+	mustEmbedUnimplementedBackupServiceServer()
 }
 
-func RegisterBundleServiceServer(s grpc.ServiceRegistrar, srv BundleServiceServer) {
-	// If the following call panics, it indicates UnimplementedBundleServiceServer was
+func RegisterBackupServiceServer(s grpc.ServiceRegistrar, srv BackupServiceServer) {
+	// If the following call panics, it indicates UnimplementedBackupServiceServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&BundleService_ServiceDesc, srv)
+	s.RegisterService(&BackupService_ServiceDesc, srv)
 }
 
-func _BundleService_CreateBackup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _BackupService_CreateBackup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateBackupRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(BundleServiceServer).CreateBackup(ctx, in)
+		return srv.(BackupServiceServer).CreateBackup(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: BundleService_CreateBackup_FullMethodName,
+		FullMethod: BackupService_CreateBackup_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BundleServiceServer).CreateBackup(ctx, req.(*CreateBackupRequest))
+		return srv.(BackupServiceServer).CreateBackup(ctx, req.(*CreateBackupRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _BundleService_DeleteBackup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _BackupService_DeleteBackup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteBackupRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(BundleServiceServer).DeleteBackup(ctx, in)
+		return srv.(BackupServiceServer).DeleteBackup(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: BundleService_DeleteBackup_FullMethodName,
+		FullMethod: BackupService_DeleteBackup_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BundleServiceServer).DeleteBackup(ctx, req.(*DeleteBackupRequest))
+		return srv.(BackupServiceServer).DeleteBackup(ctx, req.(*DeleteBackupRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _BundleService_GetBackup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _BackupService_GetBackup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetBackupRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(BundleServiceServer).GetBackup(ctx, in)
+		return srv.(BackupServiceServer).GetBackup(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: BundleService_GetBackup_FullMethodName,
+		FullMethod: BackupService_GetBackup_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BundleServiceServer).GetBackup(ctx, req.(*GetBackupRequest))
+		return srv.(BackupServiceServer).GetBackup(ctx, req.(*GetBackupRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// BundleService_ServiceDesc is the grpc.ServiceDesc for BundleService service.
+// BackupService_ServiceDesc is the grpc.ServiceDesc for BackupService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var BundleService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "backup_service.BundleService",
-	HandlerType: (*BundleServiceServer)(nil),
+var BackupService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "backup_service.BackupService",
+	HandlerType: (*BackupServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "CreateBackup",
-			Handler:    _BundleService_CreateBackup_Handler,
+			Handler:    _BackupService_CreateBackup_Handler,
 		},
 		{
 			MethodName: "DeleteBackup",
-			Handler:    _BundleService_DeleteBackup_Handler,
+			Handler:    _BackupService_DeleteBackup_Handler,
 		},
 		{
 			MethodName: "GetBackup",
-			Handler:    _BundleService_GetBackup_Handler,
+			Handler:    _BackupService_GetBackup_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
