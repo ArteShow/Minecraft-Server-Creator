@@ -166,7 +166,7 @@ async function apiFetchBlob(path, { method = "GET", body, token } = {}) {
 }
 
 function popClass() {
-  return "anim-fade-up transition duration-200 motion-safe:hover:-translate-y-0.5 sm:motion-safe:hover:-translate-y-1 sm:motion-safe:hover:scale-[1.01]";
+  return "transition-all duration-200 motion-safe:hover:-translate-y-0.5 sm:motion-safe:hover:-translate-y-1 sm:motion-safe:hover:scale-[1.01]";
 }
 
 function makeTicketId() {
@@ -297,23 +297,41 @@ function Sidebar({ items, active, setActive, title, subtitle }) {
   );
 }
 
-function NoticeStack({ notices }) {
+function ToastStack({ notices, setNotices }) {
+  useEffect(() => {
+    if (notices.length === 0) return;
+    const timer = setTimeout(() => {
+      setNotices((prev) => prev.slice(0, -1));
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [notices, setNotices]);
+
   if (notices.length === 0) return null;
 
-  return (
-    <GlassCard className="p-4">
+  return createPortal(
+    <div className="fixed bottom-5 right-5 z-[200] flex flex-col gap-2 max-w-sm w-full">
       {notices.map((notice) => (
         <div
           key={notice.id}
           className={cn(
-            "mb-2 rounded-2xl px-4 py-3 text-sm last:mb-0",
-            notice.type === "error" ? "bg-rose-400/10 text-rose-100" : "bg-cyan-400/10 text-cyan-100",
+            "flex items-start justify-between gap-3 rounded-2xl border px-4 py-3 text-sm shadow-2xl backdrop-blur-xl",
+            notice.type === "error"
+              ? "border-rose-400/20 bg-slate-950/95 text-rose-200"
+              : "border-emerald-400/20 bg-slate-950/95 text-emerald-200",
           )}
         >
-          {notice.text}
+          <span className="flex-1">{notice.text}</span>
+          <button
+            type="button"
+            onClick={() => setNotices((prev) => prev.filter((n) => n.id !== notice.id))}
+            className="shrink-0 text-slate-400 hover:text-white"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
       ))}
-    </GlassCard>
+    </div>,
+    document.body,
   );
 }
 
@@ -344,10 +362,11 @@ function PurchaseFlow({ open, plan, onClose, currentUser, onRequireAuth, onCompl
   const next = () => {
     if (!currentUser) {
       onRequireAuth();
+      onClose();
       return;
     }
     if (step === 2 && !billing.fullName.trim()) return;
-    if (step === 3 && !setup.name.trim()) return;
+    if (step === 3 && (!setup.name.trim() || !setup.version.trim())) return;
     if (step < 3) {
       setStep((value) => value + 1);
       return;
@@ -361,7 +380,7 @@ function PurchaseFlow({ open, plan, onClose, currentUser, onRequireAuth, onCompl
       open={open}
       onClose={onClose}
       title={`Buy ${plan.name}`}
-      subtitle="Choose extras, review the order, and send the provisioning request through the existing gateway API."
+      subtitle="Customise your plan, review the order, then launch your server."
     >
       <div className="mb-6 flex flex-wrap gap-3">
         {["Extras", "Billing", "Server Setup"].map((label, index) => (
@@ -396,6 +415,10 @@ function PurchaseFlow({ open, plan, onClose, currentUser, onRequireAuth, onCompl
               <div className="text-right">
                 <div className="text-sm text-slate-400">Base price</div>
                 <div className="display-font text-2xl font-bold text-white">{money(plan.price)}</div>
+                <div className="mt-2 text-xs text-slate-400">
+                  {selected.length > 0 ? `+ ${selected.length} add-on${selected.length > 1 ? "s" : ""}` : "No add-ons selected"}
+                </div>
+                <div className="display-font mt-2 text-lg font-bold text-cyan-300">Total: {money(total)}</div>
               </div>
             </div>
           </GlassCard>
@@ -455,7 +478,7 @@ function PurchaseFlow({ open, plan, onClose, currentUser, onRequireAuth, onCompl
               className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none"
             />
             <div className="rounded-2xl border border-cyan-300/20 bg-cyan-400/10 px-4 py-3 text-sm text-cyan-100">
-              Billing remains UI-only for now. The actual bundle key and server provisioning call happens on the final step.
+              Review your order on the right. The server will be provisioned after you complete the final step.
             </div>
           </div>
           <GlassCard className="p-5">
@@ -500,17 +523,23 @@ function PurchaseFlow({ open, plan, onClose, currentUser, onRequireAuth, onCompl
               <option key={software}>{software}</option>
             ))}
           </select>
-          <select
-            value={setup.version}
-            onChange={(event) => setSetup((current) => ({ ...current, version: event.target.value }))}
-            className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none"
-          >
-            {versions.map((version) => (
-              <option key={version}>{version}</option>
-            ))}
-          </select>
+          <div className="grid gap-2">
+            <input
+              value={setup.version}
+              onChange={(event) => setSetup((current) => ({ ...current, version: event.target.value.trim() }))}
+              list="minecraft-version-list"
+              placeholder="Minecraft version (e.g. 1.21.11)"
+              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none"
+            />
+            <datalist id="minecraft-version-list">
+              {versions.map((version) => (
+                <option key={version} value={version} />
+              ))}
+            </datalist>
+            <div className="text-xs text-slate-400">You can type any version manually, for example 1.21.11.</div>
+          </div>
           <div className="rounded-2xl border border-dashed border-cyan-300/25 bg-cyan-400/5 px-4 py-3 text-slate-300">
-            The selected plan becomes the bundle key request. Software and version are stored locally for the dashboard and version provisioning call.
+              Pick the Minecraft version and server software for your new server. You can change these later from the dashboard.
           </div>
         </div>
       )}
@@ -646,19 +675,22 @@ function AuthScreen({ mode, busy, error, onSubmit, setScreen }) {
         <GlassCard className="hidden overflow-hidden lg:block">
           <div className="h-full bg-[radial-gradient(circle_at_top_left,rgba(103,232,249,0.16),transparent_38%),linear-gradient(160deg,rgba(8,17,31,0.94),rgba(10,20,34,0.92))] p-8">
             <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-sm text-cyan-200">
-              Connected to your Go gateway
+              easy2host — Minecraft control plane
             </div>
-            <div className="space-y-5">
+            <div className="space-y-4">
               {[
-                "Auth uses /api/v1/auth/user/register and /api/v1/auth/user/login.",
-                "Admin account: register with type=admin and jwt=<JWT secret>, then login normally.",
-                "Purchase flow calls /bundle/create, /bundle/add, then /server/create.",
-                "Customer dashboard controls start, stop, stats, delete, and backup download.",
-                "Admin dashboard reaches network and host metadata routes through the same gateway.",
-              ].map((line) => (
-                <div key={line} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-slate-200">
-                  <Check className="mt-0.5 h-5 w-5 shrink-0 text-cyan-300" />
-                  <span>{line}</span>
+                [Crown, "Simple, fast setup", "Create an account, pick a plan, and your server is ready in minutes."],
+                [Server, "Full server control", "Start, stop, and manage your Minecraft server from one clean dashboard."],
+                [HardDrive, "Backup anytime", "Create and download backups directly from your dashboard whenever you need."],
+                [Shield, "Your servers stay yours", "Each account only sees and controls its own servers. Nothing shared."],
+                [Settings, "Your choice of software", "Pick Vanilla, Fabric, Bukkit, or Paper — and any supported Minecraft version."],
+              ].map(([Icon, title, text]) => (
+                <div key={title} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <Icon className="mt-0.5 h-5 w-5 shrink-0 text-cyan-300" />
+                  <div>
+                    <div className="font-semibold text-white">{title}</div>
+                    <div className="mt-1 text-sm text-slate-300">{text}</div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -829,7 +861,7 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
         <div>
           <div className="text-sm uppercase tracking-[0.25em] text-cyan-300/80">Server Dashboard</div>
           <h1 className="display-font mt-2 text-3xl font-bold text-white">Welcome back, {currentUser.displayName}</h1>
-          <p className="mt-2 text-slate-300">This panel is connected to your auth, bundle, server, stats, and backup routes.</p>
+          <p className="mt-2 text-slate-300">Manage your Minecraft servers — start, stop, back up, and monitor from one place.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className={cn("rounded-2xl px-4 py-3 text-sm", apiHealthy ? "bg-emerald-400/10 text-emerald-200" : "bg-amber-400/10 text-amber-100")}>
@@ -845,7 +877,6 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
       <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
         <Sidebar items={menu} active={active} setActive={setActive} title="easy2host Panel" subtitle="User API area" />
         <div className="space-y-6">
-          <NoticeStack notices={notices} />
 
           {active === "servers" && (
             <>
@@ -919,7 +950,6 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                           <p className="mt-1 text-slate-400">
                             {selectedServer.software} {selectedServer.version} · {selectedServer.bundleName}
                           </p>
-                          <p className="mt-1 break-all text-xs uppercase tracking-[0.18em] text-slate-500">{selectedServer.server_id}</p>
                         </div>
                         <div className={cn("rounded-full px-3 py-1 text-sm", selectedServer.status === "online" ? "bg-emerald-400/10 text-emerald-300" : "bg-slate-700/60 text-slate-300")}>
                           {selectedServer.status || "created"}
@@ -937,19 +967,16 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
 
                       <div className="mt-6 grid gap-4 xl:grid-cols-2">
                         <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4">
-                          <div className="mb-4 flex items-center gap-2 text-white"><Database className="h-4 w-4 text-cyan-300" /> Server Overview</div>
-                          <pre className="max-h-64 overflow-auto text-xs text-slate-300">{JSON.stringify({
-                            server_id: selectedServer.server_id,
-                            host_port: selectedServer.port,
-                            plan: selectedServer.bundleName,
-                            ram_gb: selectedServer.ram,
-                            storage_gb: selectedServer.storage,
-                            cpu_cores: selectedServer.cores,
-                            status: selectedServer.status,
-                            software: selectedServer.software,
-                            version: selectedServer.version,
-                            backups_created: selectedServer.backupCount || 0,
-                          }, null, 2)}</pre>
+                          <div className="mb-4 flex items-center gap-2 text-white"><Database className="h-4 w-4 text-cyan-300" /> Server Details</div>
+                          <div className="space-y-2 text-sm text-slate-300">
+                            <div className="flex justify-between"><span className="text-slate-400">Plan</span><span className="text-white">{selectedServer.bundleName}</span></div>
+                            <div className="flex justify-between"><span className="text-slate-400">RAM</span><span className="text-white">{selectedServer.ram} GB</span></div>
+                            <div className="flex justify-between"><span className="text-slate-400">Storage</span><span className="text-white">{selectedServer.storage} GB SSD</span></div>
+                            <div className="flex justify-between"><span className="text-slate-400">CPU cores</span><span className="text-white">{selectedServer.cores}</span></div>
+                            <div className="flex justify-between"><span className="text-slate-400">Software</span><span className="text-white">{selectedServer.software} {selectedServer.version}</span></div>
+                            <div className="flex justify-between"><span className="text-slate-400">Port</span><span className="text-white">{selectedServer.port || "—"}</span></div>
+                            <div className="flex justify-between"><span className="text-slate-400">Backups</span><span className="text-white">{selectedServer.backupCount || 0}</span></div>
+                          </div>
                         </div>
                         <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4">
                           <div className="mb-4 flex items-center gap-2 text-white"><Activity className="h-4 w-4 text-cyan-300" /> Stats Response</div>
@@ -980,15 +1007,22 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
             <GlassCard className="p-6">
               <div className="text-sm uppercase tracking-[0.2em] text-cyan-300/80">Account</div>
               <h2 className="display-font mt-2 text-2xl font-bold text-white">Profile & Session</h2>
-              <div className="mt-8 grid gap-4 md:grid-cols-4">
-                <div className={cn("rounded-2xl border border-white/10 bg-slate-950/40 p-4", popClass())}><div className="text-sm text-slate-400">Display name</div><div className="mt-2 font-semibold text-white">{currentUser.displayName}</div></div>
-                <div className={cn("rounded-2xl border border-white/10 bg-slate-950/40 p-4", popClass())}><div className="text-sm text-slate-400">Username</div><div className="mt-2 font-semibold text-white">{currentUser.username}</div></div>
-                <div className={cn("rounded-2xl border border-white/10 bg-slate-950/40 p-4", popClass())}><div className="text-sm text-slate-400">Email</div><div className="mt-2 font-semibold text-white">{currentUser.email || "Stored locally"}</div></div>
-                <div className={cn("rounded-2xl border border-white/10 bg-slate-950/40 p-4", popClass())}><div className="text-sm text-slate-400">Role</div><div className="mt-2 inline-flex items-center gap-2 font-semibold text-white"><Lock className="h-4 w-4 text-cyan-300" /> {currentUser.role}</div></div>
+              <div className="mt-8 grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+                <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4"><div className="text-sm text-slate-400">Display name</div><div className="mt-2 font-semibold text-white truncate">{currentUser.displayName}</div></div>
+                <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4"><div className="text-sm text-slate-400">Username</div><div className="mt-2 font-semibold text-white truncate">{currentUser.username}</div></div>
+                <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4"><div className="text-sm text-slate-400">Email</div><div className="mt-2 font-semibold text-white truncate">{currentUser.email || "Not provided"}</div></div>
+                <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4"><div className="text-sm text-slate-400">Role</div><div className="mt-2 inline-flex items-center gap-2 font-semibold text-white"><Lock className="h-4 w-4 text-cyan-300" /> {currentUser.role}</div></div>
               </div>
               <div className="mt-6 rounded-2xl border border-white/10 bg-slate-950/40 p-4">
-                <div className="mb-3 flex items-center gap-2 text-white"><KeyRound className="h-4 w-4 text-cyan-300" /> JWT</div>
-                <pre className="overflow-auto text-xs text-slate-300">{token || "No token loaded."}</pre>
+                <div className="mb-3 flex items-center gap-2 text-white"><KeyRound className="h-4 w-4 text-cyan-300" /> Session</div>
+                <div className="text-sm text-slate-300">You are signed in as <span className="text-white font-semibold">{currentUser.username}</span>. Your session is stored locally in this browser.</div>
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="mt-4 rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-2.5 text-sm font-semibold text-rose-200 transition hover:bg-rose-400/20"
+                >
+                  Sign out
+                </button>
               </div>
             </GlassCard>
           )}
@@ -1036,6 +1070,8 @@ function AdminDashboard({ currentUser, token, notices, setNotices, apiHealthy, l
   const [hostAddForm, setHostAddForm] = useState({ host_server_id: "", server_id: "" });
   const [busy, setBusy] = useState(false);
 
+  const metadataRows = Array.isArray(hostMetadata?.metadata) ? hostMetadata.metadata : [];
+
   const pushNotice = (type, text) => setNotices((previous) => [{ id: Date.now() + Math.random(), type, text }, ...previous].slice(0, 5));
 
   const callAdmin = async (label, fn) => {
@@ -1082,14 +1118,34 @@ function AdminDashboard({ currentUser, token, notices, setNotices, apiHealthy, l
       <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
         <Sidebar items={adminMenu} active={active} setActive={setActive} title="Admin API Area" subtitle="Documented admin actions" />
         <div className="space-y-6">
-          <NoticeStack notices={notices} />
 
           {active === "overview" && (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <GlassCard className={cn("p-5", popClass())}><div className="text-sm text-slate-400">API Base</div><div className="mt-2 text-lg font-bold text-cyan-300">{API_BASE}</div></GlassCard>
-              <GlassCard className={cn("p-5", popClass())}><div className="text-sm text-slate-400">Role</div><div className="display-font mt-2 text-3xl font-bold text-white">Admin</div></GlassCard>
-              <GlassCard className={cn("p-5", popClass())}><div className="text-sm text-slate-400">JWT present</div><div className="display-font mt-2 text-3xl font-bold text-white">{token ? "Yes" : "No"}</div></GlassCard>
-              <GlassCard className={cn("p-5", popClass())}><div className="text-sm text-slate-400">Open tickets</div><div className="display-font mt-2 text-3xl font-bold text-white">{tickets.filter((ticket) => ticket.status !== "resolved").length}</div></GlassCard>
+            <div className="space-y-6">
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <GlassCard className={cn("p-5", popClass())}><div className="text-sm text-slate-400">Signed in as</div><div className="mt-2 text-lg font-bold text-white truncate">{currentUser.username}</div></GlassCard>
+                <GlassCard className={cn("p-5", popClass())}><div className="text-sm text-slate-400">Role</div><div className="display-font mt-2 text-3xl font-bold text-white">Admin</div></GlassCard>
+                <GlassCard className={cn("p-5", popClass())}><div className="text-sm text-slate-400">Session</div><div className="display-font mt-2 text-3xl font-bold text-white">{token ? "Active" : "None"}</div></GlassCard>
+                <GlassCard className={cn("p-5", popClass())}><div className="text-sm text-slate-400">Open tickets</div><div className="display-font mt-2 text-3xl font-bold text-white">{tickets.filter((ticket) => ticket.status !== "resolved").length}</div></GlassCard>
+              </div>
+              <GlassCard className="p-6">
+                <div className="text-sm uppercase tracking-[0.2em] text-cyan-300/80">Admin Guide</div>
+                <h2 className="display-font mt-2 text-2xl font-bold text-white">How to use the admin dashboard</h2>
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                  {[
+                    ["1. Create host metadata", "Go to Host Metadata tab → enter RAM and CPU cores → click Create Metadata. Copy the generated host ID."],
+                    ["2. Register the host network", "Go to Network tab → enter the host machine's IP and paste the host ID from step 1 → click Create."],
+                    ["3. Users can now buy plans", "When a user buys a plan, servers are automatically assigned to an available host from your metadata registry."],
+                    ["4. Handle support tickets", "Go to Support Tickets tab to read user messages, update their status (Open / In Progress / Resolved), and reply."],
+                    ["5. Manage hosts", "Use Add Server To Host to manually attach a specific server ID to a host for tracking and routing purposes."],
+                    ["6. Admin account setup", "Admin accounts are created by anyone who knows the JWT_SECRET. Use the \"How to create an admin account\" guide on the sign-in page."],
+                  ].map(([title, text]) => (
+                    <div key={title} className="rounded-2xl border border-white/10 bg-slate-950/40 p-4">
+                      <div className="font-semibold text-white">{title}</div>
+                      <p className="mt-2 text-sm leading-6 text-slate-300">{text}</p>
+                    </div>
+                  ))}
+                </div>
+              </GlassCard>
             </div>
           )}
 
@@ -1099,14 +1155,38 @@ function AdminDashboard({ currentUser, token, notices, setNotices, apiHealthy, l
             <GlassCard className="p-6">
               <div className="text-sm uppercase tracking-[0.2em] text-cyan-300/80">Admin</div>
               <h2 className="display-font mt-2 text-2xl font-bold text-white">Create Network Host Entry</h2>
-              <p className="mt-3 text-slate-300">Calls POST /network/create. For provisioning, use the host ID created in Host Metadata so IDs stay paired.</p>
+              <p className="mt-3 text-slate-300">Register a host machine's IP address. You must create a host metadata entry first — the host ID from that step is required here.</p>
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 <input value={networkIp} onChange={(event) => setNetworkIp(event.target.value)} placeholder="Host IP" className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none" />
                 <input value={networkHostId} onChange={(event) => setNetworkHostId(event.target.value)} placeholder="Host server ID (from metadata create)" className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none" />
               </div>
+              {metadataRows.length > 0 && (
+                <div className="mt-4">
+                  <label className="mb-2 block text-xs uppercase tracking-[0.16em] text-slate-400">Pick existing host metadata ID</label>
+                  <select
+                    value={networkHostId}
+                    onChange={(event) => setNetworkHostId(event.target.value)}
+                    className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none"
+                  >
+                    <option value="">Select host metadata ID</option>
+                    {metadataRows.map((row) => (
+                      <option key={row.host_server_id} value={row.host_server_id}>{row.host_server_id}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="mt-4 flex">
                 <button disabled={busy} onClick={async () => {
-                  const payload = networkHostId.trim() ? { ip: networkIp, host_server_id: networkHostId.trim() } : { ip: networkIp };
+                  if (!networkIp.trim()) {
+                    pushNotice("error", "Host IP is required.");
+                    return;
+                  }
+                  if (!networkHostId.trim()) {
+                    pushNotice("error", "Host metadata ID is required. Create metadata first and use that ID.");
+                    return;
+                  }
+
+                  const payload = { ip: networkIp.trim(), host_server_id: networkHostId.trim() };
                   const result = await callAdmin("Network create", () => apiFetch("/network/create", { method: "POST", body: payload, token }));
                   if (result) setNetworkResult(result);
                 }} className={cn("rounded-2xl bg-gradient-to-r from-cyan-300 to-blue-500 px-5 py-3 font-semibold text-slate-950 disabled:opacity-60", popClass())}>Create</button>
@@ -1126,10 +1206,48 @@ function AdminDashboard({ currentUser, token, notices, setNotices, apiHealthy, l
                   <input value={hostDeleteId} onChange={(event) => setHostDeleteId(event.target.value)} placeholder="Host server ID to delete" className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none md:col-span-2" />
                 </div>
                 <div className="mt-6 flex flex-wrap gap-3">
-                  <button disabled={busy} onClick={() => callAdmin("Metadata create", () => apiFetch("/host-metadata/create", { method: "POST", body: hostCreateForm, token }))} className={cn("rounded-2xl bg-gradient-to-r from-cyan-300 to-blue-500 px-4 py-3 font-semibold text-slate-950 disabled:opacity-60", popClass())}>Create Metadata</button>
+                  <button disabled={busy} onClick={async () => {
+                    const result = await callAdmin("Metadata create", () => apiFetch("/host-metadata/create", { method: "POST", body: hostCreateForm, token }));
+                    if (!result?.host_server_id) {
+                      return;
+                    }
+
+                    const nextHostID = result.host_server_id;
+                    setHostDeleteId(nextHostID);
+                    setNetworkHostId(nextHostID);
+                    setHostAddForm((current) => ({ ...current, host_server_id: nextHostID }));
+                    setHostMetadata((current) => {
+                      const currentRows = Array.isArray(current?.metadata) ? current.metadata : [];
+                      const exists = currentRows.some((row) => row.host_server_id === nextHostID);
+                      if (exists) return current;
+
+                      return {
+                        metadata: [
+                          ...currentRows,
+                          {
+                            host_server_id: nextHostID,
+                            ram: hostCreateForm.ram,
+                            cpu_cores: hostCreateForm.cores,
+                            servers: {},
+                            created_at: new Date().toISOString(),
+                          },
+                        ],
+                      };
+                    });
+                    pushNotice("success", `Host metadata created and selected: ${nextHostID}`);
+                  }} className={cn("rounded-2xl bg-gradient-to-r from-cyan-300 to-blue-500 px-4 py-3 font-semibold text-slate-950 disabled:opacity-60", popClass())}>Create Metadata</button>
                   <button disabled={busy} onClick={async () => {
                     const result = await callAdmin("Metadata get", () => apiFetch("/host-metadata/get", { method: "GET", token }));
-                    if (result) setHostMetadata(result);
+                    if (result) {
+                      setHostMetadata(result);
+                      const firstHostID = Array.isArray(result?.metadata) && result.metadata[0]?.host_server_id
+                        ? result.metadata[0].host_server_id
+                        : "";
+                      if (firstHostID && !networkHostId.trim()) {
+                        setNetworkHostId(firstHostID);
+                        setHostAddForm((current) => ({ ...current, host_server_id: firstHostID }));
+                      }
+                    }
                   }} className={cn("rounded-2xl border border-white/10 bg-white/5 px-4 py-3 font-semibold text-white disabled:opacity-60", popClass())}>Get Metadata</button>
                   <button disabled={busy} onClick={async () => {
                     const result = await callAdmin("Metadata delete", () => apiFetch("/host-metadata/delete", { method: "POST", body: { host_server_id: hostDeleteId }, token }));
@@ -1174,12 +1292,12 @@ function LandingPage({ apiHealthy, currentUser, setScreen, startPurchase }) {
         [CreditCard, "Simple purchase flow", "Bundle, billing, and provisioning move through one sequence."],
       ]
     : [
-        [LayoutDashboard, "Clean dashboard", "One place for status, actions, backups, and account access."],
-        [Server, "Easy server control", "Start, stop, back up, and inspect your server from one page."],
-        [HardDrive, "Backup workflow", "Create a backup and download the tarball directly from the dashboard."],
-        [Shield, "Account-based access", "Each account only sees and manages its own infrastructure."],
-        [Settings, "Version and software choice", "Pick Vanilla, Fabric, Bukkit, or Paper with the Minecraft version you want."],
-        [Crown, "Admin oversight", "The admin dashboard is available through the same sign-in flow and gateway."],
+        [LayoutDashboard, "Clean dashboard", "One place for status, actions, backups, and settings."],
+        [Server, "Full server control", "Start, stop, back up, and monitor from one clean page."],
+        [HardDrive, "Backup anytime", "Create a backup and download a copy directly from your dashboard."],
+        [Shield, "Your servers, your data", "Each account only sees and controls its own Minecraft servers."],
+        [Settings, "Version and software choice", "Pick Vanilla, Fabric, Bukkit, or Paper with any supported Minecraft version."],
+        [Crown, "Admin oversight", "Admin accounts give access to infrastructure management through the same sign-in."],
       ];
 
   const faqItems = [
@@ -1235,10 +1353,10 @@ function LandingPage({ apiHealthy, currentUser, setScreen, startPurchase }) {
             </div>
             <div className="space-y-4">
               {[
-                ["1", "Authenticate", "Register or sign in through the auth service."],
-                ["2", "Bundle key", "Generate a bundle key and add the selected plan to the user account."],
-                ["3", "Provision server", "Create the Minecraft server with version, host selection, and tracked port."],
-                ["4", "Operate it", "Use the server dashboard for start, stop, stats, backup, and delete."],
+                ["1", "Create an account", "Sign up with a username and password — takes about 30 seconds."],
+                ["2", "Pick a plan", "Choose Starter, Standard, or Premium and add any extras you want."],
+                ["3", "Launch your server", "We provision your Minecraft server instantly after checkout."],
+                ["4", "You're in control", "Start, stop, back up, and monitor your server from your dashboard."],
               ].map(([number, title, text]) => (
                 <div key={number} className={cn("rounded-2xl border border-white/10 bg-slate-950/40 p-4", popClass())}>
                   <div className="flex items-start gap-4">
@@ -1256,39 +1374,65 @@ function LandingPage({ apiHealthy, currentUser, setScreen, startPurchase }) {
       </section>
 
       <section id="plans" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-16">
-        <SectionIntro eyebrow="Plans" title="Choose a plan, then create a server" text="The visible purchase flow now maps to the existing bundle and task-service APIs instead of staying as a mock landing page." />
+        <SectionIntro eyebrow="Plans" title="Pick the right plan for your server" text="All plans include a dedicated Minecraft server, full dashboard access, and one-click start/stop controls. Upgrade anytime." />
         <div className="mt-10 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-          {plans.map((plan) => (
-            <button
-              key={plan.name}
-              type="button"
-              onClick={() => startPurchase(plan)}
-              className={cn(
-                "relative isolate flex h-full min-h-[22rem] w-full flex-col rounded-[2rem] border p-6 text-left",
-                popClass(),
-                plan.featured ? "border-cyan-300/30 bg-cyan-400/10 shadow-cyan-500/10" : "border-white/10 bg-white/5",
-              )}
-            >
-              {plan.featured && <div className="pointer-events-none absolute right-5 top-5 select-none rounded-full bg-gradient-to-r from-cyan-300 to-blue-500 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-slate-950">Most popular</div>}
-              <h3 className="display-font text-2xl font-bold text-white">{plan.name}</h3>
-              <div className="mt-6 flex-1 space-y-2 text-slate-300">
-                <div>{plan.ram} GB RAM</div>
-                <div>{plan.storage} GB SSD</div>
-                <div>{plan.cores} Cores</div>
-                <div>{plan.backups} Backup slots</div>
-              </div>
-              <div className="display-font mt-8 text-3xl font-black text-white">{money(plan.price)} <span className="text-base font-medium text-slate-400">/ month</span></div>
-              <div className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-white/8 px-4 py-3 font-semibold text-white">Select plan <ChevronRight className="h-4 w-4" /></div>
-            </button>
-          ))}
+          {plans.map((plan) => {
+            const features = [
+              `${plan.ram} GB RAM`,
+              `${plan.storage} GB SSD storage`,
+              `${plan.cores} CPU cores`,
+              plan.backups === 0 ? "No included backups" : `${plan.backups} backup slot${plan.backups > 1 ? "s" : ""} included`,
+              "Full dashboard control",
+              "Start / stop anytime",
+            ];
+            return (
+              <button
+                key={plan.name}
+                type="button"
+                onClick={() => startPurchase(plan)}
+                className={cn(
+                  "relative isolate flex h-full w-full flex-col rounded-[2rem] border p-6 text-left",
+                  popClass(),
+                  plan.featured
+                    ? "border-cyan-300/30 bg-gradient-to-b from-cyan-400/10 to-transparent"
+                    : "border-white/10 bg-white/5",
+                )}
+              >
+                {plan.featured && (
+                  <div className="pointer-events-none absolute right-5 top-5 select-none rounded-full bg-gradient-to-r from-cyan-300 to-blue-500 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-slate-950">
+                    Most popular
+                  </div>
+                )}
+                <div>
+                  <h3 className="display-font text-2xl font-bold text-white">{plan.name}</h3>
+                  <div className="mt-2 text-sm text-slate-400">Perfect for {plan.name === "Starter" ? "small friend groups" : plan.name === "Standard" ? "growing communities" : "large servers"}</div>
+                </div>
+                <ul className="mt-6 flex-1 space-y-2.5">
+                  {features.map((feat) => (
+                    <li key={feat} className="flex items-center gap-2.5 text-sm text-slate-300">
+                      <Check className="h-4 w-4 shrink-0 text-cyan-300" />
+                      {feat}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-8">
+                  <div className="display-font text-3xl font-black text-white">
+                    {money(plan.price)}
+                    <span className="text-base font-medium text-slate-400"> / month</span>
+                  </div>
+                  <div className="mt-4 flex items-center gap-2 rounded-2xl border border-white/15 bg-white/8 px-4 py-3 font-semibold text-white">
+                    Select plan <ChevronRight className="h-4 w-4" />
+                  </div>
+                </div>
+              </button>
+            );
+          })}
         </div>
 
         <div className="mt-12">
-          <div className="mb-5 flex items-center justify-between gap-4">
-            <div>
-              <h3 className="display-font text-2xl font-bold text-white">Available upgrades</h3>
-              <p className="mt-2 text-slate-300">These upgrades are applied locally in the dashboard metadata so users can see the resources they bought.</p>
-            </div>
+          <div className="mb-5">
+            <h3 className="display-font text-2xl font-bold text-white">Optional upgrades</h3>
+            <p className="mt-2 text-slate-300">Add extra resources during checkout. Applied to your server at provisioning time.</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {addOns.map((addon) => (
@@ -1296,14 +1440,14 @@ function LandingPage({ apiHealthy, currentUser, setScreen, startPurchase }) {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="text-lg font-semibold text-white">{addon.label}</div>
-                    <div className="mt-2 text-sm text-slate-400">Monthly add-on for extra server resources.</div>
+                    <div className="mt-1 text-sm text-slate-400">Add-on, billed monthly</div>
                   </div>
                   <div className="rounded-2xl bg-cyan-400/10 px-3 py-2 text-sm font-semibold text-cyan-300">{money(addon.price)}</div>
                 </div>
-                <div className="mt-5 space-y-2 text-sm text-slate-300">
-                  {addon.ram > 0 && <div>+{addon.ram} GB RAM</div>}
-                  {addon.storage > 0 && <div>+{addon.storage} GB SSD</div>}
-                  <div>Selectable during checkout</div>
+                <div className="mt-4 space-y-1.5 text-sm text-slate-300">
+                  {addon.ram > 0 && <div className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-cyan-300" /> +{addon.ram} GB RAM</div>}
+                  {addon.storage > 0 && <div className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-cyan-300" /> +{addon.storage} GB SSD</div>}
+                  <div className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-cyan-300" /> Selectable during checkout</div>
                 </div>
               </GlassCard>
             ))}
@@ -1681,9 +1825,10 @@ export default function App({ initialScreen = "landing" }) {
       )}
 
       <PurchaseFlow open={Boolean(purchasePlan)} plan={purchasePlan} onClose={() => setPurchasePlan(null)} currentUser={currentUser} onRequireAuth={() => setScreen("signin")} onComplete={completePurchase} />
+      <ToastStack notices={notices} setNotices={setNotices} />
 
       <footer className="border-t border-white/10 px-4 py-8 text-center text-sm text-slate-400 sm:px-6 lg:px-16">
-        easy2host web app with connected auth, bundle, server lifecycle, backup, and admin infrastructure flows.
+        easy2host &mdash; Minecraft hosting made simple.
       </footer>
     </div>
   );
@@ -1813,15 +1958,17 @@ function AdminTicketPanel({ tickets, setTickets, pushNotice }) {
 
   const selectedTicket = tickets.find((ticket) => ticket.id === selectedId) || null;
 
+  // Use selectedId as dep to avoid object-reference churn causing stale reads
   useEffect(() => {
-    if (!selectedTicket) {
+    const ticket = tickets.find((t) => t.id === selectedId) || null;
+    if (!ticket) {
       setReply("");
       setStatus("open");
       return;
     }
-    setReply(selectedTicket.adminReply || "");
-    setStatus(selectedTicket.status || "open");
-  }, [selectedTicket]);
+    setReply(ticket.adminReply || "");
+    setStatus(ticket.status || "open");
+  }, [selectedId, tickets]);
 
   const saveTicket = () => {
     if (!selectedTicket) {

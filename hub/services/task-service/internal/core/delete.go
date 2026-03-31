@@ -43,6 +43,11 @@ func DeleteServer(serverID, token, ownerID string) error {
 		return err
 	}
 
+	targetIP := normalizeHostIP(ip.Ip)
+	if targetIP == "" {
+		return fmt.Errorf("host metadata returned empty IP for host %s", hostID)
+	}
+
 	requestBody := map[string]string{"server_id": serverID}
 	jsonBody, err := json.Marshal(requestBody)
 	if err != nil {
@@ -51,7 +56,7 @@ func DeleteServer(serverID, token, ownerID string) error {
 
 	req, err := http.NewRequest(
 		"POST",
-		"http://"+ip.Ip+":"+cfg.DefaultHostServerPort+"/server-service/delete",
+		"http://"+targetIP+":"+cfg.DefaultHostServerPort+"/server-service/delete",
 		bytes.NewReader(jsonBody),
 	)
 	if err != nil {

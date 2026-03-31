@@ -69,6 +69,11 @@ func CreateBackup(serverID, token, userID, bundle string) error {
 		return err
 	}
 
+	targetIP := normalizeHostIP(ip.Ip)
+	if targetIP == "" {
+		return fmt.Errorf("host metadata returned empty IP for host %s", hostID)
+	}
+
 	requestBody := map[string]string{"server_id": serverID}
 	jsonBody, err := json.Marshal(requestBody)
 	if err != nil {
@@ -77,7 +82,7 @@ func CreateBackup(serverID, token, userID, bundle string) error {
 
 	req, err := http.NewRequest(
 		"POST",
-		"http://"+ip.Ip+":"+cfg.DefaultHostServerPort+"/server-service/backup/create",
+		"http://"+targetIP+":"+cfg.DefaultHostServerPort+"/server-service/backup/create",
 		bytes.NewReader(jsonBody),
 	)
 	if err != nil {

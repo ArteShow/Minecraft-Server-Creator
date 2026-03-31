@@ -44,6 +44,11 @@ func GetServerStats(key, serverID, token string) (string, error) {
 		return "", err
 	}
 
+	targetIP := normalizeHostIP(serverMetadata.Ip)
+	if targetIP == "" {
+		return "", fmt.Errorf("host metadata returned empty IP for host %s", hostID)
+	}
+
 	requestBody := map[string]string{"key": key, "server_id": serverID}
 	jsonBody, err := json.Marshal(requestBody)
 	if err != nil {
@@ -52,7 +57,7 @@ func GetServerStats(key, serverID, token string) (string, error) {
 
 	req, err := http.NewRequest(
 		"POST",
-		"http://"+serverMetadata.Ip+":"+cfg.DefaultHostServerPort+"/server-service/getServerStats",
+		"http://"+targetIP+":"+cfg.DefaultHostServerPort+"/server-service/getServerStats",
 		bytes.NewReader(jsonBody),
 	)
 	if err != nil {

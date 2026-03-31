@@ -131,13 +131,18 @@ func CreateServer(version, token, bundleKey, userID string) (string, int, error)
 		return "", 0, err
 	}
 
+	targetIP := normalizeHostIP(metaResp.Ip)
+	if targetIP == "" {
+		return "", 0, fmt.Errorf("host metadata returned empty IP for host %s", hostID)
+	}
+
 	nextPort := GetNextPort(serversResp)
 	bodyBytes, err := json.Marshal(map[string]interface{}{"version": version, "port": nextPort})
 	if err != nil {
 		return "", 0, err
 	}
 
-	url := fmt.Sprintf("http://%s:%s/server-service/create", metaResp.Ip, cfg.DefaultHostServerPort)
+	url := fmt.Sprintf("http://%s:%s/server-service/create", targetIP, cfg.DefaultHostServerPort)
 	req, err := http.NewRequest("POST", url, bytes.NewReader(bodyBytes))
 	if err != nil {
 		return "", 0, err
@@ -154,6 +159,10 @@ func CreateServer(version, token, bundleKey, userID string) (string, int, error)
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated {
+		errBody, _ := io.ReadAll(resp.Body)
+		if len(errBody) > 0 {
+			return "", 0, fmt.Errorf("failed to create server, status: %d, response: %s", resp.StatusCode, string(errBody))
+		}
 		return "", 0, fmt.Errorf("failed to create server, status: %d", resp.StatusCode)
 	}
 

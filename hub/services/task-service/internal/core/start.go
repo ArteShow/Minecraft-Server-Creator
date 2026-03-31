@@ -43,6 +43,11 @@ func StartServer(serverID, token, ownerID, ram string, cpuCores int) error {
 		return err
 	}
 
+	targetIP := normalizeHostIP(ip.Ip)
+	if targetIP == "" {
+		return fmt.Errorf("host metadata returned empty IP for host %s", hostID)
+	}
+
 	requestBody := map[string]interface{}{"server_id": serverID, "RAM": ram, "cpu_cores": cpuCores}
 	jsonBody, err := json.Marshal(requestBody)
 	if err != nil {
@@ -51,7 +56,7 @@ func StartServer(serverID, token, ownerID, ram string, cpuCores int) error {
 
 	req, err := http.NewRequest(
 		"POST",
-		"http://"+ip.Ip+":"+cfg.DefaultHostServerPort+"/server-service/start",
+		"http://"+targetIP+":"+cfg.DefaultHostServerPort+"/server-service/start",
 		bytes.NewReader(jsonBody),
 	)
 	if err != nil {
