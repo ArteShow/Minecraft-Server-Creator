@@ -658,17 +658,6 @@ function AuthScreen({ mode, busy, error, onSubmit, setScreen }) {
                   <a href="/admin.html" className="text-cyan-300 hover:text-cyan-200">Admin Dashboard</a>
                 </div>
               </div>
-              <details className="rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4 text-sm text-slate-300">
-                <summary className="cursor-pointer font-semibold text-amber-200">How to create an admin account</summary>
-                <div className="mt-3 space-y-2 text-slate-300">
-                  <p>Admin accounts require knowing the <strong className="text-white">JWT_SECRET</strong> from your server config (<code className="rounded bg-slate-800 px-1">hub/config/docker.env</code>).</p>
-                  <p>Run this command (replace <code className="rounded bg-slate-800 px-1">YOUR_JWT_SECRET</code>, choose your own username/password):</p>
-                  <pre className="mt-2 overflow-auto rounded-xl bg-slate-900 p-3 text-xs text-cyan-200">{`curl -s -X POST http://localhost:8010/api/v1/auth/user/register \\
-  -H "Content-Type: application/json" \\
-  -d '{"username":"admin","password":"yourpassword","email":"","type":"admin","jwt":"YOUR_JWT_SECRET"}'`}</pre>
-                  <p className="text-slate-400">Then sign in normally. Admin credentials automatically open the Admin Dashboard.</p>
-                </div>
-              </details>
             </div>
           )}
         </GlassCard>
@@ -735,7 +724,7 @@ function PluginCatalogPanel({ search, setSearch }) {
   );
 }
 
-function CustomerDashboard({ currentUser, token, servers, setServers, notices, setNotices, apiHealthy, logout, tickets, setTickets }) {
+function CustomerDashboard({ currentUser, token, servers, setServers, notices, setNotices, apiHealthy, logout, tickets, setTickets, onBuyServer }) {
   const [active, setActive] = useState("servers");
   const [selectedServerId, setSelectedServerId] = useState(null);
   const [search, setSearch] = useState("");
@@ -868,6 +857,9 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
             <Wifi className="mr-2 inline h-4 w-4" />
             {apiHealthy ? "Gateway reachable" : "Gateway not reachable"}
           </div>
+          <button onClick={() => onBuyServer(plans[1] || plans[0])} className={cn("rounded-2xl bg-gradient-to-r from-cyan-300 to-blue-500 px-4 py-3 font-semibold text-slate-950", popClass())}>
+            Buy Server
+          </button>
           <button onClick={logout} className={cn("rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white", popClass())}>
             Log out
           </button>
@@ -880,6 +872,31 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
 
           {active === "servers" && (
             <>
+              <GlassCard className="p-5">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <h2 className="display-font text-xl font-semibold text-white">Buy Another Server</h2>
+                  <span className="text-sm text-slate-400">Choose a plan</span>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {plans.map((plan) => (
+                    <button
+                      key={plan.name}
+                      type="button"
+                      onClick={() => onBuyServer(plan)}
+                      className={cn(
+                        "rounded-2xl border p-4 text-left",
+                        popClass(),
+                        plan.featured ? "border-cyan-300/30 bg-cyan-400/10" : "border-white/10 bg-slate-950/40",
+                      )}
+                    >
+                      <div className="font-semibold text-white">{plan.name}</div>
+                      <div className="mt-1 text-sm text-slate-300">{plan.ram} GB RAM · {plan.cores} cores</div>
+                      <div className="mt-2 text-sm text-cyan-300">{money(plan.price)} / month</div>
+                    </button>
+                  ))}
+                </div>
+              </GlassCard>
+
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <GlassCard className={cn("p-5", popClass())}>
                   <div className="text-sm text-slate-400">Owned servers</div>
@@ -1137,7 +1154,7 @@ function AdminDashboard({ currentUser, token, notices, setNotices, apiHealthy, l
                     ["3. Users can now buy plans", "When a user buys a plan, servers are automatically assigned to an available host from your metadata registry."],
                     ["4. Handle support tickets", "Go to Support Tickets tab to read user messages, update their status (Open / In Progress / Resolved), and reply."],
                     ["5. Manage hosts", "Use Add Server To Host to manually attach a specific server ID to a host for tracking and routing purposes."],
-                    ["6. Admin account setup", "Admin accounts are created by anyone who knows the JWT_SECRET. Use the \"How to create an admin account\" guide on the sign-in page."],
+                    ["6. Admin accounts", "Use your pre-created admin credentials to sign in and access this dashboard."],
                   ].map(([title, text]) => (
                     <div key={title} className="rounded-2xl border border-white/10 bg-slate-950/40 p-4">
                       <div className="font-semibold text-white">{title}</div>
@@ -1157,8 +1174,8 @@ function AdminDashboard({ currentUser, token, notices, setNotices, apiHealthy, l
               <h2 className="display-font mt-2 text-2xl font-bold text-white">Create Network Host Entry</h2>
               <p className="mt-3 text-slate-300">Register a host machine's IP address. You must create a host metadata entry first — the host ID from that step is required here.</p>
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                <input value={networkIp} onChange={(event) => setNetworkIp(event.target.value)} placeholder="Host IP" className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none" />
-                <input value={networkHostId} onChange={(event) => setNetworkHostId(event.target.value)} placeholder="Host server ID (from metadata create)" className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none" />
+                <input value={networkIp} onChange={(event) => setNetworkIp(event.target.value)} placeholder="Host IP (example: host.docker.internal or 192.168.1.20)" className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none" />
+                <input value={networkHostId} onChange={(event) => setNetworkHostId(event.target.value)} placeholder="Host server ID (example: d2f0d4f9-3b74-4d2b-a8c7-30f9d7c8a123)" className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none" />
               </div>
               {metadataRows.length > 0 && (
                 <div className="mt-4">
@@ -1201,9 +1218,9 @@ function AdminDashboard({ currentUser, token, notices, setNotices, apiHealthy, l
                 <h2 className="display-font text-2xl font-bold text-white">Host Metadata</h2>
                 <p className="mt-3 text-slate-300">Create, fetch, or delete host metadata through the admin gateway.</p>
                 <div className="mt-6 grid gap-4 md:grid-cols-2">
-                  <input value={hostCreateForm.ram} onChange={(event) => setHostCreateForm((current) => ({ ...current, ram: event.target.value }))} placeholder="RAM" className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none" />
-                  <input value={hostCreateForm.cores} onChange={(event) => setHostCreateForm((current) => ({ ...current, cores: event.target.value }))} placeholder="CPU cores" className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none" />
-                  <input value={hostDeleteId} onChange={(event) => setHostDeleteId(event.target.value)} placeholder="Host server ID to delete" className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none md:col-span-2" />
+                  <input value={hostCreateForm.ram} onChange={(event) => setHostCreateForm((current) => ({ ...current, ram: event.target.value }))} placeholder="RAM (example: 16)" className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none" />
+                  <input value={hostCreateForm.cores} onChange={(event) => setHostCreateForm((current) => ({ ...current, cores: event.target.value }))} placeholder="CPU cores (example: 8)" className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none" />
+                  <input value={hostDeleteId} onChange={(event) => setHostDeleteId(event.target.value)} placeholder="Host server ID to delete (example: d2f0...a123)" className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none md:col-span-2" />
                 </div>
                 <div className="mt-6 flex flex-wrap gap-3">
                   <button disabled={busy} onClick={async () => {
@@ -1267,8 +1284,8 @@ function AdminDashboard({ currentUser, token, notices, setNotices, apiHealthy, l
               <h2 className="display-font text-2xl font-bold text-white">Add Server To Host</h2>
               <p className="mt-3 text-slate-300">Calls POST /host-metadata/add with both host and server IDs.</p>
               <div className="mt-6 grid gap-4 md:grid-cols-2">
-                <input value={hostAddForm.host_server_id} onChange={(event) => setHostAddForm((current) => ({ ...current, host_server_id: event.target.value }))} placeholder="Host server ID" className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none" />
-                <input value={hostAddForm.server_id} onChange={(event) => setHostAddForm((current) => ({ ...current, server_id: event.target.value }))} placeholder="Server ID" className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none" />
+                <input value={hostAddForm.host_server_id} onChange={(event) => setHostAddForm((current) => ({ ...current, host_server_id: event.target.value }))} placeholder="Host server ID (example: d2f0...a123)" className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none" />
+                <input value={hostAddForm.server_id} onChange={(event) => setHostAddForm((current) => ({ ...current, server_id: event.target.value }))} placeholder="Server ID (example: b58b4f1a-98ae-4833-a866-d8cd1989d377)" className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none" />
               </div>
               <div className="mt-6 flex justify-end">
                 <button disabled={busy} onClick={() => callAdmin("Host mapping", () => apiFetch("/host-metadata/add", { method: "POST", body: hostAddForm, token }))} className={cn("rounded-2xl bg-gradient-to-r from-cyan-300 to-blue-500 px-5 py-3 font-semibold text-slate-950 disabled:opacity-60", popClass())}>Attach Server</button>
@@ -1537,6 +1554,17 @@ export default function App({ initialScreen = "landing" }) {
   useEffect(() => {
     localStorage.setItem("easy2host_tickets", JSON.stringify(tickets));
   }, [tickets]);
+
+  useEffect(() => {
+    let link = document.querySelector("link[rel='icon']");
+    if (!link) {
+      link = document.createElement("link");
+      link.setAttribute("rel", "icon");
+      document.head.appendChild(link);
+    }
+    link.setAttribute("type", "image/png");
+    link.setAttribute("href", logoIcon);
+  }, []);
 
   useEffect(() => {
     setScreen(initialScreen);
@@ -1809,6 +1837,7 @@ export default function App({ initialScreen = "landing" }) {
           logout={logout}
           tickets={tickets}
           setTickets={setTickets}
+          onBuyServer={startPurchase}
         />
       )}
       {screen === "admin" && currentUser?.role === "admin" && (
