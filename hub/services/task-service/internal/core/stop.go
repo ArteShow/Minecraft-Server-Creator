@@ -3,6 +3,7 @@ package core
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/client"
@@ -11,7 +12,7 @@ import (
 	network "github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/proto/network-service"
 )
 
-func StopServer(serverID, token string) error {
+func StopServer(serverID, token, ownerID string) error {
 	cfg, err := config.Read()
 	if err != nil {
 		return err
@@ -27,7 +28,10 @@ func StopServer(serverID, token string) error {
 		return err
 	}
 
-	hostID := SelecthostIdByServerID(serverID, *hosts)
+	hostID := SelecthostIDByServerID(serverID, hosts)
+	if hostID == "" {
+		return fmt.Errorf("server %s is not mapped to a host", serverID)
+	}
 
 	networkClient, err := client.NewNetworkClient()
 	if err != nil {
@@ -56,12 +60,9 @@ func StopServer(serverID, token string) error {
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("X-Owner-ID", ownerID)
 
 	client := &http.Client{}
 	_, err = client.Do(req)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }

@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func (h *Handler)CreateServer(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CreateServer(w http.ResponseWriter, r *http.Request) {
 	ownerID := r.Header.Get("X-Owner-ID")
 	if ownerID == "" {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
@@ -32,10 +32,10 @@ func (h *Handler)CreateServer(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	res := CreateServerResponse{ServerID: id}
-	
+	res := CreateServerResponse{ServerID: id, Port: req.Port}
+
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 	if err = json.NewEncoder(w).Encode(res); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

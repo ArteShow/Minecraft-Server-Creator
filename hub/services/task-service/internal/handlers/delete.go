@@ -10,6 +10,12 @@ import (
 )
 
 func DeleteServer(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("X-User-ID")
+	if userID == "" {
+		http.Error(w, "userID header missing", http.StatusBadRequest)
+		return
+	}
+
 	auth := r.Header.Get("Authorization")
 	if auth == "" {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
@@ -37,7 +43,7 @@ func DeleteServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = core.DeleteServer(req.ServerID, token); err != nil {
+	if err = core.DeleteServer(req.ServerID, token, userID); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

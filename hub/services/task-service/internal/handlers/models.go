@@ -12,6 +12,8 @@ type CreateServerResponse struct {
 
 type StartServerRequest struct {
 	ServerID string `json:"server_id"`
+	RAM      string `json:"RAM"`
+	CPUCores int    `json:"cpu_cores"`
 }
 
 type StopServerRequest struct {

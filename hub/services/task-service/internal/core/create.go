@@ -15,44 +15,45 @@ import (
 	network "github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/proto/network-service"
 )
 
-func SelectHostWithFewestServers(servers host.GetAllHostServersResponse) string {
+const firstServerPort = 25565
+
+func SelectHostWithFewestServers(servers *host.GetAllHostServersResponse) string {
 	minServers := -1
-	selectedHostId := ""
-	for _, h := range servers.GetHosts() {
-		count := len(h.Servers)
+	selectedHostID := ""
+	for _, currentHost := range servers.GetHosts() {
+		count := len(currentHost.Servers)
 		if minServers == -1 || count < minServers {
 			minServers = count
-			selectedHostId = h.Id
+			selectedHostID = currentHost.Id
 		}
 	}
-	return selectedHostId
+	return selectedHostID
 }
 
-func SelecthostIdByServerID(serverID string, servers host.GetAllHostServersResponse) string {
-	var hostID string
-	for _, host := range servers.GetHosts() {
-		for key, _ := range host.GetServers() {
+func SelecthostIDByServerID(serverID string, servers *host.GetAllHostServersResponse) string {
+	for _, currentHost := range servers.GetHosts() {
+		for key := range currentHost.GetServers() {
 			if key == serverID {
-				hostID = host.GetId()
+				return currentHost.GetId()
 			}
 		}
 	}
-	return hostID
+	return ""
 }
 
-func GetHighestPort(servers host.GetAllHostServersResponse) int {
-	var HighestPort int
-	for _, host := range servers.GetHosts() {
-		for _, value := range host.GetServers() {
-			if HighestPort < int(value) {
-				HighestPort = int(value)
+func GetNextPort(servers *host.GetAllHostServersResponse) int {
+	highestPort := firstServerPort - 1
+	for _, currentHost := range servers.GetHosts() {
+		for _, value := range currentHost.GetServers() {
+			if highestPort < int(value) {
+				highestPort = int(value)
 			}
 		}
 	}
-	return HighestPort
+	return highestPort + 1
 }
 
-func CreateServer(version, token, bundle_key, userID string) (string, int, error) {
+func CreateServer(version, token, bundleKey, userID string) (string, int, error) {
 	cfg, err := config.Read()
 	if err != nil {
 		return "", 0, err
@@ -83,7 +84,7 @@ func CreateServer(version, token, bundle_key, userID string) (string, int, error
 		return "", 0, err
 	}
 
-	hostID := SelectHostWithFewestServers(*serversResp)
+	hostID := SelectHostWithFewestServers(serversResp)
 	if hostID == "" {
 		return "", 0, fmt.Errorf("no hosts available")
 	}
@@ -106,7 +107,7 @@ func CreateServer(version, token, bundle_key, userID string) (string, int, error
 		return "", 0, err
 	}
 
-	bundle, err := bundleClient.DisableBundleKey(&clientBundle.DisableBundleKeyRequest{Key: bundle_key})
+	bundle, err := bundleClient.DisableBundleKey(&clientBundle.DisableBundleKeyRequest{Key: bundleKey})
 	if err != nil {
 		return "", 0, err
 	}
@@ -130,7 +131,8 @@ func CreateServer(version, token, bundle_key, userID string) (string, int, error
 		return "", 0, err
 	}
 
-	bodyBytes, err := json.Marshal(map[string]string{"version": version, "port": strconv.Itoa(GetHighestPort(*serversResp))})
+	nextPort := GetNextPort(serversResp)
+	bodyBytes, err := json.Marshal(map[string]interface{}{"version": version, "port": nextPort})
 	if err != nil {
 		return "", 0, err
 	}
@@ -142,6 +144,7 @@ func CreateServer(version, token, bundle_key, userID string) (string, int, error
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("X-Owner-ID", userID)
 
 	httpClient := &http.Client{}
 	resp, err := httpClient.Do(req)
@@ -163,11 +166,14 @@ func CreateServer(version, token, bundle_key, userID string) (string, int, error
 	if err := json.Unmarshal(body, &respData); err != nil {
 		return "", 0, err
 	}
+	if respData.Port == 0 {
+		respData.Port = nextPort
+	}
 
 	_, err = hostClient.AddPortToServer(&host.AddPortToServerRequest{
 		HostServerId: hostID,
 		ServerId:     respData.ServerID,
-		Port:         int32(respData.Port), 
+		Port:         int32(respData.Port),
 	})
 	if err != nil {
 		return "", 0, err

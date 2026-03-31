@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"strconv"
 
 	proto_pb "github.com/ArteShow/Minecraft-Server-Creator/hub/services/host-metadata-service/internal/proto"
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/host-metadata-service/internal/repository"
@@ -17,7 +16,7 @@ func NewServer() *Server {
 }
 
 func (s *Server) CreateHostServer(_ context.Context, req *proto_pb.CreateHostServerRequest) (*proto_pb.CreateHostServerResponse, error) {
-	id, err := repository.Create(map[string][]int{}, req.GetRam(), req.GetCores())
+	id, err := repository.Create(map[string]int{}, req.GetRam(), req.GetCores())
 	if err != nil {
 		return &proto_pb.CreateHostServerResponse{}, err
 	}
@@ -42,19 +41,13 @@ func (s *Server) GetAllHostServers(_ context.Context, _ *proto_pb.GetAllHostServ
 
 	pbHosts := make([]*proto_pb.HostServer, len(hosts))
 
-	for i, host := range hosts {
-		pbServers := make(map[string]int32)
-
+	for index, host := range hosts {
+		pbServers := make(map[string]int32, len(host.Servers))
 		for serverID, port := range host.Servers {
-			intPort, err := strconv.Atoi(port)
-			if err != nil{
-				return &proto_pb.GetAllHostServersResponse{},  err
-			}
-
-			pbServers[strconv.Itoa(serverID)] = int32(intPort)
+			pbServers[serverID] = int32(port)
 		}
 
-		pbHosts[i] = &proto_pb.HostServer{
+		pbHosts[index] = &proto_pb.HostServer{
 			Id:        host.ID,
 			Servers:   pbServers,
 			CreatedAt: host.CreatedAt,
@@ -112,11 +105,10 @@ func (s *Server) SubtractCores(_ context.Context, req *proto_pb.SubtractCoresReq
 	return &proto_pb.SubtractCoresResponse{}, nil
 }
 
-func (s *Server) AddPortToServer(ctx context.Context, req *proto_pb.AddPortToServerRequest) (*proto_pb.AddPortToServerResponse, error) {
+func (s *Server) AddPortToServer(_ context.Context, req *proto_pb.AddPortToServerRequest) (*proto_pb.AddPortToServerResponse, error) {
 	err := repository.AddPortToServer(req.GetHostServerId(), req.GetServerId(), int(req.GetPort()))
 	if err != nil {
 		return &proto_pb.AddPortToServerResponse{}, err
 	}
 	return &proto_pb.AddPortToServerResponse{}, nil
 }
-

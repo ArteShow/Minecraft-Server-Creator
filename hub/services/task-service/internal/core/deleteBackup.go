@@ -3,6 +3,7 @@ package core
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/client"
@@ -33,7 +34,10 @@ func DeleteBackup(serverID, token, backupID string) error {
 		return err
 	}
 
-	hostID := SelecthostIdByServerID(serverID, *hosts)
+	hostID := SelecthostIDByServerID(serverID, hosts)
+	if hostID == "" {
+		return fmt.Errorf("server %s is not mapped to a host", serverID)
+	}
 
 	networkClient, err := client.NewNetworkClient()
 	if err != nil {
@@ -68,11 +72,11 @@ func DeleteBackup(serverID, token, backupID string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	_, err = backupClient.DeleteBackup(&backup.DeleteBackupRequest{BackupID: backupID})
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }

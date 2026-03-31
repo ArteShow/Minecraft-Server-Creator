@@ -3,6 +3,7 @@ package core
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -28,7 +29,10 @@ func GetBackup(serverID, token string) ([]byte, error) {
 		return []byte{}, err
 	}
 
-	hostID := SelecthostIdByServerID(serverID, *hosts)
+	hostID := SelecthostIDByServerID(serverID, hosts)
+	if hostID == "" {
+		return []byte{}, fmt.Errorf("server %s is not mapped to a host", serverID)
+	}
 
 	networkClient, err := client.NewNetworkClient()
 	if err != nil {

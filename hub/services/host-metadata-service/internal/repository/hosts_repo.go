@@ -8,15 +8,62 @@ import (
 
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/host-metadata-service/internal/database"
 	"github.com/google/uuid"
-	"github.com/lib/pq"
 )
 
 type Host struct {
-	ID        string   `json:"host_server_id"`
-	Servers   []string `json:"server_ids"`
-	RAM       string   `json:"RAM"`
-	Cores     string   `json:"cpu_cores"`
-	CreatedAt string   `json:"created_at"`
+	ID        string         `json:"host_server_id"`
+	Servers   map[string]int `json:"servers"`
+	RAM       string         `json:"ram"`
+	Cores     string         `json:"cpu_cores"`
+	CreatedAt string         `json:"created_at"`
+}
+
+func loadServers(serversJSON []byte) (map[string]int, error) {
+	servers := make(map[string]int)
+	if len(serversJSON) == 0 {
+		return servers, nil
+	}
+
+	if err := json.Unmarshal(serversJSON, &servers); err == nil {
+		return servers, nil
+	}
+
+	legacyServers := make(map[string][]int)
+	if err := json.Unmarshal(serversJSON, &legacyServers); err != nil {
+		return nil, err
+	}
+
+	for serverID, ports := range legacyServers {
+		if len(ports) == 0 {
+			servers[serverID] = 0
+			continue
+		}
+		servers[serverID] = ports[len(ports)-1]
+	}
+
+	return servers, nil
+}
+
+func saveServers(tx *sql.Tx, hostID string, servers map[string]int) error {
+	newJSON, err := json.Marshal(servers)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(`UPDATE hosts SET servers = $1 WHERE id = $2`, newJSON, hostID)
+	return err
+}
+
+func loadServersForUpdate(tx *sql.Tx, hostID string) (map[string]int, error) {
+	var serversJSON []byte
+	if err := tx.QueryRow(`SELECT servers FROM hosts WHERE id = $1 FOR UPDATE`, hostID).Scan(&serversJSON); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("host %s not found", hostID)
+		}
+		return nil, err
+	}
+
+	return loadServers(serversJSON)
 }
 
 func Get() ([]Host, error) {
@@ -27,7 +74,7 @@ func Get() ([]Host, error) {
 
 	var hosts []Host
 
-	rows, err := db.Query(`SELECT id, servers, created_at FROM hosts`)
+	rows, err := db.Query(`SELECT id, servers, ram, cores, created_at FROM hosts`)
 	if err != nil {
 		return nil, err
 	}
@@ -35,13 +82,21 @@ func Get() ([]Host, error) {
 
 	for rows.Next() {
 		var host Host
-		var servers pq.StringArray
+		var serversJSON []byte
+		var ram int
+		var cores int
 
-		err := rows.Scan(&host.ID, &servers, &host.CreatedAt)
+		err := rows.Scan(&host.ID, &serversJSON, &ram, &cores, &host.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
-		host.Servers = []string(servers)
+
+		host.Servers, err = loadServers(serversJSON)
+		if err != nil {
+			return nil, err
+		}
+		host.RAM = strconv.Itoa(ram)
+		host.Cores = strconv.Itoa(cores)
 		hosts = append(hosts, host)
 	}
 
@@ -52,7 +107,7 @@ func Get() ([]Host, error) {
 	return hosts, nil
 }
 
-func Create(servers map[string][]int, ram, cores string) (string, error) {
+func Create(servers map[string]int, ram, cores string) (string, error) {
 	db, err := database.Connect()
 	if err != nil {
 		return "", err
@@ -91,12 +146,26 @@ func AddServer(hostID string, serverID string) error {
 		return err
 	}
 
-	_, err = db.Exec(
-		`UPDATE hosts SET servers = array_append(servers, $1) WHERE id = $2`,
-		serverID,
-		hostID,
-	)
-	return err
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	servers, err := loadServersForUpdate(tx, hostID)
+	if err != nil {
+		return err
+	}
+
+	if _, exists := servers[serverID]; !exists {
+		servers[serverID] = 0
+	}
+
+	if err = saveServers(tx, hostID, servers); err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func RemoveServer(hostID string, serverID string) error {
@@ -105,12 +174,24 @@ func RemoveServer(hostID string, serverID string) error {
 		return err
 	}
 
-	_, err = db.Exec(
-		`UPDATE hosts SET servers = array_remove(servers, $1) WHERE id = $2`,
-		serverID,
-		hostID,
-	)
-	return err
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	servers, err := loadServersForUpdate(tx, hostID)
+	if err != nil {
+		return err
+	}
+
+	delete(servers, serverID)
+
+	if err = saveServers(tx, hostID, servers); err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func SubtractRAM(hostID string, ramToSubtract string) error {
@@ -183,13 +264,13 @@ func GetRAM(hostID string) (string, error) {
 		return "", err
 	}
 
-	var ram string
+	var ram int
 	err = db.QueryRow(`SELECT ram FROM hosts WHERE id = $1`, hostID).Scan(&ram)
 	if err != nil {
 		return "", err
 	}
 
-	return ram, nil
+	return strconv.Itoa(ram), nil
 }
 
 func GetCores(hostID string) (string, error) {
@@ -198,13 +279,13 @@ func GetCores(hostID string) (string, error) {
 		return "", err
 	}
 
-	var cores string
+	var cores int
 	err = db.QueryRow(`SELECT cores FROM hosts WHERE id = $1`, hostID).Scan(&cores)
 	if err != nil {
 		return "", err
 	}
 
-	return cores, nil
+	return strconv.Itoa(cores), nil
 }
 
 func AddPortToServer(hostID string, serverID string, port int) error {
@@ -219,32 +300,14 @@ func AddPortToServer(hostID string, serverID string, port int) error {
 	}
 	defer tx.Rollback()
 
-	var serversJSON []byte
-	err = tx.QueryRow(`SELECT servers FROM hosts WHERE id = $1 FOR UPDATE`, hostID).Scan(&serversJSON)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return fmt.Errorf("host %s not found", hostID)
-		}
-		return err
-	}
-
-	servers := make(map[string][]int)
-	if len(serversJSON) > 0 {
-		err = json.Unmarshal(serversJSON, &servers)
-		if err != nil {
-			return err
-		}
-	}
-
-	servers[serverID] = append(servers[serverID], port)
-
-	newJSON, err := json.Marshal(servers)
+	servers, err := loadServersForUpdate(tx, hostID)
 	if err != nil {
 		return err
 	}
 
-	_, err = tx.Exec(`UPDATE hosts SET servers = $1 WHERE id = $2`, newJSON, hostID)
-	if err != nil {
+	servers[serverID] = port
+
+	if err = saveServers(tx, hostID, servers); err != nil {
 		return err
 	}
 

@@ -22,7 +22,7 @@ func CreateHostServerMetaDataEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := repository.Create(make(map[string][]int), req.RAM, req.Cores)
+	id, err := repository.Create(make(map[string]int), req.RAM, req.Cores)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

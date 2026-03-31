@@ -3,6 +3,7 @@ package core
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -28,7 +29,10 @@ func GetServerStats(key, serverID, token string) (string, error) {
 		return "", err
 	}
 
-	hostID := SelectHostWithFewestServers(*hosts)
+	hostID := SelecthostIDByServerID(serverID, hosts)
+	if hostID == "" {
+		return "", fmt.Errorf("server %s is not mapped to a host", serverID)
+	}
 
 	networkClient, err := client.NewNetworkClient()
 	if err != nil {

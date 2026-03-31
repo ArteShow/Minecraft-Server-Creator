@@ -54,7 +54,10 @@ func CreateBackup(serverID, token, userID, bundle string) error {
 		return err
 	}
 
-	hostID := SelecthostIdByServerID(serverID, *hosts)
+	hostID := SelecthostIDByServerID(serverID, hosts)
+	if hostID == "" {
+		return fmt.Errorf("server %s is not mapped to a host", serverID)
+	}
 
 	networkClient, err := client.NewNetworkClient()
 	if err != nil {

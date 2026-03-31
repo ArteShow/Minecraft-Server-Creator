@@ -1,11 +1,518 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>easy2host Preview</title>
+  <style>
+    :root{
+      --bg:#07111f;
+      --bg2:#09121c;
+      --panel:rgba(255,255,255,.05);
+      --panel-strong:rgba(255,255,255,.07);
+      --line:rgba(255,255,255,.10);
+      --text:#ffffff;
+      --muted:#b7c3d9;
+      --accent1:#67e8f9;
+      --accent2:#60a5fa;
+      --accent3:#22d3ee;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top, rgba(56,189,248,.08), transparent 28%),
+        linear-gradient(180deg,#08111f 0%,#09121c 45%,#070d17 100%);
+    }
+    .container{max-width:1280px;margin:0 auto;padding:0 32px}
+    .header{
+      position:sticky;top:0;z-index:40;
+      border-bottom:1px solid var(--line);
+      background:rgba(2,8,23,.78);
+      backdrop-filter:blur(18px);
+    }
+    .header-inner{
+      display:flex;align-items:center;justify-content:space-between;gap:20px;
+      padding:18px 0;
+    }
+    .brand{display:flex;align-items:center;gap:14px;text-decoration:none;color:white}
+    .logo{height:40px;max-width:220px;object-fit:contain}
+    .nav{display:flex;align-items:center;gap:42px}
+    .nav a{
+      text-decoration:none;color:#d6deed;font-weight:700;font-size:15px;
+      transition:color .18s ease, opacity .18s ease;
+    }
+    .nav a:hover{color:white}
+    .header-actions{display:flex;align-items:center;gap:14px}
+    .btn{
+      display:inline-flex;align-items:center;justify-content:center;
+      border:none;border-radius:22px;padding:16px 24px;
+      font-weight:800;font-size:16px;cursor:pointer;text-decoration:none;
+      transition:transform .18s ease, opacity .18s ease, background .18s ease;
+      white-space:nowrap;
+    }
+    .btn:hover{transform:translateY(-2px)}
+    .btn-secondary{
+      color:white;background:rgba(255,255,255,.04);border:1px solid var(--line);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.03);
+    }
+    .btn-primary{
+      color:#07111f;
+      background:linear-gradient(90deg,var(--accent1),var(--accent2));
+    }
+
+    .hero{
+      position:relative;overflow:hidden;
+      padding:56px 0 38px;
+    }
+    .hero-grid{
+      display:grid;grid-template-columns:1.08fr .92fr;gap:38px;align-items:center;
+    }
+    .pill{
+      display:inline-flex;align-items:center;
+      padding:10px 15px;border:1px solid rgba(34,211,238,.22);
+      border-radius:999px;background:rgba(34,211,238,.08);
+      color:#c6f3ff;font-size:14px;font-weight:700;
+    }
+    .hero h1{
+      margin:20px 0 0;
+      max-width:920px;
+      font-size:86px;line-height:.93;letter-spacing:-.05em;
+      font-weight:900;
+    }
+    .gradient{
+      background:linear-gradient(90deg,var(--accent1),var(--accent2));
+      -webkit-background-clip:text;background-clip:text;color:transparent;
+    }
+    .lead{
+      max-width:850px;margin:22px 0 0;
+      color:#d7e1ef;font-size:23px;line-height:1.55;
+    }
+    .actions{display:flex;gap:14px;flex-wrap:wrap;margin-top:30px}
+    .stats{
+      display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
+      max-width:860px;margin-top:28px;
+    }
+    .card{
+      border:1px solid var(--line);
+      background:var(--panel);
+      backdrop-filter:blur(13px);
+      border-radius:28px;padding:24px;
+      box-shadow:0 18px 50px rgba(0,0,0,.22);
+    }
+    .hover{transition:transform .18s ease, background .18s ease, border-color .18s ease}
+    .hover:hover{transform:translateY(-3px) scale(1.01)}
+    .stat strong{display:block;font-size:30px;margin-bottom:7px}
+    .muted{color:var(--muted)}
+    .section{padding:64px 0}
+    .eyebrow{
+      margin:0 0 10px;
+      font-size:13px;font-weight:800;
+      letter-spacing:.22em;text-transform:uppercase;
+      color:#9fe8f7;
+    }
+    h2{
+      margin:0;
+      font-size:44px;line-height:1.04;
+      letter-spacing:-.03em;
+    }
+    .sub{
+      max-width:860px;margin:16px 0 0;
+      color:var(--muted);font-size:18px;line-height:1.65;
+    }
+    .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+    .plan-card{position:relative}
+    .plan-card.featured{
+      border-color:rgba(103,232,249,.35);
+      background:rgba(34,211,238,.08);
+      box-shadow:0 0 0 1px rgba(103,232,249,.05),0 18px 50px rgba(0,0,0,.22);
+    }
+    .tag{
+      display:inline-flex;align-items:center;justify-content:center;
+      padding:8px 12px;border-radius:999px;
+      background:rgba(34,211,238,.12);
+      color:#a5f3fc;font-size:12px;font-weight:900;
+      letter-spacing:.16em;text-transform:uppercase;
+    }
+    .tag-price{letter-spacing:0;text-transform:none;font-size:13px}
+    .plan-title{font-size:34px;font-weight:900;letter-spacing:-.03em}
+    .plan-meta{display:grid;gap:9px;margin-top:18px;color:#d1d9e9}
+    .plan-price{
+      margin-top:28px;font-size:42px;font-weight:900;letter-spacing:-.03em;
+    }
+    .small{font-size:14px}
+    .feature-grid,.faq{display:grid;gap:16px}
+    .feature-grid{grid-template-columns:repeat(3,1fr);margin-top:30px}
+    .feature-icon{
+      width:48px;height:48px;border-radius:18px;
+      display:flex;align-items:center;justify-content:center;
+      background:rgba(34,211,238,.10);color:#9fe8f7;
+      font-size:20px;font-weight:900;
+    }
+    .faq{margin-top:28px}
+    .cta-card{padding:34px}
+    .purchase-flow .flow-step{
+      border-radius:30px;padding:18px 20px;background:rgba(2,8,23,.38);
+    }
+    .flow-inner{display:flex;align-items:flex-start;gap:16px}
+    .flow-num{
+      width:44px;min-width:44px;height:74px;border-radius:22px;
+      display:flex;align-items:center;justify-content:center;
+      background:rgba(34,211,238,.12);color:#9fe8f7;
+      font-weight:900;font-size:23px;
+    }
+    .flow-title{font-size:19px;font-weight:900;letter-spacing:-.02em}
+    .flow-text{margin-top:8px;color:#d1d9e8;font-size:16px;line-height:1.45}
+    .mobile-actions{display:none}
+    footer{
+      border-top:1px solid var(--line);
+      padding:28px 0;text-align:center;color:var(--muted);font-size:14px;
+    }
+
+    .modal{
+      position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+      background:rgba(0,0,0,.72);z-index:100;padding:16px;
+    }
+    .modal.open{display:flex}
+    .modal-card{
+      width:100%;max-width:520px;
+      border:1px solid var(--line);background:rgba(8,17,31,.96);
+      backdrop-filter:blur(18px);border-radius:28px;padding:26px;
+      box-shadow:0 30px 80px rgba(0,0,0,.4);
+    }
+    .modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+    .modal-title{font-size:28px;font-weight:900;letter-spacing:-.03em}
+    .close{
+      width:40px;height:40px;border-radius:16px;border:1px solid var(--line);
+      background:rgba(255,255,255,.05);color:white;cursor:pointer;font-size:18px;
+    }
+    .field{display:grid;gap:9px;margin-top:16px}
+    .field label{font-size:14px;color:#d6deed;font-weight:700}
+    .field input{
+      width:100%;padding:15px 16px;border-radius:18px;border:1px solid var(--line);
+      background:rgba(255,255,255,.05);color:white;font-size:15px;outline:none;
+    }
+    .modal-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:22px}
+
+    @media (max-width:1100px){
+      .hero-grid,.grid-3,.feature-grid,.stats{grid-template-columns:1fr}
+      .hero h1{font-size:62px}
+      .lead{font-size:19px}
+      .nav{gap:26px}
+    }
+    @media (max-width:860px){
+      .container{padding:0 18px}
+      .nav,.header-actions{display:none}
+      .mobile-actions{display:flex;gap:10px;align-items:center}
+      .hero h1{font-size:48px}
+      h2{font-size:34px}
+      .section{padding:52px 0}
+      .cta-card{padding:26px}
+    }
+    @media (max-width:560px){
+      .logo{max-width:175px;height:34px}
+      .hero{padding-top:34px}
+      .hero h1{font-size:40px}
+      .lead{font-size:17px}
+      .btn{width:100%}
+      .actions{flex-direction:column}
+      .flow-num{height:64px}
+      .modal-card{padding:20px}
+      .modal-actions{flex-direction:column}
+      .modal-actions .btn{width:100%}
+    }
+  </style>
 </head>
 <body>
-    <h1>hey</h1>
+  <div class="modal" id="signinModal">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title">Sign In</div>
+          <div class="sub" style="margin-top:8px;font-size:15px">Sign in with your email and password to manage your servers.</div>
+        </div>
+        <button class="close" data-close="signinModal">✕</button>
+      </div>
+      <div class="field"><label>Email</label><input type="email" placeholder="you@example.com"></div>
+      <div class="field"><label>Password</label><input type="password" placeholder="Password"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" data-close="signinModal">Close</button>
+        <button class="btn btn-primary">Sign In</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="signupModal">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title">Create Account</div>
+          <div class="sub" style="margin-top:8px;font-size:15px">Create your account and start hosting in just a few steps.</div>
+        </div>
+        <button class="close" data-close="signupModal">✕</button>
+      </div>
+      <div class="field"><label>Full name</label><input type="text" placeholder="Your name"></div>
+      <div class="field"><label>Email</label><input type="email" placeholder="you@example.com"></div>
+      <div class="field"><label>Password</label><input type="password" placeholder="Create a password"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" data-close="signupModal">Close</button>
+        <button class="btn btn-primary">Create Account</button>
+      </div>
+    </div>
+  </div>
+
+  <header class="header">
+    <div class="container header-inner">
+      <a class="brand" href="#">
+        <img src="logo-full.png" alt="easy2host" class="logo">
+      </a>
+      <nav class="nav">
+        <a href="#">Home</a>
+        <a href="#plans">Plans</a>
+        <a href="#features">Features</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <div class="header-actions">
+        <button class="btn btn-secondary" data-open="signinModal">Sign In</button>
+        <button class="btn btn-primary" data-open="signupModal">Create Account</button>
+      </div>
+      <div class="mobile-actions">
+        <button class="btn btn-secondary" data-open="signinModal" style="padding:12px 16px">Sign In</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero container">
+      <div class="hero-grid">
+        <div>
+          <div class="pill">Fast, clean Minecraft hosting</div>
+          <h1>Start Hosting Today <span class="gradient">with Easy2host.</span></h1>
+          <p class="lead">Create your account, choose the plan that fits your server, add optional upgrades, complete checkout, and finish with your server setup. After purchase, your server is deployed into your personal dashboard, where only you can manage it.</p>
+          <div class="actions">
+            <a class="btn btn-primary" href="#plans">Explore Plans</a>
+            <button class="btn btn-secondary" data-open="signupModal">Create Account</button>
+          </div>
+          <div class="stats">
+            <div class="card stat hover"><strong>1.8 → 1.21.2</strong><span class="muted">Old and new versions supported</span></div>
+            <div class="card stat hover"><strong>Extras</strong><span class="muted">Add RAM and SSD during checkout</span></div>
+            <div class="card stat hover"><strong>Private</strong><span class="muted">Only your own servers show up</span></div>
+          </div>
+        </div>
+
+        <div class="card hover purchase-flow">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px">
+            <div>
+              <div class="muted small" style="font-weight:700">How it works</div>
+              <div style="font-size:24px;font-weight:900;letter-spacing:-.03em">Purchase flow preview</div>
+            </div>
+            <div class="tag">3 steps</div>
+          </div>
+
+          <div style="display:grid;gap:16px">
+            <div class="flow-step">
+              <div class="flow-inner">
+                <div class="flow-num">1</div>
+                <div>
+                  <div class="flow-title">Choose your hosting plan</div>
+                  <div class="flow-text">Select Starter, Standard, or Premium, then add extra RAM or SSD if you want more resources.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="flow-step">
+              <div class="flow-inner">
+                <div class="flow-num">2</div>
+                <div>
+                  <div class="flow-title">Complete checkout</div>
+                  <div class="flow-text">Review your order and enter billing details in a dedicated checkout step before the server is created.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="flow-step">
+              <div class="flow-inner">
+                <div class="flow-num">3</div>
+                <div>
+                  <div class="flow-title">Configure your server</div>
+                  <div class="flow-text">Choose the server name, software type, and Minecraft version, then manage it from your own dashboard.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="plans" class="section container">
+      <div class="eyebrow">Plans</div>
+      <h2>Choose a plan, then create a server</h2>
+      <p class="sub">Choose a plan, customize it with add-ons, and finish with your server setup before deployment.</p>
+
+      <div class="grid-3" style="margin-top:30px">
+        <div class="card hover plan-card">
+          <div class="plan-title">Starter</div>
+          <div class="plan-meta">
+            <div>2 GB RAM</div>
+            <div>5 GB SSD</div>
+            <div>2 Cores</div>
+            <div>200% CPU Power</div>
+            <div>0 Backups</div>
+          </div>
+          <div class="plan-price">€5.99 <span class="muted" style="font-size:16px;font-weight:500">/ month</span></div>
+        </div>
+
+        <div class="card hover plan-card featured">
+          <div class="tag">Most popular</div>
+          <div class="plan-title" style="margin-top:14px">Standard</div>
+          <div class="plan-meta">
+            <div>4 GB RAM</div>
+            <div>15 GB SSD</div>
+            <div>3 Cores</div>
+            <div>300% CPU Power</div>
+            <div>1 Backup</div>
+          </div>
+          <div class="plan-price">€8.99 <span class="muted" style="font-size:16px;font-weight:500">/ month</span></div>
+        </div>
+
+        <div class="card hover plan-card">
+          <div class="plan-title">Premium</div>
+          <div class="plan-meta">
+            <div>5 GB RAM</div>
+            <div>20 GB SSD</div>
+            <div>4 Cores</div>
+            <div>400% CPU Power</div>
+            <div>2 Backups</div>
+          </div>
+          <div class="plan-price">€10.99 <span class="muted" style="font-size:16px;font-weight:500">/ month</span></div>
+        </div>
+      </div>
+
+      <div style="margin-top:42px">
+        <h2 style="font-size:32px">Available upgrades</h2>
+        <p class="sub">These extra upgrade windows are shown again so users can clearly see what can be added before checkout.</p>
+        <div class="grid-3" style="margin-top:22px">
+          <div class="card hover">
+            <div style="display:flex;justify-content:space-between;gap:12px">
+              <div>
+                <div style="font-size:22px;font-weight:800;letter-spacing:-.02em">+1 GB RAM</div>
+                <div class="muted small" style="margin-top:8px">Monthly add-on for extra server resources.</div>
+              </div>
+              <div class="tag tag-price">€1.99</div>
+            </div>
+            <div style="margin-top:18px;display:grid;gap:8px" class="muted small">
+              <div>+1 GB RAM</div>
+              <div>Can be selected during checkout</div>
+            </div>
+          </div>
+
+          <div class="card hover">
+            <div style="display:flex;justify-content:space-between;gap:12px">
+              <div>
+                <div style="font-size:22px;font-weight:800;letter-spacing:-.02em">+5 GB SSD</div>
+                <div class="muted small" style="margin-top:8px">Monthly add-on for extra server resources.</div>
+              </div>
+              <div class="tag tag-price">€1.49</div>
+            </div>
+            <div style="margin-top:18px;display:grid;gap:8px" class="muted small">
+              <div>+5 GB SSD</div>
+              <div>Can be selected during checkout</div>
+            </div>
+          </div>
+
+          <div class="card hover">
+            <div style="display:flex;justify-content:space-between;gap:12px">
+              <div>
+                <div style="font-size:22px;font-weight:800;letter-spacing:-.02em">+10 GB SSD</div>
+                <div class="muted small" style="margin-top:8px">Monthly add-on for extra server resources.</div>
+              </div>
+              <div class="tag tag-price">€2.00</div>
+            </div>
+            <div style="margin-top:18px;display:grid;gap:8px" class="muted small">
+              <div>+10 GB SSD</div>
+              <div>Can be selected during checkout</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="section container">
+      <div class="eyebrow">Features</div>
+      <h2>Everything you need to manage your server cleanly</h2>
+      <p class="sub">easy2host is built to feel simple for beginners while still giving you the controls that matter.</p>
+
+      <div class="feature-grid">
+        <div class="card hover">
+          <div class="feature-icon">◫</div>
+          <div style="margin-top:18px;font-size:22px;font-weight:800">Clean dashboard</div>
+          <p class="sub small" style="margin-top:10px">A clear panel for server status, actions, backups, and account management.</p>
+        </div>
+        <div class="card hover">
+          <div class="feature-icon">▶</div>
+          <div style="margin-top:18px;font-size:22px;font-weight:800">Easy server control</div>
+          <p class="sub small" style="margin-top:10px">Start, stop, back up, and manage your server from one simple interface.</p>
+        </div>
+        <div class="card hover">
+          <div class="feature-icon">⬚</div>
+          <div style="margin-top:18px;font-size:22px;font-weight:800">Plugins and mods</div>
+          <p class="sub small" style="margin-top:10px">Browse live plugins from Modrinth and keep your setup flexible.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="section container">
+      <div class="eyebrow">FAQ</div>
+      <h2>Frequently asked questions</h2>
+      <p class="sub">Clear answers for the things most people want to know before getting started.</p>
+
+      <div class="faq">
+        <div class="card hover"><div style="font-size:20px;font-weight:800">How fast can I create a server?</div><p class="sub small">Once your account is ready, you can choose a plan, complete checkout, and finish server setup in just a few steps.</p></div>
+        <div class="card hover"><div style="font-size:20px;font-weight:800">Can I change the Minecraft version later?</div><p class="sub small">Yes. The platform is designed around editable server settings and flexible version selection.</p></div>
+        <div class="card hover"><div style="font-size:20px;font-weight:800">Which server software can I choose?</div><p class="sub small">You can choose between Vanilla, Fabric, Bukkit, and Paper during setup.</p></div>
+        <div class="card hover"><div style="font-size:20px;font-weight:800">Can I add extra resources?</div><p class="sub small">Yes. During checkout you can add extra RAM and SSD upgrades before the server is created.</p></div>
+        <div class="card hover"><div style="font-size:20px;font-weight:800">Will other users be able to see my server?</div><p class="sub small">No. Your account dashboard only shows the servers connected to your own account.</p></div>
+        <div class="card hover"><div style="font-size:20px;font-weight:800">Does the panel support plugins and mods?</div><p class="sub small">Yes. The interface includes a plugin and mod catalog, including live plugin search through Modrinth.</p></div>
+      </div>
+    </section>
+
+    <section class="container" style="padding-bottom:90px">
+      <div class="card cta-card">
+        <div style="display:flex;justify-content:space-between;gap:20px;align-items:center;flex-wrap:wrap">
+          <div>
+            <div class="eyebrow">Ready to get started?</div>
+            <h2>Create your account and launch your server today</h2>
+            <p class="sub">Pick your plan, configure your server, and manage everything from one clean dashboard.</p>
+          </div>
+          <button class="btn btn-primary" data-open="signupModal">Create Account</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>easy2host prototype — standalone browser preview with your logo assets included.</footer>
+
+  <script>
+    document.querySelectorAll("[data-open]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-open");
+        document.getElementById(id).classList.add("open");
+      });
+    });
+    document.querySelectorAll("[data-close]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-close");
+        document.getElementById(id).classList.remove("open");
+      });
+    });
+    document.querySelectorAll(".modal").forEach((modal) => {
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) modal.classList.remove("open");
+      });
+    });
+  </script>
 </body>
 </html>
