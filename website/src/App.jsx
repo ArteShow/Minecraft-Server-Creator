@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Activity,
   Boxes,
@@ -15,6 +16,7 @@ import {
   Lock,
   LogIn,
   Menu,
+  MessageSquare,
   Play,
   Plus,
   Search,
@@ -164,7 +166,11 @@ async function apiFetchBlob(path, { method = "GET", body, token } = {}) {
 }
 
 function popClass() {
-  return "anim-fade-up transition duration-200 motion-safe:hover:-translate-y-1 motion-safe:hover:scale-[1.02]";
+  return "anim-fade-up transition duration-200 motion-safe:hover:-translate-y-0.5 sm:motion-safe:hover:-translate-y-1 sm:motion-safe:hover:scale-[1.01]";
+}
+
+function makeTicketId() {
+  return `TCK-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 }
 
 function downloadBlob(blob, filename) {
@@ -232,9 +238,9 @@ function Modal({ open, onClose, title, subtitle, children }) {
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 p-2 sm:items-center sm:p-4"
+      className="fixed inset-0 z-[120] flex items-end justify-center bg-black/75 p-2 sm:items-center sm:p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <GlassCard
@@ -256,7 +262,8 @@ function Modal({ open, onClose, title, subtitle, children }) {
         </div>
         {children}
       </GlassCard>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -358,15 +365,18 @@ function PurchaseFlow({ open, plan, onClose, currentUser, onRequireAuth, onCompl
     >
       <div className="mb-6 flex flex-wrap gap-3">
         {["Extras", "Billing", "Server Setup"].map((label, index) => (
-          <div
+          <button
             key={label}
+            type="button"
+            onClick={() => !creating && setStep(index + 1)}
             className={cn(
               "rounded-full px-4 py-2 text-sm",
+              creating ? "cursor-default" : "cursor-pointer",
               step === index + 1 ? "bg-cyan-400/15 text-cyan-300" : "bg-white/5 text-slate-400",
             )}
           >
             {label}
-          </div>
+          </button>
         ))}
       </div>
 
@@ -693,7 +703,7 @@ function PluginCatalogPanel({ search, setSearch }) {
   );
 }
 
-function CustomerDashboard({ currentUser, token, servers, setServers, notices, setNotices, apiHealthy, logout }) {
+function CustomerDashboard({ currentUser, token, servers, setServers, notices, setNotices, apiHealthy, logout, tickets, setTickets }) {
   const [active, setActive] = useState("servers");
   const [selectedServerId, setSelectedServerId] = useState(null);
   const [search, setSearch] = useState("");
@@ -808,6 +818,7 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
 
   const menu = [
     { key: "servers", label: "My Servers", icon: Server },
+    { key: "support", label: "Support", icon: MessageSquare },
     ...(SHOW_PLUGIN_CATALOG ? [{ key: "catalog", label: "Plugins & Mods", icon: Boxes }] : []),
     { key: "account", label: "Account", icon: Settings },
   ];
@@ -956,6 +967,15 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
 
           {active === "catalog" && SHOW_PLUGIN_CATALOG && <PluginCatalogPanel search={search} setSearch={setSearch} />}
 
+          {active === "support" && (
+            <UserSupportPanel
+              currentUser={currentUser}
+              tickets={tickets}
+              setTickets={setTickets}
+              pushNotice={pushNotice}
+            />
+          )}
+
           {active === "account" && (
             <GlassCard className="p-6">
               <div className="text-sm uppercase tracking-[0.2em] text-cyan-300/80">Account</div>
@@ -1005,7 +1025,7 @@ function HostMetadataTable({ metadata }) {
   );
 }
 
-function AdminDashboard({ currentUser, token, notices, setNotices, apiHealthy, logout }) {
+function AdminDashboard({ currentUser, token, notices, setNotices, apiHealthy, logout, tickets, setTickets }) {
   const [active, setActive] = useState("overview");
   const [networkIp, setNetworkIp] = useState("");
   const [networkHostId, setNetworkHostId] = useState("");
@@ -1034,6 +1054,7 @@ function AdminDashboard({ currentUser, token, notices, setNotices, apiHealthy, l
 
   const adminMenu = [
     { key: "overview", label: "Overview", icon: Crown },
+    { key: "tickets", label: "Support Tickets", icon: MessageSquare },
     { key: "network", label: "Network", icon: Server },
     { key: "metadata", label: "Host Metadata", icon: Database },
     { key: "mapping", label: "Add Server To Host", icon: Plus },
@@ -1068,9 +1089,11 @@ function AdminDashboard({ currentUser, token, notices, setNotices, apiHealthy, l
               <GlassCard className={cn("p-5", popClass())}><div className="text-sm text-slate-400">API Base</div><div className="mt-2 text-lg font-bold text-cyan-300">{API_BASE}</div></GlassCard>
               <GlassCard className={cn("p-5", popClass())}><div className="text-sm text-slate-400">Role</div><div className="display-font mt-2 text-3xl font-bold text-white">Admin</div></GlassCard>
               <GlassCard className={cn("p-5", popClass())}><div className="text-sm text-slate-400">JWT present</div><div className="display-font mt-2 text-3xl font-bold text-white">{token ? "Yes" : "No"}</div></GlassCard>
-              <GlassCard className={cn("p-5", popClass())}><div className="text-sm text-slate-400">Identity</div><div className="mt-2 text-sm font-semibold text-white">{currentUser.ownerKey}</div></GlassCard>
+              <GlassCard className={cn("p-5", popClass())}><div className="text-sm text-slate-400">Open tickets</div><div className="display-font mt-2 text-3xl font-bold text-white">{tickets.filter((ticket) => ticket.status !== "resolved").length}</div></GlassCard>
             </div>
           )}
+
+          {active === "tickets" && <AdminTicketPanel tickets={tickets} setTickets={setTickets} pushNotice={pushNotice} />}
 
           {active === "network" && (
             <GlassCard className="p-6">
@@ -1234,19 +1257,28 @@ function LandingPage({ apiHealthy, currentUser, setScreen, startPurchase }) {
 
       <section id="plans" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-16">
         <SectionIntro eyebrow="Plans" title="Choose a plan, then create a server" text="The visible purchase flow now maps to the existing bundle and task-service APIs instead of staying as a mock landing page." />
-        <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-10 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
           {plans.map((plan) => (
-            <button key={plan.name} onClick={() => startPurchase(plan)} className={cn("relative rounded-[2rem] border p-6 text-left", popClass(), plan.featured ? "border-cyan-300/30 bg-cyan-400/10 shadow-cyan-500/10" : "border-white/10 bg-white/5")}>
+            <button
+              key={plan.name}
+              type="button"
+              onClick={() => startPurchase(plan)}
+              className={cn(
+                "relative isolate flex h-full min-h-[22rem] w-full flex-col rounded-[2rem] border p-6 text-left",
+                popClass(),
+                plan.featured ? "border-cyan-300/30 bg-cyan-400/10 shadow-cyan-500/10" : "border-white/10 bg-white/5",
+              )}
+            >
               {plan.featured && <div className="pointer-events-none absolute right-5 top-5 select-none rounded-full bg-gradient-to-r from-cyan-300 to-blue-500 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-slate-950">Most popular</div>}
               <h3 className="display-font text-2xl font-bold text-white">{plan.name}</h3>
-              <div className="mt-6 space-y-2 text-slate-300">
+              <div className="mt-6 flex-1 space-y-2 text-slate-300">
                 <div>{plan.ram} GB RAM</div>
                 <div>{plan.storage} GB SSD</div>
                 <div>{plan.cores} Cores</div>
                 <div>{plan.backups} Backup slots</div>
               </div>
               <div className="display-font mt-8 text-3xl font-black text-white">{money(plan.price)} <span className="text-base font-medium text-slate-400">/ month</span></div>
-              <div className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-white/8 px-4 py-3 font-semibold text-white">Select plan <ChevronRight className="h-4 w-4" /></div>
+              <div className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-white/8 px-4 py-3 font-semibold text-white">Select plan <ChevronRight className="h-4 w-4" /></div>
             </button>
           ))}
         </div>
@@ -1333,6 +1365,7 @@ export default function App({ initialScreen = "landing" }) {
   const [currentUser, setCurrentUser] = useState(() => safeJsonParse(localStorage.getItem("easy2host_user"), null));
   const [servers, setServers] = useState(() => safeJsonParse(localStorage.getItem("easy2host_servers"), []));
   const [profiles, setProfiles] = useState(() => safeJsonParse(localStorage.getItem("easy2host_profiles"), {}));
+  const [tickets, setTickets] = useState(() => safeJsonParse(localStorage.getItem("easy2host_tickets"), []));
   const [authBusy, setAuthBusy] = useState(false);
   const [authError, setAuthError] = useState("");
   const [purchasePlan, setPurchasePlan] = useState(null);
@@ -1356,6 +1389,10 @@ export default function App({ initialScreen = "landing" }) {
   useEffect(() => {
     localStorage.setItem("easy2host_profiles", JSON.stringify(profiles));
   }, [profiles]);
+
+  useEffect(() => {
+    localStorage.setItem("easy2host_tickets", JSON.stringify(tickets));
+  }, [tickets]);
 
   useEffect(() => {
     setScreen(initialScreen);
@@ -1616,14 +1653,277 @@ export default function App({ initialScreen = "landing" }) {
       {screen === "landing" && <LandingPage apiHealthy={apiHealthy} currentUser={currentUser} setScreen={setScreen} startPurchase={startPurchase} />}
       {screen === "signup" && <AuthScreen mode="signup" busy={authBusy} error={authError} onSubmit={handleSignUp} setScreen={setScreen} />}
       {screen === "signin" && <AuthScreen mode="signin" busy={authBusy} error={authError} onSubmit={handleSignIn} setScreen={setScreen} />}
-      {screen === "dashboard" && currentUser?.role === "user" && <CustomerDashboard currentUser={currentUser} token={token} servers={servers} setServers={setServers} notices={notices} setNotices={setNotices} apiHealthy={apiHealthy} logout={logout} />}
-      {screen === "admin" && currentUser?.role === "admin" && <AdminDashboard currentUser={currentUser} token={token} notices={notices} setNotices={setNotices} apiHealthy={apiHealthy} logout={logout} />}
+      {screen === "dashboard" && currentUser?.role === "user" && (
+        <CustomerDashboard
+          currentUser={currentUser}
+          token={token}
+          servers={servers}
+          setServers={setServers}
+          notices={notices}
+          setNotices={setNotices}
+          apiHealthy={apiHealthy}
+          logout={logout}
+          tickets={tickets}
+          setTickets={setTickets}
+        />
+      )}
+      {screen === "admin" && currentUser?.role === "admin" && (
+        <AdminDashboard
+          currentUser={currentUser}
+          token={token}
+          notices={notices}
+          setNotices={setNotices}
+          apiHealthy={apiHealthy}
+          logout={logout}
+          tickets={tickets}
+          setTickets={setTickets}
+        />
+      )}
 
       <PurchaseFlow open={Boolean(purchasePlan)} plan={purchasePlan} onClose={() => setPurchasePlan(null)} currentUser={currentUser} onRequireAuth={() => setScreen("signin")} onComplete={completePurchase} />
 
       <footer className="border-t border-white/10 px-4 py-8 text-center text-sm text-slate-400 sm:px-6 lg:px-16">
         easy2host web app with connected auth, bundle, server lifecycle, backup, and admin infrastructure flows.
       </footer>
+    </div>
+  );
+}
+
+function UserSupportPanel({ currentUser, tickets, setTickets, pushNotice }) {
+  const [form, setForm] = useState({ subject: "", message: "", priority: "normal" });
+
+  const myTickets = useMemo(
+    () => tickets.filter((ticket) => ticket.ownerId === currentUser.ownerKey),
+    [tickets, currentUser.ownerKey],
+  );
+
+  const submitTicket = () => {
+    const subject = form.subject.trim();
+    const message = form.message.trim();
+    if (!subject || !message) {
+      pushNotice("error", "Please fill in both subject and message.");
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const ticket = {
+      id: makeTicketId(),
+      ownerId: currentUser.ownerKey,
+      ownerUsername: currentUser.username,
+      subject,
+      message,
+      priority: form.priority,
+      status: "open",
+      adminReply: "",
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    setTickets((previous) => [ticket, ...previous]);
+    setForm({ subject: "", message: "", priority: "normal" });
+    pushNotice("success", `Support ticket ${ticket.id} created.`);
+  };
+
+  return (
+    <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+      <GlassCard className="p-6">
+        <div className="text-sm uppercase tracking-[0.2em] text-cyan-300/80">Support</div>
+        <h2 className="display-font mt-2 text-2xl font-bold text-white">Create Ticket</h2>
+        <p className="mt-3 text-slate-300">Open a support ticket for billing, server setup, or runtime issues. Admins can handle it in the admin dashboard.</p>
+
+        <div className="mt-6 space-y-4">
+          <input
+            value={form.subject}
+            onChange={(event) => setForm((current) => ({ ...current, subject: event.target.value }))}
+            placeholder="Subject"
+            className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none"
+          />
+
+          <select
+            value={form.priority}
+            onChange={(event) => setForm((current) => ({ ...current, priority: event.target.value }))}
+            className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none"
+          >
+            <option value="low">Low</option>
+            <option value="normal">Normal</option>
+            <option value="high">High</option>
+            <option value="urgent">Urgent</option>
+          </select>
+
+          <textarea
+            value={form.message}
+            onChange={(event) => setForm((current) => ({ ...current, message: event.target.value }))}
+            placeholder="Describe your issue"
+            rows={6}
+            className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none"
+          />
+
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={submitTicket}
+              className={cn("rounded-2xl bg-gradient-to-r from-cyan-300 to-blue-500 px-5 py-3 font-semibold text-slate-950", popClass())}
+            >
+              Submit Ticket
+            </button>
+          </div>
+        </div>
+      </GlassCard>
+
+      <GlassCard className="p-6">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h3 className="display-font text-2xl font-bold text-white">My Tickets</h3>
+          <div className="rounded-2xl bg-white/8 px-3 py-1 text-sm text-slate-300">{myTickets.length}</div>
+        </div>
+
+        <div className="space-y-3">
+          {myTickets.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/30 p-6 text-slate-400">
+              No tickets yet.
+            </div>
+          )}
+
+          {myTickets.map((ticket) => (
+            <div key={ticket.id} className="rounded-2xl border border-white/10 bg-slate-950/40 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="font-semibold text-white">{ticket.subject}</div>
+                <div className="rounded-full bg-white/8 px-3 py-1 text-xs uppercase tracking-[0.12em] text-slate-300">{ticket.status}</div>
+              </div>
+
+              <div className="mt-2 text-xs uppercase tracking-[0.12em] text-slate-500">{ticket.id} · {ticket.priority}</div>
+              <p className="mt-3 text-sm leading-6 text-slate-300">{ticket.message}</p>
+              {ticket.adminReply && (
+                <div className="mt-3 rounded-xl border border-cyan-300/20 bg-cyan-400/10 p-3 text-sm text-cyan-100">
+                  <div className="font-semibold">Admin reply</div>
+                  <div className="mt-1">{ticket.adminReply}</div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </GlassCard>
+    </div>
+  );
+}
+
+function AdminTicketPanel({ tickets, setTickets, pushNotice }) {
+  const [selectedId, setSelectedId] = useState("");
+  const [reply, setReply] = useState("");
+  const [status, setStatus] = useState("open");
+
+  const selectedTicket = tickets.find((ticket) => ticket.id === selectedId) || null;
+
+  useEffect(() => {
+    if (!selectedTicket) {
+      setReply("");
+      setStatus("open");
+      return;
+    }
+    setReply(selectedTicket.adminReply || "");
+    setStatus(selectedTicket.status || "open");
+  }, [selectedTicket]);
+
+  const saveTicket = () => {
+    if (!selectedTicket) {
+      pushNotice("error", "Select a ticket first.");
+      return;
+    }
+
+    const now = new Date().toISOString();
+    setTickets((previous) =>
+      previous.map((ticket) =>
+        ticket.id === selectedTicket.id
+          ? {
+              ...ticket,
+              status,
+              adminReply: reply.trim(),
+              updatedAt: now,
+            }
+          : ticket,
+      ),
+    );
+
+    pushNotice("success", `Ticket ${selectedTicket.id} updated.`);
+  };
+
+  return (
+    <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+      <GlassCard className="p-6">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="display-font text-2xl font-bold text-white">Support Queue</h2>
+          <div className="rounded-2xl bg-white/8 px-3 py-1 text-sm text-slate-300">{tickets.length}</div>
+        </div>
+        <div className="space-y-3">
+          {tickets.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/30 p-6 text-slate-400">
+              No open tickets.
+            </div>
+          )}
+          {tickets.map((ticket) => (
+            <button
+              key={ticket.id}
+              type="button"
+              onClick={() => setSelectedId(ticket.id)}
+              className={cn(
+                "w-full rounded-2xl border p-4 text-left",
+                popClass(),
+                selectedId === ticket.id ? "border-cyan-300/30 bg-cyan-400/10" : "border-white/10 bg-slate-950/40",
+              )}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="font-semibold text-white">{ticket.subject}</div>
+                <div className="rounded-full bg-white/8 px-3 py-1 text-xs uppercase tracking-[0.12em] text-slate-300">{ticket.status}</div>
+              </div>
+              <div className="mt-2 text-xs uppercase tracking-[0.12em] text-slate-500">{ticket.id} · {ticket.ownerUsername} · {ticket.priority}</div>
+            </button>
+          ))}
+        </div>
+      </GlassCard>
+
+      <GlassCard className="p-6">
+        {!selectedTicket ? (
+          <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/30 p-6 text-slate-400">
+            Select a ticket to update status and reply.
+          </div>
+        ) : (
+          <>
+            <div className="text-sm uppercase tracking-[0.2em] text-cyan-300/80">Ticket Details</div>
+            <h3 className="display-font mt-2 text-2xl font-bold text-white">{selectedTicket.subject}</h3>
+            <div className="mt-2 text-xs uppercase tracking-[0.12em] text-slate-500">{selectedTicket.id} · {selectedTicket.ownerUsername} · {selectedTicket.priority}</div>
+            <p className="mt-4 rounded-2xl border border-white/10 bg-slate-950/40 p-4 text-sm leading-6 text-slate-300">{selectedTicket.message}</p>
+
+            <div className="mt-5 grid gap-4">
+              <select
+                value={status}
+                onChange={(event) => setStatus(event.target.value)}
+                className="w-full rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none"
+              >
+                <option value="open">Open</option>
+                <option value="in_progress">In Progress</option>
+                <option value="resolved">Resolved</option>
+              </select>
+
+              <textarea
+                value={reply}
+                onChange={(event) => setReply(event.target.value)}
+                rows={6}
+                placeholder="Write an admin response"
+                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none"
+              />
+
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={saveTicket}
+                  className={cn("rounded-2xl bg-gradient-to-r from-cyan-300 to-blue-500 px-5 py-3 font-semibold text-slate-950", popClass())}
+                >
+                  Save Ticket Update
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </GlassCard>
     </div>
   );
 }

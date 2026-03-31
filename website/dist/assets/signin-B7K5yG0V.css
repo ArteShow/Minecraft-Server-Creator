@@ -1,0 +1,1 @@
+@keyframes page-fade{0%{opacity:0}to{opacity:1}}#root{animation:page-fade .32s ease-out both}main{animation:page-fade .38s ease-out both}

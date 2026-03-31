@@ -1,0 +1,1 @@
+@keyframes page-fade{0%{opacity:0}to{opacity:1}}#root{animation:page-fade .32s ease-out both}header{animation:page-fade .38s ease-out both}section{animation:page-fade .44s ease-out both}section:nth-of-type(2){animation-delay:90ms}section:nth-of-type(3){animation-delay:.18s}
