@@ -22,4 +22,4 @@ build:
 down:
 	docker compose --env-file host/config/docker.env -f host/docker-compose.yaml down
 	docker compose --env-file hub/config/docker.env -f hub/docker-compose.yaml down
-	docker compose --env-file website/config/docker.env -f website/docker-compose.yaml up -d --build
+	docker compose --env-file website/config/docker.env -f website/docker-compose.yaml down
