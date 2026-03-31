@@ -33,11 +33,6 @@ func main() {
 	// ---- HTTP proxies ----
 	createHostServerProxy := proxy.NewProxy("http://network-service:8011", "/network-service/create")
 
-	createHostServerMetadataProxy := proxy.NewProxy("http://host-metadata-service:8012", "/host-metadata-service/create")
-	deleteHostServerMetadataProxy := proxy.NewProxy("http://host-metadata-service:8012", "/host-metadata-service/delete")
-	getHostServerMetadataProxy := proxy.NewProxy("http://host-metadata-service:8012", "/host-metadata-service/get")
-	addServerToHostProxy := proxy.NewProxy("http://host-metadata-service:8012", "/host-metadata-service/add")
-
 	createServerProxy := proxy.NewProxy("http://task-service:8013", "/task-service/create")
 	startServerProxy := proxy.NewProxy("http://task-service:8013", "/task-service/start")
 	stopServerProxy := proxy.NewProxy("http://task-service:8013", "/task-service/stop")
@@ -67,11 +62,6 @@ func main() {
 		),
 	)
 	handler.Handle("/api/"+cfg.APIVersion+"/network/create", middleware.LoggingMiddleware(middleware.AdminAuthMiddleware(createHostServerProxy)))
-
-	handler.Handle("/api/"+cfg.APIVersion+"/host-metadata/create", middleware.LoggingMiddleware(middleware.AdminAuthMiddleware(createHostServerMetadataProxy)))
-	handler.Handle("/api/"+cfg.APIVersion+"/host-metadata/delete", middleware.LoggingMiddleware(middleware.AdminAuthMiddleware(deleteHostServerMetadataProxy)))
-	handler.Handle("/api/"+cfg.APIVersion+"/host-metadata/get", middleware.LoggingMiddleware(middleware.AdminAuthMiddleware(getHostServerMetadataProxy)))
-	handler.Handle("/api/"+cfg.APIVersion+"/host-metadata/add", middleware.LoggingMiddleware(middleware.AdminAuthMiddleware(addServerToHostProxy)))
 
 	handler.Handle("/api/"+cfg.APIVersion+"/server/create", middleware.LoggingMiddleware(middleware.AuthMiddleware(createServerProxy)))
 	handler.Handle("/api/"+cfg.APIVersion+"/server/start", middleware.LoggingMiddleware(middleware.AuthMiddleware(startServerProxy)))
