@@ -15,7 +15,7 @@ type HostClient struct {
 }
 
 func NewHostClient() (*HostClient, error) {
-	conn, err := grpc.Dial("network-service:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial("host-metadata-service:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
@@ -23,7 +23,7 @@ func NewHostClient() (*HostClient, error) {
 	client := pb.NewHostMetadataServiceClient(conn)
 	if client == nil {
 		conn.Close()
-		return nil, errors.New("failed to create NewHostClient")
+		return nil, errors.New("failed to create host metadata client")
 	}
 
 	return &HostClient{

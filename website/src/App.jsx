@@ -225,15 +225,16 @@ function Modal({ open, onClose, title, subtitle, children }) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 p-2 sm:items-center sm:p-4">
-      <div className="absolute inset-0" onClick={onClose} />
-      <GlassCard className="relative z-10 max-h-[92vh] w-full max-w-3xl overflow-auto rounded-t-[2.2rem] p-5 sm:rounded-[2rem] sm:p-8">
+    <div className="pointer-events-none fixed inset-0 z-50 flex items-end justify-center bg-black/75 p-2 sm:items-center sm:p-4">
+      <button type="button" aria-label="Close modal" className="pointer-events-auto absolute inset-0" onClick={onClose} />
+      <GlassCard className="pointer-events-auto relative z-10 max-h-[92vh] w-full max-w-3xl overflow-auto rounded-t-[2.2rem] p-5 sm:rounded-[2rem] sm:p-8">
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
             <h2 className="display-font text-2xl font-bold text-white">{title}</h2>
             <p className="mt-2 text-sm text-slate-300 sm:text-base">{subtitle}</p>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="rounded-2xl border border-white/10 bg-white/5 p-2 text-white transition hover:bg-white/10"
           >
@@ -963,6 +964,7 @@ function HostMetadataTable({ metadata }) {
 function AdminDashboard({ currentUser, token, notices, setNotices, apiHealthy, logout }) {
   const [active, setActive] = useState("overview");
   const [networkIp, setNetworkIp] = useState("");
+  const [networkHostId, setNetworkHostId] = useState("");
   const [networkResult, setNetworkResult] = useState(null);
   const [hostMetadata, setHostMetadata] = useState(null);
   const [hostCreateForm, setHostCreateForm] = useState({ ram: "", cores: "" });
@@ -1030,11 +1032,15 @@ function AdminDashboard({ currentUser, token, notices, setNotices, apiHealthy, l
             <GlassCard className="p-6">
               <div className="text-sm uppercase tracking-[0.2em] text-cyan-300/80">Admin</div>
               <h2 className="display-font mt-2 text-2xl font-bold text-white">Create Network Host Entry</h2>
-              <p className="mt-3 text-slate-300">Calls POST /network/create with a host IP address.</p>
-              <div className="mt-6 flex flex-col gap-4 sm:flex-row">
+              <p className="mt-3 text-slate-300">Calls POST /network/create. For provisioning, use the host ID created in Host Metadata so IDs stay paired.</p>
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 <input value={networkIp} onChange={(event) => setNetworkIp(event.target.value)} placeholder="Host IP" className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none" />
+                <input value={networkHostId} onChange={(event) => setNetworkHostId(event.target.value)} placeholder="Host server ID (from metadata create)" className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none" />
+              </div>
+              <div className="mt-4 flex">
                 <button disabled={busy} onClick={async () => {
-                  const result = await callAdmin("Network create", () => apiFetch("/network/create", { method: "POST", body: { ip: networkIp }, token }));
+                  const payload = networkHostId.trim() ? { ip: networkIp, host_server_id: networkHostId.trim() } : { ip: networkIp };
+                  const result = await callAdmin("Network create", () => apiFetch("/network/create", { method: "POST", body: payload, token }));
                   if (result) setNetworkResult(result);
                 }} className={cn("rounded-2xl bg-gradient-to-r from-cyan-300 to-blue-500 px-5 py-3 font-semibold text-slate-950 disabled:opacity-60", popClass())}>Create</button>
               </div>
@@ -1187,7 +1193,7 @@ function LandingPage({ apiHealthy, currentUser, setScreen, startPurchase }) {
         <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {plans.map((plan) => (
             <button key={plan.name} onClick={() => startPurchase(plan)} className={cn("relative rounded-[2rem] border p-6 text-left", popClass(), plan.featured ? "border-cyan-300/30 bg-cyan-400/10 shadow-cyan-500/10" : "border-white/10 bg-white/5")}>
-              {plan.featured && <div className="absolute right-5 top-5 rounded-full bg-gradient-to-r from-cyan-300 to-blue-500 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-slate-950">Most popular</div>}
+              {plan.featured && <div className="pointer-events-none absolute right-5 top-5 select-none rounded-full bg-gradient-to-r from-cyan-300 to-blue-500 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-slate-950">Most popular</div>}
               <h3 className="display-font text-2xl font-bold text-white">{plan.name}</h3>
               <div className="mt-6 space-y-2 text-slate-300">
                 <div>{plan.ram} GB RAM</div>
@@ -1361,6 +1367,16 @@ export default function App({ initialScreen = "landing" }) {
 
   const startPurchase = (plan) => setPurchasePlan(plan);
 
+  const openLandingSection = (sectionId) => {
+    const targetUrl = `/index.html#${sectionId}`;
+    if (window.location.pathname !== "/index.html") {
+      window.location.href = targetUrl;
+      return;
+    }
+    const target = document.getElementById(sectionId);
+    if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const logout = () => {
     setToken("");
     setCurrentUser(null);
@@ -1501,9 +1517,9 @@ export default function App({ initialScreen = "landing" }) {
 
           <nav className="hidden items-center gap-8 md:flex">
             <button onClick={() => openPage("landing")} className="text-sm font-medium text-slate-300 transition hover:text-white">Home</button>
-            <a href="#plans" className="text-sm font-medium text-slate-300 transition hover:text-white">Plans</a>
-            <a href="#features" className="text-sm font-medium text-slate-300 transition hover:text-white">Features</a>
-            <a href="#faq" className="text-sm font-medium text-slate-300 transition hover:text-white">FAQ</a>
+            <button onClick={() => openLandingSection("plans")} className="text-sm font-medium text-slate-300 transition hover:text-white">Plans</button>
+            <button onClick={() => openLandingSection("features")} className="text-sm font-medium text-slate-300 transition hover:text-white">Features</button>
+            <button onClick={() => openLandingSection("faq")} className="text-sm font-medium text-slate-300 transition hover:text-white">FAQ</button>
             {currentUser?.role === "user" && <button onClick={() => openPage("dashboard")} className="text-sm font-medium text-slate-300 transition hover:text-white">Server Dashboard</button>}
             {currentUser?.role === "admin" && <button onClick={() => openPage("admin")} className="text-sm font-medium text-slate-300 transition hover:text-white">Admin Dashboard</button>}
           </nav>
@@ -1531,9 +1547,9 @@ export default function App({ initialScreen = "landing" }) {
           <div className="border-t border-white/10 px-4 py-4 sm:px-6 md:hidden">
             <div className="flex flex-col gap-3">
               <button onClick={() => { openPage("landing"); setMobileOpen(false); }} className="rounded-xl px-3 py-2 text-left text-slate-300 hover:bg-white/5 hover:text-white">Home</button>
-              <a href="#plans" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2 text-left text-slate-300 hover:bg-white/5 hover:text-white">Plans</a>
-              <a href="#features" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2 text-left text-slate-300 hover:bg-white/5 hover:text-white">Features</a>
-              <a href="#faq" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2 text-left text-slate-300 hover:bg-white/5 hover:text-white">FAQ</a>
+              <button onClick={() => { openLandingSection("plans"); setMobileOpen(false); }} className="rounded-xl px-3 py-2 text-left text-slate-300 hover:bg-white/5 hover:text-white">Plans</button>
+              <button onClick={() => { openLandingSection("features"); setMobileOpen(false); }} className="rounded-xl px-3 py-2 text-left text-slate-300 hover:bg-white/5 hover:text-white">Features</button>
+              <button onClick={() => { openLandingSection("faq"); setMobileOpen(false); }} className="rounded-xl px-3 py-2 text-left text-slate-300 hover:bg-white/5 hover:text-white">FAQ</button>
               {!currentUser && (
                 <>
                   <button onClick={() => { openPage("signin"); setMobileOpen(false); }} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left text-white">Sign In</button>

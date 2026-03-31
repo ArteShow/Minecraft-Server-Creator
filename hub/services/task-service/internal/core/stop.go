@@ -51,7 +51,7 @@ func StopServer(serverID, token, ownerID string) error {
 
 	req, err := http.NewRequest(
 		"POST",
-		"http://"+ip.Ip+":"+cfg.DefaultHostServerPort+"/server/stop",
+		"http://"+ip.Ip+":"+cfg.DefaultHostServerPort+"/server-service/stop",
 		bytes.NewReader(jsonBody),
 	)
 	if err != nil {

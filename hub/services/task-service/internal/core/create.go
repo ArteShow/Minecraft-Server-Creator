@@ -137,7 +137,7 @@ func CreateServer(version, token, bundleKey, userID string) (string, int, error)
 		return "", 0, err
 	}
 
-	url := fmt.Sprintf("http://%s:%s/server/create", metaResp.Ip, cfg.DefaultHostServerPort)
+	url := fmt.Sprintf("http://%s:%s/server-service/create", metaResp.Ip, cfg.DefaultHostServerPort)
 	req, err := http.NewRequest("POST", url, bytes.NewReader(bodyBytes))
 	if err != nil {
 		return "", 0, err

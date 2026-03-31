@@ -51,7 +51,7 @@ func StartServer(serverID, token, ownerID, ram string, cpuCores int) error {
 
 	req, err := http.NewRequest(
 		"POST",
-		"http://"+ip.Ip+":"+cfg.DefaultHostServerPort+"/server/start",
+		"http://"+ip.Ip+":"+cfg.DefaultHostServerPort+"/server-service/start",
 		bytes.NewReader(jsonBody),
 	)
 	if err != nil {

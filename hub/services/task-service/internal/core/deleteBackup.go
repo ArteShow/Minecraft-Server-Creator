@@ -57,7 +57,7 @@ func DeleteBackup(serverID, token, backupID string) error {
 
 	req, err := http.NewRequest(
 		"POST",
-		"http://"+ip.Ip+":"+cfg.DefaultHostServerPort+"/server/backup/delete",
+		"http://"+ip.Ip+":"+cfg.DefaultHostServerPort+"/server-service/backup/delete",
 		bytes.NewReader(jsonBody),
 	)
 	if err != nil {

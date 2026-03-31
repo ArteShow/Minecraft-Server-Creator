@@ -77,7 +77,7 @@ func CreateBackup(serverID, token, userID, bundle string) error {
 
 	req, err := http.NewRequest(
 		"POST",
-		"http://"+ip.Ip+":"+cfg.DefaultHostServerPort+"/server/backup/create",
+		"http://"+ip.Ip+":"+cfg.DefaultHostServerPort+"/server-service/backup/create",
 		bytes.NewReader(jsonBody),
 	)
 	if err != nil {

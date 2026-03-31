@@ -41,6 +41,7 @@ func main() {
 	mux.HandleFunc("/task-service/start", handlers.StartServer)
 	mux.HandleFunc("/task-service/stop", handlers.StopServer)
 	mux.HandleFunc("/task-service/delete", handlers.DeleteServer)
+	mux.HandleFunc("/task-service/getStats", handlers.GetServerStats)
 	mux.HandleFunc("/task-service/getServerStats", handlers.GetServerStats)
 
 	mux.HandleFunc("/task-service/backup/create", handlers.CreateBackup)

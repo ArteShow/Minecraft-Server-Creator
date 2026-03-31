@@ -1,0 +1,10 @@
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS bundles JSONB DEFAULT '{}'::JSONB;
+
+CREATE TABLE IF NOT EXISTS bundle_keys (
+    key TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    bundle TEXT NOT NULL,
+    used BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT now()
+);

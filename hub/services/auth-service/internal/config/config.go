@@ -9,7 +9,7 @@ type Config struct {
 	DBPassword string `env:"POSTGRES_PASSWORD" env-default:"dev_only"`
 	DBName     string `env:"POSTGRES_DB" env-default:"minecraft_server_creator_db"`
 	Port   string `env:"AUTH_SERVICE_PORT" env-default:"8014"`
-	JWTSecret   string `env:"NETWORK_SERVICE_HTTP_PORT" env-default:"dev_only"`
+	JWTSecret   string `env:"JWT_SECRET" env-default:"dev_only"`
 }
 
 func Read() (*Config, error) {

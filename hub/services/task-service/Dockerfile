@@ -10,6 +10,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o task-service ./cmd/tas
 FROM alpine:latest
 WORKDIR /app
 COPY --from=builder /app/task-service .
+COPY --from=builder /app/internal/config/bundles.json ./bundles.json
 
 EXPOSE 8013
 CMD ["./task-service"]

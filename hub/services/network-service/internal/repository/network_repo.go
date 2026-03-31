@@ -14,8 +14,11 @@ type HostMetadata struct {
 	CreatedAt time.Time
 }
 
-func CreateServerFunction(ip string) (string, error) {
-	serverID := uuid.NewString()
+func CreateServerFunction(ip, hostServerID string) (string, error) {
+	serverID := hostServerID
+	if serverID == "" {
+		serverID = uuid.NewString()
+	}
 
 	db, err := database.Connect()
 	if err != nil {

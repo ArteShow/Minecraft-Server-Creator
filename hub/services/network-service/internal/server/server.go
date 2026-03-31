@@ -37,16 +37,17 @@ func (s *Server) GetServerMetadata(_ context.Context, req *network_pb.GetServerM
 		return &network_pb.GetServerMetadataResponse{}, err
 	}
 
+	var ping int64
 	client := http.Client{
 		Timeout: 5 * time.Second,
 	}
 
 	start := time.Now()
 	resp, err := client.Get("http://" + metadata.IP)
-	if err != nil {
-		return &network_pb.GetServerMetadataResponse{}, err
+	if err == nil {
+		defer resp.Body.Close()
+		ping = int64(time.Since(start))
 	}
-	defer resp.Body.Close()
 
-	return &network_pb.GetServerMetadataResponse{Ip: metadata.ID, Ping: int64(time.Since(start))}, nil
+	return &network_pb.GetServerMetadataResponse{Ip: metadata.IP, Ping: ping}, nil
 }

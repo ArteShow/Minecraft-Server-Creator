@@ -52,7 +52,7 @@ func GetServerStats(key, serverID, token string) (string, error) {
 
 	req, err := http.NewRequest(
 		"POST",
-		"http://"+serverMetadata.Ip+":"+cfg.DefaultHostServerPort+"/server/getServerStats",
+		"http://"+serverMetadata.Ip+":"+cfg.DefaultHostServerPort+"/server-service/getServerStats",
 		bytes.NewReader(jsonBody),
 	)
 	if err != nil {

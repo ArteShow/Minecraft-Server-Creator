@@ -52,7 +52,7 @@ func GetBackup(serverID, token string) ([]byte, error) {
 
 	req, err := http.NewRequest(
 		"POST",
-		"http://"+ip.Ip+":"+cfg.DefaultHostServerPort+"/server/backup/get",
+		"http://"+ip.Ip+":"+cfg.DefaultHostServerPort+"/server-service/backup/get",
 		bytes.NewReader(jsonBody),
 	)
 	if err != nil {

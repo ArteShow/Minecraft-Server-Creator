@@ -22,7 +22,7 @@ func CreateHostServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	serverID, err := repository.CreateServerFunction(req.IP)
+	serverID, err := repository.CreateServerFunction(req.IP, req.HostServerID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
