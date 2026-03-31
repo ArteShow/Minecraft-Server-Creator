@@ -151,7 +151,7 @@ func (ds *DockerService) StartServerContainer(
 				done
 
 				echo "starting minecraft server with %s RAM"
-				exec java -Xms%sGB -Xmx%sGB -jar server.jar nogui
+				exec java -Xms%s -Xmx%s -jar server.jar nogui
 				`, javaHeap, javaHeap, javaHeap)
 
 	resp, err := ds.client.ContainerCreate(
