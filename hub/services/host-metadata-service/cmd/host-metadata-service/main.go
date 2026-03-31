@@ -1,15 +1,26 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/host-metadata-service/internal/config"
+	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/host-metadata-service/internal/handlers"
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/host-metadata-service/internal/proto"
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/host-metadata-service/internal/server"
 	"google.golang.org/grpc"
+)
+
+const (
+	readTimeout  = 10 * time.Second
+	writeTimeout = 10 * time.Second
+	idleTimeout  = 60 * time.Second
 )
 
 func main() {
@@ -26,9 +37,6 @@ func main() {
 	grpcServer := grpc.NewServer()
 	proto.RegisterHostMetadataServiceServer(grpcServer, server.NewServer())
 
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt)
-
 	go func() {
 		log.Println("gRPC server running on :" + cfg.GRPCPort)
 		if err := grpcServer.Serve(grpcLis); err != nil {
@@ -36,8 +44,56 @@ func main() {
 		}
 	}()
 
-	<-sigChan
-	log.Println("Shutting down gRPC server...")
+	if cfg.Port != "" && cfg.Port[0] != ':' {
+		cfg.Port = ":" + cfg.Port
+	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/host-metadata-service/health", func(w http.ResponseWriter, _ *http.Request) {
+		_, err := w.Write([]byte("ok"))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	})
+
+	mux.HandleFunc("/host-metadata-service/create", handlers.CreateHostServerMetaDataEntry)
+	mux.HandleFunc("/host-metadata-service/delete", handlers.DeleteHostServerMetadata)
+	mux.HandleFunc("/host-metadata-service/get", handlers.GetHostServerMetadata)
+	mux.HandleFunc("/host-metadata-service/add", handlers.AddServerToHostServer)
+
+	httpServer := &http.Server{
+		Addr:         cfg.Port,
+		Handler:      mux,
+		ReadTimeout:  readTimeout,
+		WriteTimeout: writeTimeout,
+		IdleTimeout:  idleTimeout,
+	}
+
+	go func() {
+		log.Println("HTTP server running on " + cfg.Port)
+		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("HTTP server error: %v", err)
+		}
+	}()
+
+	ctx, stop := signal.NotifyContext(
+		context.Background(),
+		os.Interrupt,
+		syscall.SIGTERM,
+	)
+	defer stop()
+
+	<-ctx.Done()
+	log.Println("shutting down...")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
 	grpcServer.GracefulStop()
-	log.Println("gRPC server stopped")
+	if err := httpServer.Shutdown(shutdownCtx); err != nil {
+		log.Printf("HTTP shutdown failed: %v", err)
+	}
+
+	log.Println("shutdown complete")
 }
