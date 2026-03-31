@@ -18,7 +18,6 @@ const (
 	readTimeout  = 10 * time.Second
 	writeTimeout = 10 * time.Second
 	idleTimeou   = 60 * time.Second
-	hubTCPPort   = "8010" // Minecraft TCP proxy hub port
 )
 
 func main() {
