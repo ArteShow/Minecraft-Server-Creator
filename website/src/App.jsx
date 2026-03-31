@@ -121,6 +121,14 @@ async function apiFetch(path, { method = "GET", body, token } = {}) {
   const text = await response.text();
   const data = text ? safeJsonParse(text, { raw: text }) : {};
 
+  if (response.status === 401) {
+    window.dispatchEvent(
+      new CustomEvent("easy2host:unauthorized", {
+        detail: { path, method, message: data?.message || data?.error || "Unauthorized" },
+      }),
+    );
+  }
+
   if (!response.ok) {
     throw new Error(data?.message || data?.error || data?.raw || `Request failed with status ${response.status}`);
   }
@@ -142,6 +150,13 @@ async function apiFetchBlob(path, { method = "GET", body, token } = {}) {
   if (!response.ok) {
     const text = await response.text();
     const data = text ? safeJsonParse(text, { raw: text }) : {};
+    if (response.status === 401) {
+      window.dispatchEvent(
+        new CustomEvent("easy2host:unauthorized", {
+          detail: { path, method, message: data?.message || data?.error || "Unauthorized" },
+        }),
+      );
+    }
     throw new Error(data?.message || data?.error || data?.raw || `Request failed with status ${response.status}`);
   }
 
@@ -149,7 +164,7 @@ async function apiFetchBlob(path, { method = "GET", body, token } = {}) {
 }
 
 function popClass() {
-  return "transition duration-200 motion-safe:hover:-translate-y-1 motion-safe:hover:scale-[1.02]";
+  return "anim-fade-up transition duration-200 motion-safe:hover:-translate-y-1 motion-safe:hover:scale-[1.02]";
 }
 
 function downloadBlob(blob, filename) {
@@ -173,7 +188,7 @@ function GlassCard({ className = "", children }) {
   return (
     <div
       className={cn(
-        "rounded-[2rem] border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl shadow-black/20",
+        "min-w-0 overflow-hidden rounded-[2rem] border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl shadow-black/20",
         className,
       )}
     >
@@ -563,6 +578,15 @@ function AuthScreen({ mode, busy, error, onSubmit, setScreen }) {
               {signup ? "Sign in" : "Create one"}
             </button>
           </div>
+          {!signup && (
+            <div className="mt-4 rounded-2xl border border-white/10 bg-slate-950/40 p-4 text-sm text-slate-300">
+              <div className="font-semibold text-white">Quick links</div>
+              <div className="mt-2 flex flex-wrap gap-3">
+                <a href="/dashboard.html" className="text-cyan-300 hover:text-cyan-200">Open Server Dashboard</a>
+                <a href="/admin.html" className="text-cyan-300 hover:text-cyan-200">Open Admin Dashboard</a>
+              </div>
+            </div>
+          )}
         </GlassCard>
         <GlassCard className="hidden overflow-hidden lg:block">
           <div className="h-full bg-[radial-gradient(circle_at_top_left,rgba(103,232,249,0.16),transparent_38%),linear-gradient(160deg,rgba(8,17,31,0.94),rgba(10,20,34,0.92))] p-8">
@@ -572,6 +596,7 @@ function AuthScreen({ mode, busy, error, onSubmit, setScreen }) {
             <div className="space-y-5">
               {[
                 "Auth uses /api/v1/auth/user/register and /api/v1/auth/user/login.",
+                "Admin account: register with type=admin and jwt=<JWT secret>, then login normally.",
                 "Purchase flow calls /bundle/create, /bundle/add, then /server/create.",
                 "Customer dashboard controls start, stop, stats, delete, and backup download.",
                 "Admin dashboard reaches network and host metadata routes through the same gateway.",
@@ -695,6 +720,16 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
       setBusy(server.server_id, false);
     }
   };
+
+  useEffect(() => {
+    if (!selectedServer || !token) return;
+
+    const timer = window.setInterval(() => {
+      fetchStats(selectedServer);
+    }, 30000);
+
+    return () => window.clearInterval(timer);
+  }, [selectedServer, token]);
 
   const createBackup = async (server) => {
     setBusy(server.server_id, true);
@@ -828,7 +863,7 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                           <p className="mt-1 text-slate-400">
                             {selectedServer.software} {selectedServer.version} · {selectedServer.bundleName}
                           </p>
-                          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">{selectedServer.server_id}</p>
+                          <p className="mt-1 break-all text-xs uppercase tracking-[0.18em] text-slate-500">{selectedServer.server_id}</p>
                         </div>
                         <div className={cn("rounded-full px-3 py-1 text-sm", selectedServer.status === "online" ? "bg-emerald-400/10 text-emerald-300" : "bg-slate-700/60 text-slate-300")}>
                           {selectedServer.status || "created"}
@@ -1241,8 +1276,8 @@ function LandingPage({ apiHealthy, currentUser, setScreen, startPurchase }) {
   );
 }
 
-export default function App() {
-  const [screen, setScreen] = useState("landing");
+export default function App({ initialScreen = "landing" }) {
+  const [screen, setScreen] = useState(initialScreen);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [token, setToken] = useState(() => localStorage.getItem("easy2host_token") || "");
   const [currentUser, setCurrentUser] = useState(() => safeJsonParse(localStorage.getItem("easy2host_user"), null));
@@ -1273,6 +1308,37 @@ export default function App() {
   }, [profiles]);
 
   useEffect(() => {
+    setScreen(initialScreen);
+  }, [initialScreen]);
+
+  useEffect(() => {
+    if (screen === "dashboard" && !currentUser) {
+      setScreen("signin");
+      return;
+    }
+    if (screen === "admin" && !currentUser) {
+      setScreen("signin");
+      return;
+    }
+    if (screen === "admin" && currentUser?.role !== "admin") {
+      setScreen("dashboard");
+    }
+  }, [screen, currentUser]);
+
+  useEffect(() => {
+    const onUnauthorized = (event) => {
+      const message = event?.detail?.message || "Session expired. Please sign in again.";
+      setToken("");
+      setCurrentUser(null);
+      setScreen("signin");
+      setNotices((previous) => [{ id: Date.now() + Math.random(), type: "error", text: message }, ...previous].slice(0, 5));
+    };
+
+    window.addEventListener("easy2host:unauthorized", onUnauthorized);
+    return () => window.removeEventListener("easy2host:unauthorized", onUnauthorized);
+  }, []);
+
+  useEffect(() => {
     let ignore = false;
     const checkHealth = async () => {
       try {
@@ -1298,7 +1364,7 @@ export default function App() {
   const logout = () => {
     setToken("");
     setCurrentUser(null);
-    setScreen("landing");
+    setScreen(initialScreen === "admin" || initialScreen === "dashboard" ? "signin" : initialScreen);
     setMobileOpen(false);
   };
 
@@ -1407,35 +1473,51 @@ export default function App() {
     }
   };
 
+  const openPage = (nextScreen) => {
+    const routes = {
+      landing: "/index.html",
+      signin: "/signin.html",
+      signup: "/signup.html",
+      dashboard: "/dashboard.html",
+      admin: "/admin.html",
+    };
+    const target = routes[nextScreen] || "/index.html";
+    if (window.location.pathname !== target) {
+      window.location.href = target;
+      return;
+    }
+    setScreen(nextScreen);
+  };
+
   return (
     <div className="min-h-screen bg-[#07111f] text-white">
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.08),transparent_28%),linear-gradient(180deg,#08111f_0%,#09121c_45%,#070d17_100%)]" />
 
       <header className="sticky top-0 z-40 border-b border-white/10 bg-slate-950/70 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:px-16">
-          <button onClick={() => setScreen("landing")} className="min-w-0 text-left">
+          <button onClick={() => openPage("landing")} className="min-w-0 text-left">
             <Brand />
           </button>
 
           <nav className="hidden items-center gap-8 md:flex">
-            <button onClick={() => setScreen("landing")} className="text-sm font-medium text-slate-300 transition hover:text-white">Home</button>
+            <button onClick={() => openPage("landing")} className="text-sm font-medium text-slate-300 transition hover:text-white">Home</button>
             <a href="#plans" className="text-sm font-medium text-slate-300 transition hover:text-white">Plans</a>
             <a href="#features" className="text-sm font-medium text-slate-300 transition hover:text-white">Features</a>
             <a href="#faq" className="text-sm font-medium text-slate-300 transition hover:text-white">FAQ</a>
-            {currentUser?.role === "user" && <button onClick={() => setScreen("dashboard")} className="text-sm font-medium text-slate-300 transition hover:text-white">Server Dashboard</button>}
-            {currentUser?.role === "admin" && <button onClick={() => setScreen("admin")} className="text-sm font-medium text-slate-300 transition hover:text-white">Admin Dashboard</button>}
+            {currentUser?.role === "user" && <button onClick={() => openPage("dashboard")} className="text-sm font-medium text-slate-300 transition hover:text-white">Server Dashboard</button>}
+            {currentUser?.role === "admin" && <button onClick={() => openPage("admin")} className="text-sm font-medium text-slate-300 transition hover:text-white">Admin Dashboard</button>}
           </nav>
 
           <div className="hidden items-center gap-2 md:flex lg:gap-3">
             {currentUser ? (
               <>
                 <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-slate-300">{currentUser.username}</div>
-                <button onClick={() => setScreen(currentUser.role === "admin" ? "admin" : "dashboard")} className={cn("rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 font-medium text-white", popClass())}>{currentUser.role === "admin" ? "Admin Panel" : "Dashboard"}</button>
+                <button onClick={() => openPage(currentUser.role === "admin" ? "admin" : "dashboard")} className={cn("rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 font-medium text-white", popClass())}>{currentUser.role === "admin" ? "Admin Panel" : "Dashboard"}</button>
               </>
             ) : (
               <>
-                <button onClick={() => setScreen("signin")} className={cn("rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 font-medium text-white", popClass())}>Sign In</button>
-                <button onClick={() => setScreen("signup")} className={cn("rounded-2xl bg-gradient-to-r from-cyan-300 to-blue-500 px-4 py-2.5 font-semibold text-slate-950", popClass())}>Create Account</button>
+                <button onClick={() => openPage("signin")} className={cn("rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 font-medium text-white", popClass())}>Sign In</button>
+                <button onClick={() => openPage("signup")} className={cn("rounded-2xl bg-gradient-to-r from-cyan-300 to-blue-500 px-4 py-2.5 font-semibold text-slate-950", popClass())}>Create Account</button>
               </>
             )}
           </div>
@@ -1448,18 +1530,18 @@ export default function App() {
         {mobileOpen && (
           <div className="border-t border-white/10 px-4 py-4 sm:px-6 md:hidden">
             <div className="flex flex-col gap-3">
-              <button onClick={() => { setScreen("landing"); setMobileOpen(false); }} className="rounded-xl px-3 py-2 text-left text-slate-300 hover:bg-white/5 hover:text-white">Home</button>
+              <button onClick={() => { openPage("landing"); setMobileOpen(false); }} className="rounded-xl px-3 py-2 text-left text-slate-300 hover:bg-white/5 hover:text-white">Home</button>
               <a href="#plans" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2 text-left text-slate-300 hover:bg-white/5 hover:text-white">Plans</a>
               <a href="#features" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2 text-left text-slate-300 hover:bg-white/5 hover:text-white">Features</a>
               <a href="#faq" onClick={() => setMobileOpen(false)} className="rounded-xl px-3 py-2 text-left text-slate-300 hover:bg-white/5 hover:text-white">FAQ</a>
               {!currentUser && (
                 <>
-                  <button onClick={() => { setScreen("signin"); setMobileOpen(false); }} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left text-white">Sign In</button>
-                  <button onClick={() => { setScreen("signup"); setMobileOpen(false); }} className="rounded-xl bg-gradient-to-r from-cyan-300 to-blue-500 px-3 py-2 text-left font-semibold text-slate-950">Create Account</button>
+                  <button onClick={() => { openPage("signin"); setMobileOpen(false); }} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left text-white">Sign In</button>
+                  <button onClick={() => { openPage("signup"); setMobileOpen(false); }} className="rounded-xl bg-gradient-to-r from-cyan-300 to-blue-500 px-3 py-2 text-left font-semibold text-slate-950">Create Account</button>
                 </>
               )}
-              {currentUser?.role === "user" && <button onClick={() => { setScreen("dashboard"); setMobileOpen(false); }} className="rounded-xl px-3 py-2 text-left text-slate-300 hover:bg-white/5 hover:text-white">Server Dashboard</button>}
-              {currentUser?.role === "admin" && <button onClick={() => { setScreen("admin"); setMobileOpen(false); }} className="rounded-xl px-3 py-2 text-left text-slate-300 hover:bg-white/5 hover:text-white">Admin Dashboard</button>}
+              {currentUser?.role === "user" && <button onClick={() => { openPage("dashboard"); setMobileOpen(false); }} className="rounded-xl px-3 py-2 text-left text-slate-300 hover:bg-white/5 hover:text-white">Server Dashboard</button>}
+              {currentUser?.role === "admin" && <button onClick={() => { openPage("admin"); setMobileOpen(false); }} className="rounded-xl px-3 py-2 text-left text-slate-300 hover:bg-white/5 hover:text-white">Admin Dashboard</button>}
             </div>
           </div>
         )}

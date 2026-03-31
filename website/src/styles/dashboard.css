@@ -1,0 +1,16 @@
+#root {
+  animation: fade-up 420ms ease-out both;
+}
+
+main,
+section,
+article,
+button {
+  animation: fade-up 560ms ease-out both;
+}
+
+@media (min-width: 1024px) {
+  .rounded-\[2rem\] {
+    animation: float-soft 8s ease-in-out infinite;
+  }
+}

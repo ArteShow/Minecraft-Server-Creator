@@ -1,0 +1,19 @@
+#root {
+  animation: fade-up 420ms ease-out both;
+}
+
+header {
+  animation: fade-up 520ms ease-out both;
+}
+
+section {
+  animation: fade-up 620ms ease-out both;
+}
+
+section:nth-of-type(2) {
+  animation-delay: 90ms;
+}
+
+section:nth-of-type(3) {
+  animation-delay: 180ms;
+}
