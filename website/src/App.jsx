@@ -222,12 +222,25 @@ function SectionIntro({ eyebrow, title, text }) {
 }
 
 function Modal({ open, onClose, title, subtitle, children }) {
+  // Trap focus and stop background scroll while open
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [open]);
+
   if (!open) return null;
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-50 flex items-end justify-center bg-black/75 p-2 sm:items-center sm:p-4">
-      <button type="button" aria-label="Close modal" className="pointer-events-auto absolute inset-0" onClick={onClose} />
-      <GlassCard className="pointer-events-auto relative z-10 max-h-[92vh] w-full max-w-3xl overflow-auto rounded-t-[2.2rem] p-5 sm:rounded-[2rem] sm:p-8">
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 p-2 sm:items-center sm:p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <GlassCard
+        className="relative z-10 max-h-[92vh] w-full max-w-3xl overflow-auto rounded-t-[2.2rem] p-5 sm:rounded-[2rem] sm:p-8"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
             <h2 className="display-font text-2xl font-bold text-white">{title}</h2>
@@ -236,7 +249,7 @@ function Modal({ open, onClose, title, subtitle, children }) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-2xl border border-white/10 bg-white/5 p-2 text-white transition hover:bg-white/10"
+            className="shrink-0 rounded-2xl border border-white/10 bg-white/5 p-2 text-white transition hover:bg-white/10"
           >
             <X className="h-5 w-5" />
           </button>
@@ -302,6 +315,8 @@ function PurchaseFlow({ open, plan, onClose, currentUser, onRequireAuth, onCompl
   const [selectedAddOns, setSelectedAddOns] = useState([]);
   const [setup, setSetup] = useState({ name: "", version: versions.at(-1), software: "Paper" });
   const [billing, setBilling] = useState({ fullName: currentUser?.displayName || "", country: "Austria" });
+  const [creating, setCreating] = useState(false);
+  const [createStep, setCreateStep] = useState("");
 
   useEffect(() => {
     if (open) {
@@ -309,6 +324,8 @@ function PurchaseFlow({ open, plan, onClose, currentUser, onRequireAuth, onCompl
       setStep(1);
       setSelectedAddOns([]);
       setSetup({ name: "", version: versions.at(-1), software: "Paper" });
+      setCreating(false);
+      setCreateStep("");
     }
   }, [open, currentUser]);
 
@@ -328,7 +345,8 @@ function PurchaseFlow({ open, plan, onClose, currentUser, onRequireAuth, onCompl
       setStep((value) => value + 1);
       return;
     }
-    onComplete({ plan, addons: selected, setup, billing });
+    setCreating(true);
+    onComplete({ plan, addons: selected, setup, billing }, setCreateStep).finally(() => setCreating(false));
   };
 
   return (
@@ -488,11 +506,20 @@ function PurchaseFlow({ open, plan, onClose, currentUser, onRequireAuth, onCompl
       )}
 
       <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
-        <div className="text-sm text-slate-400">
-          {currentUser ? `Signed in as ${currentUser.username}` : "Create an account or sign in to continue."}
+        <div className="min-w-0 flex-1">
+          {creating ? (
+            <div className="rounded-2xl border border-cyan-300/20 bg-cyan-400/10 px-4 py-3 text-sm text-cyan-100">
+              <div className="font-semibold">Creating your server…</div>
+              {createStep && <div className="mt-1 text-slate-300">{createStep}</div>}
+            </div>
+          ) : (
+            <div className="text-sm text-slate-400">
+              {currentUser ? `Signed in as ${currentUser.username}` : "Create an account or sign in to continue."}
+            </div>
+          )}
         </div>
         <div className="flex gap-3">
-          {step > 1 && (
+          {step > 1 && !creating && (
             <button
               onClick={() => setStep((value) => value - 1)}
               className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 font-semibold text-white"
@@ -501,10 +528,14 @@ function PurchaseFlow({ open, plan, onClose, currentUser, onRequireAuth, onCompl
             </button>
           )}
           <button
+            disabled={creating}
             onClick={next}
-            className="rounded-2xl bg-gradient-to-r from-cyan-300 to-blue-500 px-5 py-3 font-semibold text-slate-950"
+            className={cn(
+              "rounded-2xl bg-gradient-to-r from-cyan-300 to-blue-500 px-5 py-3 font-semibold text-slate-950 disabled:opacity-60",
+              !creating && popClass(),
+            )}
           >
-            {!currentUser ? "Sign in to continue" : step === 3 ? "Create Server" : "Continue"}
+            {creating ? "Creating…" : !currentUser ? "Sign in to continue" : step === 3 ? "Create Server" : "Continue"}
           </button>
         </div>
       </div>
@@ -580,12 +611,25 @@ function AuthScreen({ mode, busy, error, onSubmit, setScreen }) {
             </button>
           </div>
           {!signup && (
-            <div className="mt-4 rounded-2xl border border-white/10 bg-slate-950/40 p-4 text-sm text-slate-300">
-              <div className="font-semibold text-white">Quick links</div>
-              <div className="mt-2 flex flex-wrap gap-3">
-                <a href="/dashboard.html" className="text-cyan-300 hover:text-cyan-200">Open Server Dashboard</a>
-                <a href="/admin.html" className="text-cyan-300 hover:text-cyan-200">Open Admin Dashboard</a>
+            <div className="mt-4 space-y-3">
+              <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4 text-sm text-slate-300">
+                <div className="font-semibold text-white">Quick links</div>
+                <div className="mt-2 flex flex-wrap gap-3">
+                  <a href="/dashboard.html" className="text-cyan-300 hover:text-cyan-200">Server Dashboard</a>
+                  <a href="/admin.html" className="text-cyan-300 hover:text-cyan-200">Admin Dashboard</a>
+                </div>
               </div>
+              <details className="rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4 text-sm text-slate-300">
+                <summary className="cursor-pointer font-semibold text-amber-200">How to create an admin account</summary>
+                <div className="mt-3 space-y-2 text-slate-300">
+                  <p>Admin accounts require knowing the <strong className="text-white">JWT_SECRET</strong> from your server config (<code className="rounded bg-slate-800 px-1">hub/config/docker.env</code>).</p>
+                  <p>Run this command (replace <code className="rounded bg-slate-800 px-1">YOUR_JWT_SECRET</code>, choose your own username/password):</p>
+                  <pre className="mt-2 overflow-auto rounded-xl bg-slate-900 p-3 text-xs text-cyan-200">{`curl -s -X POST http://localhost:8010/api/v1/auth/user/register \\
+  -H "Content-Type: application/json" \\
+  -d '{"username":"admin","password":"yourpassword","email":"","type":"admin","jwt":"YOUR_JWT_SECRET"}'`}</pre>
+                  <p className="text-slate-400">Then sign in normally. Admin credentials automatically open the Admin Dashboard.</p>
+                </div>
+              </details>
             </div>
           )}
         </GlassCard>
@@ -1443,7 +1487,7 @@ export default function App({ initialScreen = "landing" }) {
     }
   };
 
-  const completePurchase = async (order) => {
+  const completePurchase = async (order, setCreateStep) => {
     if (!currentUser || !token) {
       setScreen("signin");
       return;
@@ -1451,12 +1495,18 @@ export default function App({ initialScreen = "landing" }) {
 
     try {
       const bundleName = order.plan.name;
+
+      setCreateStep && setCreateStep("Step 1/3 — Generating bundle key…");
       const bundleKeyResponse = await apiFetch("/bundle/create", {
         method: "POST",
         body: { bundle: bundleName },
         token,
       });
+
+      setCreateStep && setCreateStep("Step 2/3 — Adding bundle to your account…");
       await apiFetch("/bundle/add", { method: "POST", body: { bundle: bundleName }, token });
+
+      setCreateStep && setCreateStep("Step 3/3 — Provisioning Minecraft server…");
       const created = await apiFetch("/server/create", {
         method: "POST",
         body: { version: order.setup.version, bundle: bundleKeyResponse.key },
@@ -1483,9 +1533,9 @@ export default function App({ initialScreen = "landing" }) {
       setServers((previous) => [...previous, nextServer]);
       setPurchasePlan(null);
       setScreen("dashboard");
-      pushNotice("success", `Server ${order.setup.name} created with ID ${created.server_id}.`);
+      pushNotice("success", `Server "${order.setup.name}" created — ID: ${created.server_id}.`);
     } catch (error) {
-      pushNotice("error", error.message);
+      pushNotice("error", `Server creation failed: ${error.message}`);
     }
   };
 
