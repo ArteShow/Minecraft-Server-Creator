@@ -42,3 +42,13 @@ type DeleteBackupRequest struct {
 	ServerID string `json:"server_id"`
 	BackupID string `json:"backup_id"`
 }
+
+type ListBackupsResponse struct {
+	Backups []BackupItem `json:"backups"`
+}
+
+type BackupItem struct {
+	BackupID string `json:"backup_id"`
+	ServerID string `json:"server_id"`
+	UserID   string `json:"user_id"`
+}

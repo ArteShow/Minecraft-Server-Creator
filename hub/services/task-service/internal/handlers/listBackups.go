@@ -4,34 +4,18 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"strconv"
-	"strings"
 
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/core"
 )
 
-func GetBackup(w http.ResponseWriter, r *http.Request) {
+func ListBackups(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("X-User-ID")
 	if userID == "" {
 		http.Error(w, "userID header missing", http.StatusBadRequest)
 		return
 	}
 
-	auth := r.Header.Get("Authorization")
-	if auth == "" {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	parts := strings.SplitN(auth, " ", 2)
-	if len(parts) != 2 || parts[0] != "Bearer" {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	token := parts[1]
-
-	var req CreateBackupRequest
+	var req GetBackupRequest
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -44,17 +28,25 @@ func GetBackup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tar, err := core.GetBackup(req.ServerID, token)
+	backups, err := core.ListBackups(req.ServerID, userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/octet-stream")
-	w.Header().Set("Content-Disposition", "attachment; filename=\"backup.tar.gz\"")
-	w.Header().Set("Content-Length", strconv.Itoa(len(tar)))
+	items := make([]BackupItem, 0, len(backups))
+	for _, entry := range backups {
+		items = append(items, BackupItem{
+			BackupID: entry.BackupID,
+			ServerID: entry.ServerID,
+			UserID:   entry.UserID,
+		})
+	}
+
+	resp := ListBackupsResponse{Backups: items}
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	if _, err = w.Write(tar); err != nil {
+	if err = json.NewEncoder(w).Encode(resp); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

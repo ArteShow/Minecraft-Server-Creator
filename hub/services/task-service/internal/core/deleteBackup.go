@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/client"
@@ -73,9 +74,18 @@ func DeleteBackup(serverID, token, backupID string) error {
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	client := &http.Client{}
-	_, err = client.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		if len(body) > 0 {
+			return fmt.Errorf("host backup delete failed, status %d: %s", resp.StatusCode, string(body))
+		}
+		return fmt.Errorf("host backup delete failed, status %d", resp.StatusCode)
 	}
 
 	_, err = backupClient.DeleteBackup(&backup.DeleteBackupRequest{BackupID: backupID})

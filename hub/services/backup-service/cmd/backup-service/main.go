@@ -26,6 +26,11 @@ func main() {
 	grpcServer := grpc.NewServer()
 	proto.RegisterBundleServiceServer(grpcServer, server.NewServer())
 
+	// Compatibility alias: some clients use backup_service.BackupService service name.
+	aliasDesc := proto.BundleService_ServiceDesc
+	aliasDesc.ServiceName = "backup_service.BackupService"
+	grpcServer.RegisterService(&aliasDesc, server.NewServer())
+
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt)
 

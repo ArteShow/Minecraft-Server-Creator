@@ -728,8 +728,9 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
   const [active, setActive] = useState("servers");
   const [selectedServerId, setSelectedServerId] = useState(null);
   const [search, setSearch] = useState("");
-  const [statsMap, setStatsMap] = useState({});
   const [serverBusy, setServerBusy] = useState({});
+  const [backupBusy, setBackupBusy] = useState({});
+  const [backupListMap, setBackupListMap] = useState({});
 
   const ownedServers = useMemo(
     () => servers.filter((server) => server.ownerId === currentUser.ownerKey),
@@ -747,6 +748,7 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
   }, [ownedServers, selectedServerId]);
 
   const setBusy = (serverId, value) => setServerBusy((previous) => ({ ...previous, [serverId]: value }));
+  const setBackupLoading = (serverId, value) => setBackupBusy((previous) => ({ ...previous, [serverId]: value }));
   const pushNotice = (type, text) => setNotices((previous) => [{ id: Date.now() + Math.random(), type, text }, ...previous].slice(0, 5));
 
   const updateServer = (serverId, updater) => {
@@ -788,8 +790,8 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
         body: { server_id: server.server_id, key: "Online" },
         token,
       });
-      setStatsMap((previous) => ({ ...previous, [server.server_id]: normalizeStatsValue(data.value) }));
-      pushNotice("success", `Loaded stats for ${server.name}.`);
+      const value = normalizeStatsValue(data.value);
+      pushNotice("success", `${server.name} status: ${typeof value === "string" ? value : JSON.stringify(value)}`);
     } catch (error) {
       pushNotice("error", error.message);
     } finally {
@@ -816,6 +818,7 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
         token,
       });
       updateServer(server.server_id, (current) => ({ backupCount: (current.backupCount || 0) + 1 }));
+      await loadBackups(server);
       pushNotice("success", `Backup created for ${server.name}.`);
     } catch (error) {
       pushNotice("error", error.message);
@@ -836,6 +839,55 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
       setBusy(server.server_id, false);
     }
   };
+
+  const loadBackups = async (server) => {
+    setBackupLoading(server.server_id, true);
+    try {
+      const data = await apiFetch("/server/backup/list", {
+        method: "POST",
+        body: { server_id: server.server_id },
+        token,
+      });
+      setBackupListMap((previous) => ({ ...previous, [server.server_id]: Array.isArray(data.backups) ? data.backups : [] }));
+    } catch (error) {
+      pushNotice("error", error.message);
+    } finally {
+      setBackupLoading(server.server_id, false);
+    }
+  };
+
+  const deleteBackup = async (server, backupID) => {
+    setBackupLoading(server.server_id, true);
+    try {
+      await apiFetch("/server/backup/delete", {
+        method: "POST",
+        body: { server_id: server.server_id, backup_id: backupID },
+        token,
+      });
+      await loadBackups(server);
+      updateServer(server.server_id, (current) => ({ backupCount: Math.max((current.backupCount || 0) - 1, 0) }));
+      pushNotice("success", `Backup ${backupID} deleted.`);
+    } catch (error) {
+      pushNotice("error", error.message);
+    } finally {
+      setBackupLoading(server.server_id, false);
+    }
+  };
+
+  const copyJoinAddress = async (server) => {
+    const address = `localhost:${server.port || FIRST_SERVER_PORT}`;
+    try {
+      await navigator.clipboard.writeText(address);
+      pushNotice("success", `Join address copied: ${address}`);
+    } catch {
+      pushNotice("error", `Could not copy. Join address: ${address}`);
+    }
+  };
+
+  useEffect(() => {
+    if (!selectedServer || !token) return;
+    loadBackups(selectedServer);
+  }, [selectedServer?.server_id, token]);
 
   const menu = [
     { key: "servers", label: "My Servers", icon: Server },
@@ -897,7 +949,7 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                 </div>
               </GlassCard>
 
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <GlassCard className={cn("p-5", popClass())}>
                   <div className="text-sm text-slate-400">Owned servers</div>
                   <div className="display-font mt-2 text-3xl font-bold text-white">{ownedServers.length}</div>
@@ -909,12 +961,6 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                 <GlassCard className={cn("p-5", popClass())}>
                   <div className="text-sm text-slate-400">Known backups</div>
                   <div className="display-font mt-2 text-3xl font-bold text-white">{ownedServers.reduce((sum, server) => sum + (server.backupCount || 0), 0)}</div>
-                </GlassCard>
-                <GlassCard className={cn("p-5", popClass())}>
-                  <div className="text-sm text-slate-400">Next host port hint</div>
-                  <div className="display-font mt-2 text-2xl font-bold text-cyan-300">
-                    {ownedServers.reduce((highest, server) => Math.max(highest, server.port || 0), FIRST_SERVER_PORT - 1) + 1}
-                  </div>
                 </GlassCard>
               </div>
 
@@ -946,7 +992,7 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                           <div>
                             <div className="font-semibold text-white">{server.name}</div>
                             <div className="mt-1 text-sm text-slate-400">
-                              {server.software} {server.version} · {server.bundleName} · {server.server_id}
+                              {server.software} {server.version} · {server.bundleName}
                             </div>
                           </div>
                           <div className={cn("rounded-full px-3 py-1 text-xs", server.status === "online" ? "bg-emerald-400/10 text-emerald-300" : "bg-slate-700/60 text-slate-300")}>
@@ -967,6 +1013,12 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                           <p className="mt-1 text-slate-400">
                             {selectedServer.software} {selectedServer.version} · {selectedServer.bundleName}
                           </p>
+                          <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-400/10 px-3 py-1 text-sm text-cyan-200">
+                            Join: localhost:{selectedServer.port || FIRST_SERVER_PORT}
+                            <button type="button" onClick={() => copyJoinAddress(selectedServer)} className="rounded-lg border border-cyan-300/20 bg-cyan-300/10 p-1 text-cyan-100 hover:bg-cyan-300/20">
+                              <Copy className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
                         </div>
                         <div className={cn("rounded-full px-3 py-1 text-sm", selectedServer.status === "online" ? "bg-emerald-400/10 text-emerald-300" : "bg-slate-700/60 text-slate-300")}>
                           {selectedServer.status || "created"}
@@ -982,7 +1034,7 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                         <button disabled={serverBusy[selectedServer.server_id]} onClick={() => runServerAction(selectedServer, "delete")} className={cn("flex items-center justify-center gap-2 rounded-2xl bg-rose-500/20 px-4 py-3 text-rose-200 disabled:opacity-60", popClass())}><Trash2 className="h-4 w-4" /> Delete</button>
                       </div>
 
-                      <div className="mt-6 grid gap-4 xl:grid-cols-2">
+                      <div className="mt-6">
                         <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4">
                           <div className="mb-4 flex items-center gap-2 text-white"><Database className="h-4 w-4 text-cyan-300" /> Server Details</div>
                           <div className="space-y-2 text-sm text-slate-300">
@@ -995,9 +1047,41 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                             <div className="flex justify-between"><span className="text-slate-400">Backups</span><span className="text-white">{selectedServer.backupCount || 0}</span></div>
                           </div>
                         </div>
-                        <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4">
-                          <div className="mb-4 flex items-center gap-2 text-white"><Activity className="h-4 w-4 text-cyan-300" /> Stats Response</div>
-                          <pre className="max-h-64 overflow-auto text-xs text-slate-300">{JSON.stringify(statsMap[selectedServer.server_id] || { message: "Load stats to see backend response." }, null, 2)}</pre>
+
+                        <div className="mt-4 rounded-2xl border border-white/10 bg-slate-950/40 p-4">
+                          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex items-center gap-2 text-white"><HardDrive className="h-4 w-4 text-cyan-300" /> Backup List</div>
+                            <button
+                              type="button"
+                              onClick={() => loadBackups(selectedServer)}
+                              disabled={backupBusy[selectedServer.server_id]}
+                              className={cn("rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white disabled:opacity-60", popClass())}
+                            >
+                              Refresh
+                            </button>
+                          </div>
+
+                          {(backupListMap[selectedServer.server_id] || []).length === 0 && (
+                            <div className="rounded-xl border border-dashed border-white/10 bg-black/20 px-3 py-3 text-sm text-slate-400">
+                              No backups recorded yet.
+                            </div>
+                          )}
+
+                          <div className="space-y-2">
+                            {(backupListMap[selectedServer.server_id] || []).map((entry) => (
+                              <div key={entry.backup_id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2">
+                                <div className="min-w-0 text-sm text-slate-300">{entry.backup_id}</div>
+                                <button
+                                  type="button"
+                                  disabled={backupBusy[selectedServer.server_id]}
+                                  onClick={() => deleteBackup(selectedServer, entry.backup_id)}
+                                  className={cn("rounded-lg border border-rose-400/25 bg-rose-400/10 px-2.5 py-1 text-xs font-semibold text-rose-200 disabled:opacity-60", popClass())}
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </>
@@ -1898,6 +1982,22 @@ function UserSupportPanel({ currentUser, tickets, setTickets, pushNotice }) {
     pushNotice("success", `Support ticket ${ticket.id} created.`);
   };
 
+  const closeTicket = (ticketID) => {
+    const now = new Date().toISOString();
+    setTickets((previous) =>
+      previous.map((ticket) =>
+        ticket.id === ticketID
+          ? {
+              ...ticket,
+              status: "resolved",
+              updatedAt: now,
+            }
+          : ticket,
+      ),
+    );
+    pushNotice("success", `Ticket ${ticketID} closed.`);
+  };
+
   return (
     <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
       <GlassCard className="p-6">
@@ -1970,6 +2070,17 @@ function UserSupportPanel({ currentUser, tickets, setTickets, pushNotice }) {
                 <div className="mt-3 rounded-xl border border-cyan-300/20 bg-cyan-400/10 p-3 text-sm text-cyan-100">
                   <div className="font-semibold">Admin reply</div>
                   <div className="mt-1">{ticket.adminReply}</div>
+                </div>
+              )}
+              {ticket.status !== "resolved" && (
+                <div className="mt-3 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => closeTicket(ticket.id)}
+                    className={cn("rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-2 text-sm font-semibold text-emerald-200", popClass())}
+                  >
+                    Close Ticket
+                  </button>
                 </div>
               )}
             </div>

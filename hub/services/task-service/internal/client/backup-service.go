@@ -15,7 +15,7 @@ type BackupClient struct {
 }
 
 func NewBackupClient() (*BackupClient, error) {
-	conn, err := grpc.Dial("network-service:50056", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial("backup-service:50056", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
@@ -23,7 +23,7 @@ func NewBackupClient() (*BackupClient, error) {
 	client := pb.NewBackupServiceClient(conn)
 	if client == nil {
 		conn.Close()
-		return nil, errors.New("failed to create NewNetworkClient")
+		return nil, errors.New("failed to create NewBackupClient")
 	}
 
 	return &BackupClient{

@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"strings"
 
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/client"
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/config"
@@ -40,8 +42,22 @@ func CreateBackup(serverID, token, userID, bundle string) error {
 			backupCounter++
 		}
 	}
-	if backupCounter > bundles.Bundles[bundle].Backups {
-		return fmt.Errorf("You are not allowed to have this amount of backups in this bundle %s", bundle)
+
+	selectedBundle := ""
+	bundleLimit := -1
+	for name, cfg := range bundles.Bundles {
+		if strings.EqualFold(name, strings.TrimSpace(bundle)) {
+			selectedBundle = name
+			bundleLimit = cfg.Backups
+			break
+		}
+	}
+	if selectedBundle == "" {
+		return fmt.Errorf("unknown bundle %q", bundle)
+	}
+
+	if backupCounter >= bundleLimit {
+		return fmt.Errorf("backup limit reached for bundle %s (%d)", selectedBundle, bundleLimit)
 	}
 
 	hostClient, err := client.NewHostClient()
@@ -93,10 +109,20 @@ func CreateBackup(serverID, token, userID, bundle string) error {
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	client := &http.Client{}
-	_, err = client.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		if len(body) > 0 {
+			return fmt.Errorf("host backup create failed, status %d: %s", resp.StatusCode, string(body))
+		}
+		return fmt.Errorf("host backup create failed, status %d", resp.StatusCode)
+	}
+
 	_, err = backupClient.CreateBackup(&backup.CreateBackupRequest{ServerID: serverID, UserID: userID})
 	if err != nil {
 		return err

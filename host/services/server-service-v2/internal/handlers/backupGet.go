@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strconv"
 )
 
-func (h *Handler)Getbackup(w http.ResponseWriter, r * http.Request) {
+func (h *Handler) Getbackup(w http.ResponseWriter, r *http.Request) {
 	var req GetBackupRequest
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -28,6 +29,10 @@ func (h *Handler)Getbackup(w http.ResponseWriter, r * http.Request) {
 
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Content-Disposition", "attachment; filename=\"backup.tar.gz\"")
+	w.Header().Set("Content-Length", strconv.Itoa(len(backup)))
 	w.WriteHeader(http.StatusOK)
-	w.Write(backup)
+	if _, err = w.Write(backup); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }

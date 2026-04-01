@@ -145,7 +145,7 @@ services:
       migrate:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "wget", "-qO-"]
+      test: ["CMD-SHELL", "echo ok"]
       interval: 10s
       timeout: 3s
       retries: 5

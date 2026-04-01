@@ -72,12 +72,20 @@ func GetBackup(serverID, token string) ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		if len(body) > 0 {
+			return []byte{}, fmt.Errorf("host backup download failed, status %d: %s", resp.StatusCode, string(body))
+		}
+		return []byte{}, fmt.Errorf("host backup download failed, status %d", resp.StatusCode)
+	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return []byte{}, err
 	}
-	defer resp.Body.Close()
 
 	return body, nil
 }
