@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"strconv"
 )
 
 func (h *Handler) Getbackup(w http.ResponseWriter, r *http.Request) {
@@ -27,10 +26,6 @@ func (h *Handler) Getbackup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	backup, err := h.Server.DockerService.DownloadBackup(req.ServerID, backupName)
-	if err != nil && req.BackupID != "" {
-		// Backward compatibility for older backups created before backup_id naming.
-		backup, err = h.Server.DockerService.DownloadBackup(req.ServerID, "mc_backup_"+req.ServerID)
-	}
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -38,7 +33,6 @@ func (h *Handler) Getbackup(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Content-Disposition", "attachment; filename=\"backup.tar.gz\"")
-	w.Header().Set("Content-Length", strconv.Itoa(len(backup)))
 	w.WriteHeader(http.StatusOK)
 	if _, err = w.Write(backup); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

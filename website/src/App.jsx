@@ -210,7 +210,7 @@ function Brand({ compact = false }) {
       {!compact && (
         <div>
           <div className="display-font text-lg font-bold tracking-tight text-white">easy2host</div>
-          <div className="text-[11px] uppercase tracking-[0.32em] text-slate-400">Minecraft control plane</div>
+          <div className="text-[11px] uppercase tracking-[0.32em] text-slate-400">Minecraft hosting made easy</div>
         </div>
       )}
     </div>
@@ -664,7 +664,7 @@ function AuthScreen({ mode, busy, error, onSubmit, setScreen }) {
         <GlassCard className="hidden overflow-hidden lg:block">
           <div className="h-full bg-[radial-gradient(circle_at_top_left,rgba(103,232,249,0.16),transparent_38%),linear-gradient(160deg,rgba(8,17,31,0.94),rgba(10,20,34,0.92))] p-8">
             <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-sm text-cyan-200">
-              easy2host — Minecraft control plane
+              easy2host — Simple Minecraft hosting
             </div>
             <div className="space-y-4">
               {[
@@ -699,7 +699,7 @@ function PluginCatalogPanel({ search, setSearch }) {
         <div>
           <div className="text-sm uppercase tracking-[0.2em] text-cyan-300/80">Catalog</div>
           <h2 className="display-font mt-2 text-2xl font-bold text-white">Plugins & Mods</h2>
-          <p className="mt-2 text-slate-400">This code remains in place but is hidden from the visible product flow for now.</p>
+          <p className="mt-2 text-slate-400">Coming soon. Browse and install popular plugins and mods to enhance your server.</p>
         </div>
         <div className="relative w-full max-w-sm">
           <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
@@ -927,10 +927,10 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
             <Wifi className="mr-2 inline h-4 w-4" />
             {apiHealthy ? "Gateway reachable" : "Gateway not reachable"}
           </div>
-          <button onClick={() => onBuyServer(plans[1] || plans[0])} className={cn("rounded-2xl bg-gradient-to-r from-cyan-300 to-blue-500 px-4 py-3 font-semibold text-slate-950", popClass())}>
+          <button onClick={() => onBuyServer(plans[1] || plans[0])} className={cn("rounded-2xl bg-gradient-to-r from-cyan-300 to-blue-500 px-4 py-3 font-semibold text-slate-950 transition-all duration-300 hover:shadow-xl hover:shadow-cyan-400/30", popClass())}>
             Buy Server
           </button>
-          <button onClick={logout} className={cn("rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white", popClass())}>
+          <button onClick={logout} className={cn("rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white transition-all duration-300 hover:bg-white/10 hover:border-white/20 hover:shadow-lg hover:shadow-white/10", popClass())}>
             Log out
           </button>
         </div>
@@ -954,9 +954,9 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                       type="button"
                       onClick={() => onBuyServer(plan)}
                       className={cn(
-                        "rounded-2xl border p-4 text-left",
+                        "rounded-2xl border p-4 text-left transition-all duration-300 hover:shadow-xl hover:shadow-cyan-400/20",
                         popClass(),
-                        plan.featured ? "border-cyan-300/30 bg-cyan-400/10" : "border-white/10 bg-slate-950/40",
+                        plan.featured ? "border-cyan-300/30 bg-cyan-400/10 hover:border-cyan-300/50" : "border-white/10 bg-slate-950/40 hover:border-white/20 hover:bg-slate-950/60",
                       )}
                     >
                       <div className="font-semibold text-white">{plan.name}</div>
@@ -986,7 +986,7 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                 <GlassCard className="p-5">
                   <div className="mb-4 flex items-center justify-between gap-4">
                     <h2 className="display-font text-xl font-semibold text-white">My Servers</h2>
-                    <div className="text-sm text-slate-400">Tracked locally until a backend list endpoint exists.</div>
+                    <div className="text-sm text-slate-400">Your servers across all plans</div>
                   </div>
                   <div className="space-y-3">
                     {ownedServers.length === 0 && (
@@ -999,11 +999,11 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                         key={server.server_id}
                         onClick={() => setSelectedServerId(server.server_id)}
                         className={cn(
-                          "w-full rounded-2xl border p-4 text-left",
+                          "w-full rounded-2xl border p-4 text-left transition-all duration-300",
                           popClass(),
                           selectedServer?.server_id === server.server_id
-                            ? "border-cyan-300/30 bg-cyan-400/10"
-                            : "border-white/10 bg-slate-950/40 hover:bg-white/5",
+                            ? "border-cyan-300/30 bg-cyan-400/10 shadow-lg shadow-cyan-400/10"
+                            : "border-white/10 bg-slate-950/40 hover:bg-white/5 hover:border-white/20 hover:shadow-lg hover:shadow-white/5",
                         )}
                       >
                         <div className="flex items-center justify-between gap-4">
@@ -1044,18 +1044,11 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                       </div>
 
                       <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                        <button disabled={serverBusy[selectedServer.server_id]} onClick={() => runServerAction(selectedServer, "start")} className={cn("flex items-center justify-center gap-2 rounded-2xl bg-emerald-400/15 px-4 py-3 text-emerald-300 disabled:opacity-60", popClass())}><Play className="h-4 w-4" /> Start</button>
-                        <button disabled={serverBusy[selectedServer.server_id]} onClick={() => runServerAction(selectedServer, "stop")} className={cn("flex items-center justify-center gap-2 rounded-2xl bg-rose-400/15 px-4 py-3 text-rose-300 disabled:opacity-60", popClass())}><Square className="h-4 w-4" /> Stop</button>
-                        <button disabled={serverBusy[selectedServer.server_id]} onClick={() => fetchStats(selectedServer)} className={cn("flex items-center justify-center gap-2 rounded-2xl bg-sky-400/15 px-4 py-3 text-sky-300 disabled:opacity-60", popClass())}><Activity className="h-4 w-4" /> Stats</button>
-                        <button disabled={serverBusy[selectedServer.server_id]} onClick={() => createBackup(selectedServer)} className={cn("flex items-center justify-center gap-2 rounded-2xl bg-violet-400/15 px-4 py-3 text-violet-300 disabled:opacity-60", popClass())}><HardDrive className="h-4 w-4" /> Create Backup</button>
-                        <button
-                          disabled={serverBusy[selectedServer.server_id] || !(selectedBackupMap[selectedServer.server_id] || "")}
-                          onClick={() => downloadBackup(selectedServer, selectedBackupMap[selectedServer.server_id])}
-                          className={cn("flex items-center justify-center gap-2 rounded-2xl bg-white/8 px-4 py-3 text-white disabled:opacity-60", popClass())}
-                        >
-                          <Download className="h-4 w-4" /> Download Selected Backup
-                        </button>
-                        <button disabled={serverBusy[selectedServer.server_id]} onClick={() => runServerAction(selectedServer, "delete")} className={cn("flex items-center justify-center gap-2 rounded-2xl bg-rose-500/20 px-4 py-3 text-rose-200 disabled:opacity-60", popClass())}><Trash2 className="h-4 w-4" /> Delete</button>
+                        <button disabled={serverBusy[selectedServer.server_id]} onClick={() => runServerAction(selectedServer, "start")} className={cn("flex items-center justify-center gap-2 rounded-2xl bg-emerald-400/15 px-4 py-3 text-emerald-300 disabled:opacity-60 transition-all duration-300 hover:bg-emerald-400/25 hover:shadow-lg hover:shadow-emerald-400/20", popClass())}><Play className="h-4 w-4" /> Start</button>
+                        <button disabled={serverBusy[selectedServer.server_id]} onClick={() => runServerAction(selectedServer, "stop")} className={cn("flex items-center justify-center gap-2 rounded-2xl bg-rose-400/15 px-4 py-3 text-rose-300 disabled:opacity-60 transition-all duration-300 hover:bg-rose-400/25 hover:shadow-lg hover:shadow-rose-400/20", popClass())}><Square className="h-4 w-4" /> Stop</button>
+                        <button disabled={serverBusy[selectedServer.server_id]} onClick={() => fetchStats(selectedServer)} className={cn("flex items-center justify-center gap-2 rounded-2xl bg-sky-400/15 px-4 py-3 text-sky-300 disabled:opacity-60 transition-all duration-300 hover:bg-sky-400/25 hover:shadow-lg hover:shadow-sky-400/20", popClass())}><Activity className="h-4 w-4" /> Stats</button>
+                        <button disabled={serverBusy[selectedServer.server_id]} onClick={() => createBackup(selectedServer)} className={cn("flex items-center justify-center gap-2 rounded-2xl bg-violet-400/15 px-4 py-3 text-violet-300 disabled:opacity-60 transition-all duration-300 hover:bg-violet-400/25 hover:shadow-lg hover:shadow-violet-400/20", popClass())}><HardDrive className="h-4 w-4" /> Create Backup</button>
+                        <button disabled={serverBusy[selectedServer.server_id]} onClick={() => runServerAction(selectedServer, "delete")} className={cn("flex items-center justify-center gap-2 rounded-2xl bg-rose-500/20 px-4 py-3 text-rose-200 disabled:opacity-60 transition-all duration-300 hover:bg-rose-500/30 hover:shadow-lg hover:shadow-rose-500/20", popClass())}><Trash2 className="h-4 w-4" /> Delete</button>
                       </div>
 
                       <div className="mt-6">
@@ -1154,21 +1147,37 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
               <div className="text-sm uppercase tracking-[0.2em] text-cyan-300/80">Account</div>
               <h2 className="display-font mt-2 text-2xl font-bold text-white">Profile & Session</h2>
               <div className="mt-8 grid gap-4 sm:grid-cols-2 md:grid-cols-4">
-                <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4"><div className="text-sm text-slate-400">Display name</div><div className="mt-2 font-semibold text-white truncate">{currentUser.displayName}</div></div>
-                <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4"><div className="text-sm text-slate-400">Username</div><div className="mt-2 font-semibold text-white truncate">{currentUser.username}</div></div>
-                <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4"><div className="text-sm text-slate-400">Email</div><div className="mt-2 font-semibold text-white truncate">{currentUser.email || "Not provided"}</div></div>
-                <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4"><div className="text-sm text-slate-400">Role</div><div className="mt-2 inline-flex items-center gap-2 font-semibold text-white"><Lock className="h-4 w-4 text-cyan-300" /> {currentUser.role}</div></div>
+                <div className={cn("rounded-2xl border border-white/10 bg-slate-950/40 p-4 transition-all duration-300 hover:border-cyan-300/20 hover:bg-slate-950/60 hover:shadow-lg hover:shadow-cyan-400/10", popClass())}><div className="text-sm text-slate-400">Display name</div><div className="mt-2 font-semibold text-white truncate">{currentUser.displayName}</div></div>
+                <div className={cn("rounded-2xl border border-white/10 bg-slate-950/40 p-4 transition-all duration-300 hover:border-cyan-300/20 hover:bg-slate-950/60 hover:shadow-lg hover:shadow-cyan-400/10", popClass())}><div className="text-sm text-slate-400">Username</div><div className="mt-2 font-semibold text-white truncate">{currentUser.username}</div></div>
+                <div className={cn("rounded-2xl border border-white/10 bg-slate-950/40 p-4 transition-all duration-300 hover:border-cyan-300/20 hover:bg-slate-950/60 hover:shadow-lg hover:shadow-cyan-400/10", popClass())}><div className="text-sm text-slate-400">Email</div><div className="mt-2 font-semibold text-white truncate">{currentUser.email || "Not provided"}</div></div>
+                <div className={cn("rounded-2xl border border-white/10 bg-slate-950/40 p-4 transition-all duration-300 hover:border-cyan-300/20 hover:bg-slate-950/60 hover:shadow-lg hover:shadow-cyan-400/10", popClass())}><div className="text-sm text-slate-400">Role</div><div className="mt-2 inline-flex items-center gap-2 font-semibold text-white"><Lock className="h-4 w-4 text-cyan-300" /> {currentUser.role}</div></div>
               </div>
-              <div className="mt-6 rounded-2xl border border-white/10 bg-slate-950/40 p-4">
-                <div className="mb-3 flex items-center gap-2 text-white"><KeyRound className="h-4 w-4 text-cyan-300" /> Session</div>
-                <div className="text-sm text-slate-300">You are signed in as <span className="text-white font-semibold">{currentUser.username}</span>. Your session is stored locally in this browser.</div>
-                <button
-                  type="button"
-                  onClick={logout}
-                  className="mt-4 rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-2.5 text-sm font-semibold text-rose-200 transition hover:bg-rose-400/20"
-                >
-                  Sign out
-                </button>
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <div className={cn("rounded-2xl border border-white/10 bg-slate-950/40 p-4 transition-all duration-300 hover:border-cyan-300/20 hover:bg-slate-950/60 hover:shadow-lg hover:shadow-cyan-400/10", popClass())}>
+                  <div className="mb-3 flex items-center gap-2 text-white"><KeyRound className="h-4 w-4 text-cyan-300" /> Session</div>
+                  <div className="text-sm text-slate-300">You are signed in as <span className="text-white font-semibold">{currentUser.username}</span>.</div>
+                  <button
+                    type="button"
+                    onClick={logout}
+                    className="mt-4 w-full rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-2.5 text-sm font-semibold text-rose-200 transition-all duration-300 hover:bg-rose-400/20 hover:shadow-lg hover:shadow-rose-400/20"
+                  >
+                    Sign out
+                  </button>
+                </div>
+                <div className={cn("rounded-2xl border border-white/10 bg-slate-950/40 p-4 transition-all duration-300 hover:border-cyan-300/20 hover:bg-slate-950/60 hover:shadow-lg hover:shadow-cyan-400/10", popClass())}>
+                  <div className="mb-3 flex items-center gap-2 text-white"><Shield className="h-4 w-4 text-cyan-300" /> Auth Token</div>
+                  <div className="text-xs text-slate-400 font-mono break-all leading-relaxed">{token.slice(0, 20)}...{token.slice(-20)}</div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(token);
+                      pushNotice("success", "Token copied to clipboard");
+                    }}
+                    className="mt-3 w-full rounded-lg border border-cyan-400/25 bg-cyan-400/10 px-3 py-2 text-xs font-semibold text-cyan-200 transition-all duration-300 hover:bg-cyan-400/20 hover:shadow-lg hover:shadow-cyan-400/10"
+                  >
+                    Copy Token
+                  </button>
+                </div>
               </div>
             </GlassCard>
           )}
@@ -1248,7 +1257,7 @@ function AdminDashboard({ currentUser, token, notices, setNotices, apiHealthy, l
         <div>
           <div className="text-sm uppercase tracking-[0.25em] text-cyan-300/80">Admin Dashboard</div>
           <h1 className="display-font mt-2 text-3xl font-bold text-white">Infrastructure Control</h1>
-          <p className="mt-2 text-slate-300">This uses your existing admin-guarded gateway endpoints rather than mocked admin data.</p>
+          <p className="mt-2 text-slate-300">Manage your hosting infrastructure, register new hosts, and monitor your network.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className={cn("rounded-2xl px-4 py-3 text-sm", apiHealthy ? "bg-emerald-400/10 text-emerald-200" : "bg-amber-400/10 text-amber-100")}>
@@ -1451,8 +1460,8 @@ function LandingPage({ apiHealthy, currentUser, setScreen, startPurchase }) {
     ["Which server software can I choose?", "You can choose Vanilla, Fabric, Bukkit, or Paper during setup while still selecting the exact Minecraft version."],
     ["Can I add extra resources?", "Yes. During checkout you can add extra RAM and SSD upgrades before the server is created."],
     ["Will other users be able to see my server?", "No. Your dashboard only tracks the servers associated with your signed-in account."],
-    ["Is there an admin panel?", "Yes. Admin credentials automatically open the admin dashboard and reach the protected infrastructure routes."],
-    ["Are plugins gone?", "The catalog code is still preserved, but the visible plugin feature is intentionally hidden for now."],
+    ["Can I install plugins and mods?", "Plugin and mod support is coming soon. We're curating a marketplace of essential additions for your server."],
+    ["How do I get support?", "Visit the Support section in your dashboard to open tickets. Our team responds to all inquiries within 24 hours."],
   ];
 
   return (
@@ -1473,7 +1482,7 @@ function LandingPage({ apiHealthy, currentUser, setScreen, startPurchase }) {
               Start Hosting Today <span className="bg-gradient-to-r from-cyan-300 via-sky-300 to-blue-400 bg-clip-text text-transparent">with Easy2host.</span>
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-slate-300 sm:mt-6 sm:text-lg sm:leading-8">
-              Sign up, choose a plan, generate a real bundle key, provision a server, and manage it through the server dashboard. Admin credentials land in the infrastructure dashboard automatically.
+              Create your account, select a plan, and launch your Minecraft server instantly. Manage everything from your personal dashboard with full control and flexibility.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
               <button onClick={() => setScreen(currentUser ? currentUser.role === "admin" ? "admin" : "dashboard" : "signup")} className={cn("rounded-2xl bg-gradient-to-r from-cyan-300 to-blue-500 px-6 py-3 font-semibold text-slate-950", popClass())}>
@@ -1481,19 +1490,18 @@ function LandingPage({ apiHealthy, currentUser, setScreen, startPurchase }) {
               </button>
               <a href="#plans" className={cn("rounded-2xl border border-white/10 bg-white/5 px-6 py-3 font-semibold text-white", popClass())}>Explore Plans</a>
             </div>
-            <div className="mt-10 grid max-w-2xl gap-4 sm:grid-cols-4">
+            <div className="mt-10 grid max-w-2xl gap-4 sm:grid-cols-3">
               <GlassCard className={cn("p-4", popClass())}><div className="display-font text-2xl font-bold text-white">1.8 → 1.21.2</div><div className="mt-1 text-sm text-slate-300">Version support</div></GlassCard>
-              <GlassCard className={cn("p-4", popClass())}><div className="display-font text-2xl font-bold text-white">Dashboards</div><div className="mt-1 text-sm text-slate-300">User + admin</div></GlassCard>
-              <GlassCard className={cn("p-4", popClass())}><div className="display-font text-2xl font-bold text-white">Backups</div><div className="mt-1 text-sm text-slate-300">Create + download</div></GlassCard>
-              <GlassCard className={cn("p-4", popClass())}><div className="display-font text-2xl font-bold text-white">{apiHealthy ? "Online" : "Pending"}</div><div className="mt-1 text-sm text-slate-300">Gateway connection</div></GlassCard>
+              <GlassCard className={cn("p-4", popClass())}><div className="display-font text-2xl font-bold text-white">Dashboards</div><div className="mt-1 text-sm text-slate-300">Clean & simple</div></GlassCard>
+              <GlassCard className={cn("p-4", popClass())}><div className="display-font text-2xl font-bold text-white">Backups</div><div className="mt-1 text-sm text-slate-300">Create & download</div></GlassCard>
             </div>
           </div>
 
           <GlassCard className={cn("overflow-hidden p-6 lg:p-7", popClass())}>
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-400">Provisioning sequence</p>
-                <h3 className="display-font text-xl font-semibold text-white">Real API flow</h3>
+                <p className="text-sm text-slate-400">Getting started</p>
+                <h3 className="display-font text-xl font-semibold text-white">Four easy steps</h3>
               </div>
               <div className="rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-sm text-cyan-200">4 steps</div>
             </div>
@@ -1602,7 +1610,7 @@ function LandingPage({ apiHealthy, currentUser, setScreen, startPurchase }) {
       </section>
 
       <section id="features" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-16">
-        <SectionIntro eyebrow="Features" title="Everything you need to manage your server cleanly" text="The served website now reflects the real backend capabilities that exist today, and hides the plugin marketplace until that flow is ready." />
+        <SectionIntro eyebrow="Features" title="Everything you need to manage your server cleanly" text="A complete control panel for your Minecraft server with all the tools you need to run a successful server." />
         <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {featureCards.map(([Icon, title, text]) => (
             <GlassCard key={title} className={cn("p-6", popClass())}>
@@ -1617,7 +1625,7 @@ function LandingPage({ apiHealthy, currentUser, setScreen, startPurchase }) {
       </section>
 
       <section id="faq" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-16">
-        <SectionIntro eyebrow="FAQ" title="Frequently asked questions" text="The frontend now mirrors the real contract and the remaining hidden feature surface is intentional." />
+        <SectionIntro eyebrow="FAQ" title="Frequently asked questions" text="Find answers to common questions about easy2host and how to get the most out of your server." />
         <div className="mt-10 grid gap-4">
           {faqItems.map(([question, answer]) => (
             <GlassCard key={question} className={cn("p-6", popClass())}>
@@ -1635,7 +1643,7 @@ function LandingPage({ apiHealthy, currentUser, setScreen, startPurchase }) {
               <div>
                 <p className="text-sm uppercase tracking-[0.25em] text-cyan-300/80">Ready to get started?</p>
                 <h2 className="display-font mt-3 text-3xl font-bold text-white sm:text-4xl">Create your account and launch your server today</h2>
-                <p className="mt-4 max-w-2xl text-slate-300">Pick a plan, configure the version, and manage everything from the connected dashboard.</p>
+                <p className="mt-4 max-w-2xl text-slate-300">Choose your plan, select your Minecraft version, and take full control of your server.</p>
               </div>
               <button onClick={() => setScreen(currentUser ? currentUser.role === "admin" ? "admin" : "dashboard" : "signup")} className={cn("rounded-2xl bg-gradient-to-r from-cyan-300 to-blue-500 px-6 py-3 font-semibold text-slate-950", popClass())}>
                 {currentUser ? "Open Dashboard" : "Create Account"}
@@ -1990,7 +1998,7 @@ export default function App({ initialScreen = "landing" }) {
           <div>
             <div className="display-font text-xl font-bold text-white">easy2host</div>
             <p className="mt-2 max-w-md text-sm leading-6 text-slate-400">
-              Reliable Minecraft hosting control panel with clean workflows for provisioning, backups, and infrastructure management.
+              Host your Minecraft server with confidence. Easy setup, powerful controls, and reliable uptime—all in one place.
             </p>
           </div>
           <div className="text-sm text-slate-300 md:text-center">
@@ -2003,7 +2011,7 @@ export default function App({ initialScreen = "landing" }) {
             </div>
           </div>
           <div className="text-left text-sm text-slate-400 md:text-right">
-            <div>Minecraft control plane</div>
+            <div>Simple Minecraft hosting</div>
             <div className="mt-2">Copyright {new Date().getFullYear()} easy2host</div>
           </div>
         </div>

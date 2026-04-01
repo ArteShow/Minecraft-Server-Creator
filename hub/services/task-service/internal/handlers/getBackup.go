@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/core"
@@ -52,7 +51,6 @@ func GetBackup(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Content-Disposition", "attachment; filename=\"backup.tar.gz\"")
-	w.Header().Set("Content-Length", strconv.Itoa(len(tar)))
 	w.WriteHeader(http.StatusOK)
 	if _, err = w.Write(tar); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

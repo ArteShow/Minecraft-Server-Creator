@@ -5,10 +5,41 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"strings"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
 )
+
+func (d *DockerService) resolveServerVolume(serverID string) (string, error) {
+	ctx := context.Background()
+	containerName := "mc_container_" + serverID
+
+	inspect, err := d.client.ContainerInspect(ctx, containerName)
+	if err == nil {
+		for _, m := range inspect.Mounts {
+			if strings.EqualFold(m.Destination, "/data") && m.Type == mount.TypeVolume {
+				if m.Name == "" {
+					return "", fmt.Errorf("server container %s has /data mount without a named volume", containerName)
+				}
+				return m.Name, nil
+			}
+		}
+		return "", fmt.Errorf("server container %s has no /data volume mount", containerName)
+	}
+
+	// Fallback for cases where container is not currently inspectable but volume still exists.
+	fallback := volumeName(serverID)
+	exists, existsErr := d.VolumeExists(serverID)
+	if existsErr != nil {
+		return "", existsErr
+	}
+	if !exists {
+		return "", fmt.Errorf("server volume %s not found; refusing to create backup in a new empty volume", fallback)
+	}
+
+	return fallback, nil
+}
 
 func (d *DockerService) CreateBackup(serverID string, backupName string) error {
 	if serverID == "" || backupName == "" {
@@ -16,19 +47,26 @@ func (d *DockerService) CreateBackup(serverID string, backupName string) error {
 	}
 
 	ctx := context.Background()
+	serverVolume, err := d.resolveServerVolume(serverID)
+	if err != nil {
+		return err
+	}
 
 	resp, err := d.client.ContainerCreate(
 		ctx,
 		&container.Config{
 			Image: "alpine:3.19",
-			Cmd:   []string{"tar", "czf", path.Join("/data", backupName+".tar.gz"), "-C", "/data", "."},
+			Cmd: []string{
+				"sh", "-c",
+				"tar --exclude='*.tar.gz' -czf " + path.Join("/data", backupName+".tar.gz") + " -C /data .",
+			},
 		},
 		&container.HostConfig{
 			AutoRemove: true,
 			Mounts: []mount.Mount{
 				{
 					Type:   mount.TypeVolume,
-					Source: volumeName(serverID),
+					Source: serverVolume,
 					Target: "/data",
 				},
 			},
@@ -70,6 +108,10 @@ func (d *DockerService) DownloadBackup(serverID string, backupName string) ([]by
 
 	ctx := context.Background()
 	filePath := path.Join("/data", backupName+".tar.gz")
+	serverVolume, err := d.resolveServerVolume(serverID)
+	if err != nil {
+		return nil, err
+	}
 
 	resp, err := d.client.ContainerCreate(
 		ctx,
@@ -82,7 +124,7 @@ func (d *DockerService) DownloadBackup(serverID string, backupName string) ([]by
 			Mounts: []mount.Mount{
 				{
 					Type:   mount.TypeVolume,
-					Source: volumeName(serverID),
+					Source: serverVolume,
 					Target: "/data",
 				},
 			},
@@ -123,19 +165,23 @@ func (d *DockerService) DeleteBackup(serverID string, backupName string) error {
 
 	ctx := context.Background()
 	filePath := path.Join("/data", backupName+".tar.gz")
+	serverVolume, err := d.resolveServerVolume(serverID)
+	if err != nil {
+		return err
+	}
 
 	resp, err := d.client.ContainerCreate(
 		ctx,
 		&container.Config{
 			Image: "alpine:3.19",
-			Cmd:   []string{"rm", "-f", filePath},
+			Cmd:   []string{"rm", filePath},
 		},
 		&container.HostConfig{
 			AutoRemove: true,
 			Mounts: []mount.Mount{
 				{
 					Type:   mount.TypeVolume,
-					Source: volumeName(serverID),
+					Source: serverVolume,
 					Target: "/data",
 				},
 			},

@@ -15,8 +15,8 @@ import (
 
 const (
 	readTimeout  = 10 * time.Second
-	writeTimeout = 10 * time.Second
-	idleTimeou   = 60 * time.Second
+	writeTimeout = 5 * time.Minute
+	idleTimeou   = 5 * time.Minute
 )
 
 func main() {

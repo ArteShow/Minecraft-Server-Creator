@@ -26,16 +26,8 @@ func (h *Handler) DeleteBackup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err = h.Server.DockerService.DeleteBackup(req.ServerID, backupName); err != nil {
-		if req.BackupID == "" {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		// Backward compatibility for backups created before backup_id naming.
-		if fallbackErr := h.Server.DockerService.DeleteBackup(req.ServerID, "mc_backup_"+req.ServerID); fallbackErr != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
