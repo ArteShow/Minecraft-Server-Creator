@@ -13,13 +13,18 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		cfg, err := config.Read()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return 
+			return
 		}
 
 		auth := r.Header.Get("Authorization")
 		if auth == "" {
-			http.Error(w, "unauthorized", http.StatusUnauthorized)
-			return
+			if queryToken := strings.TrimSpace(r.URL.Query().Get("token")); queryToken != "" {
+				auth = "Bearer " + queryToken
+				r.Header.Set("Authorization", auth)
+			} else {
+				http.Error(w, "unauthorized", http.StatusUnauthorized)
+				return
+			}
 		}
 
 		parts := strings.SplitN(auth, " ", 2)
@@ -33,18 +38,18 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
-			return 
+			return
 		}
 
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok || !token.Valid {
-			return 
+			return
 		}
 
 		userID, ok := claims["user_id"].(string)
-		if !ok || userID == ""{
+		if !ok || userID == "" {
 			w.WriteHeader(http.StatusUnauthorized)
-			return 
+			return
 		}
 
 		r.Header.Set("X-User-ID", userID)
@@ -58,7 +63,7 @@ func AdminAuthMiddleware(next http.Handler) http.Handler {
 		cfg, err := config.Read()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return 
+			return
 		}
 
 		auth := r.Header.Get("Authorization")
@@ -78,18 +83,18 @@ func AdminAuthMiddleware(next http.Handler) http.Handler {
 		})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
-			return 
+			return
 		}
 
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok || !token.Valid {
-			return 
+			return
 		}
 
 		adminID, ok := claims["admin_id"].(string)
-		if !ok || adminID == ""{
+		if !ok || adminID == "" {
 			w.WriteHeader(http.StatusUnauthorized)
-			return 
+			return
 		}
 
 		r.Header.Set("X-Admin-ID", adminID)

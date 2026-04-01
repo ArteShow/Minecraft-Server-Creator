@@ -43,6 +43,8 @@ func main() {
 	stopServerProxy := proxy.NewProxy("http://task-service:8013", "/task-service/stop")
 	deleteServerProxy := proxy.NewProxy("http://task-service:8013", "/task-service/delete")
 	getServerStatsProxy := proxy.NewProxy("http://task-service:8013", "/task-service/getStats")
+	serverConsoleWSProxy := proxy.NewProxy("http://task-service:8013", "/task-service/console/ws")
+	sendServerConsoleCommandProxy := proxy.NewProxy("http://task-service:8013", "/task-service/console/command")
 
 	createBackupProxy := proxy.NewProxy("http://task-service:8013", "/task-service/backup/create")
 	listBackupProxy := proxy.NewProxy("http://task-service:8013", "/task-service/backup/list")
@@ -79,6 +81,8 @@ func main() {
 	handler.Handle("/api/"+cfg.APIVersion+"/server/stop", middleware.LoggingMiddleware(middleware.AuthMiddleware(stopServerProxy)))
 	handler.Handle("/api/"+cfg.APIVersion+"/server/delete", middleware.LoggingMiddleware(middleware.AuthMiddleware(deleteServerProxy)))
 	handler.Handle("/api/"+cfg.APIVersion+"/server/getStats", middleware.LoggingMiddleware(middleware.AuthMiddleware(getServerStatsProxy)))
+	handler.Handle("/api/"+cfg.APIVersion+"/server/console/ws", middleware.LoggingMiddleware(middleware.AuthMiddleware(serverConsoleWSProxy)))
+	handler.Handle("/api/"+cfg.APIVersion+"/server/console/command", middleware.LoggingMiddleware(middleware.AuthMiddleware(sendServerConsoleCommandProxy)))
 
 	handler.Handle("/api/"+cfg.APIVersion+"/server/backup/create", middleware.LoggingMiddleware(middleware.AuthMiddleware(createBackupProxy)))
 	handler.Handle("/api/"+cfg.APIVersion+"/server/backup/list", middleware.LoggingMiddleware(middleware.AuthMiddleware(listBackupProxy)))

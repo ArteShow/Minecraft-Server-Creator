@@ -35,6 +35,8 @@ func main() {
 	stopServerProxy := proxy.NewProxy("http://server-service-v2:8003", "/server-service/stop")
 	deleteServerProxy := proxy.NewProxy("http://server-service-v2:8003", "/server-service/delete")
 	getServerStatsProxy := proxy.NewProxy("http://server-service-v2:8003", "/server-service/getServerStats")
+	getServerConsoleProxy := proxy.NewProxy("http://server-service-v2:8003", "/server-service/console")
+	sendServerConsoleCommandProxy := proxy.NewProxy("http://server-service-v2:8003", "/server-service/console/command")
 
 	createBackupProxy := proxy.NewProxy("http://server-service-v2:8003", "/server-service/backup/create")
 	getBackupProxy := proxy.NewProxy("http://server-service-v2:8003", "/server-service/backup/get")
@@ -57,6 +59,8 @@ func main() {
 	handler.Handle("/server/stop", middleware.LoggingMiddleware(middleware.AuthMiddleware()(stopServerProxy)))
 	handler.Handle("/server/delete", middleware.LoggingMiddleware(middleware.AuthMiddleware()(deleteServerProxy)))
 	handler.Handle("/server/getServerStats", middleware.LoggingMiddleware(getServerStatsProxy))
+	handler.Handle("/server/console", middleware.LoggingMiddleware(middleware.AuthMiddleware()(getServerConsoleProxy)))
+	handler.Handle("/server/console/command", middleware.LoggingMiddleware(middleware.AuthMiddleware()(sendServerConsoleCommandProxy)))
 
 	handler.Handle("/server/backup/create", middleware.LoggingMiddleware(createBackupProxy))
 	handler.Handle("/server/backup/get", middleware.LoggingMiddleware(getBackupProxy))

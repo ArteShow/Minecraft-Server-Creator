@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  Activity,
   Boxes,
   Check,
   ChevronRight,
@@ -24,6 +23,7 @@ import {
   Settings,
   Shield,
   Square,
+  TerminalSquare,
   Trash2,
   UserPlus,
   Wifi,
@@ -184,10 +184,9 @@ function downloadBlob(blob, filename) {
   URL.revokeObjectURL(url);
 }
 
-function normalizeStatsValue(value) {
-  if (typeof value !== "string") return value;
-  const parsed = safeJsonParse(value, null);
-  return parsed ?? value;
+function buildConsoleWsUrl(serverId, token) {
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  return `${protocol}//${window.location.host}${API_BASE}/server/console/ws?server_id=${encodeURIComponent(serverId)}&token=${encodeURIComponent(token)}`;
 }
 
 function GlassCard({ className = "", children }) {
@@ -732,6 +731,12 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
   const [backupBusy, setBackupBusy] = useState({});
   const [backupListMap, setBackupListMap] = useState({});
   const [selectedBackupMap, setSelectedBackupMap] = useState({});
+  const [consoleTextMap, setConsoleTextMap] = useState({});
+  const [playerCountMap, setPlayerCountMap] = useState({});
+  const [consoleStateMap, setConsoleStateMap] = useState({});
+  const [consoleWindowOpen, setConsoleWindowOpen] = useState(false);
+  const [consoleCommand, setConsoleCommand] = useState("");
+  const [consoleSending, setConsoleSending] = useState(false);
 
   const ownedServers = useMemo(
     () => servers.filter((server) => server.ownerId === currentUser.ownerKey),
@@ -766,6 +771,7 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
           token,
         });
         updateServer(server.server_id, () => ({ status: "online" }));
+        setConsoleWindowOpen(true);
       }
       if (action === "stop") {
         await apiFetch("/server/stop", { method: "POST", body: { server_id: server.server_id }, token });
@@ -783,32 +789,55 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
     }
   };
 
-  const fetchStats = async (server) => {
-    setBusy(server.server_id, true);
-    try {
-      const data = await apiFetch("/server/getStats", {
-        method: "POST",
-        body: { server_id: server.server_id, key: "Online" },
-        token,
-      });
-      const value = normalizeStatsValue(data.value);
-      pushNotice("success", `${server.name} status: ${typeof value === "string" ? value : JSON.stringify(value)}`);
-    } catch (error) {
-      pushNotice("error", error.message);
-    } finally {
-      setBusy(server.server_id, false);
-    }
-  };
-
   useEffect(() => {
-    if (!selectedServer || !token) return;
+    if (active !== "servers" || !selectedServer?.server_id || !token) return undefined;
 
-    const timer = window.setInterval(() => {
-      fetchStats(selectedServer);
-    }, 30000);
+    let socket = null;
+    let reconnectTimer = null;
+    let closed = false;
+    const serverID = selectedServer.server_id;
 
-    return () => window.clearInterval(timer);
-  }, [selectedServer, token]);
+    const connect = () => {
+      if (closed) return;
+
+      setConsoleStateMap((previous) => ({ ...previous, [serverID]: "connecting" }));
+      socket = new WebSocket(buildConsoleWsUrl(serverID, token));
+
+      socket.onopen = () => {
+        setConsoleStateMap((previous) => ({ ...previous, [serverID]: "live" }));
+      };
+
+      socket.onmessage = (event) => {
+        const payload = safeJsonParse(event.data, null);
+        if (!payload) return;
+        if (payload.error) {
+          setConsoleStateMap((previous) => ({ ...previous, [serverID]: "error" }));
+          return;
+        }
+
+        setConsoleTextMap((previous) => ({ ...previous, [serverID]: payload.console || "" }));
+        setPlayerCountMap((previous) => ({ ...previous, [serverID]: Number(payload.online_players) || 0 }));
+      };
+
+      socket.onerror = () => {
+        setConsoleStateMap((previous) => ({ ...previous, [serverID]: "error" }));
+      };
+
+      socket.onclose = () => {
+        if (closed) return;
+        setConsoleStateMap((previous) => ({ ...previous, [serverID]: "reconnecting" }));
+        reconnectTimer = window.setTimeout(connect, 1500);
+      };
+    };
+
+    connect();
+
+    return () => {
+      closed = true;
+      if (reconnectTimer) window.clearTimeout(reconnectTimer);
+      if (socket) socket.close();
+    };
+  }, [active, selectedServer?.server_id, token]);
 
   const createBackup = async (server) => {
     setBusy(server.server_id, true);
@@ -825,6 +854,24 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
       pushNotice("error", error.message);
     } finally {
       setBusy(server.server_id, false);
+    }
+  };
+
+  const sendConsoleCommand = async () => {
+    if (!selectedServer || !consoleCommand.trim()) return;
+    setConsoleSending(true);
+    try {
+      await apiFetch("/server/console/command", {
+        method: "POST",
+        body: { server_id: selectedServer.server_id, command: consoleCommand.trim() },
+        token,
+      });
+      setConsoleCommand("");
+      pushNotice("success", "Command sent.");
+    } catch (error) {
+      pushNotice("error", error.message);
+    } finally {
+      setConsoleSending(false);
     }
   };
 
@@ -1041,12 +1088,21 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                         <div className={cn("rounded-full px-3 py-1 text-sm", selectedServer.status === "online" ? "bg-emerald-400/10 text-emerald-300" : "bg-slate-700/60 text-slate-300")}>
                           {selectedServer.status || "created"}
                         </div>
+                        <div className="rounded-full px-3 py-1 text-sm bg-cyan-400/10 text-cyan-200">
+                          Players: {playerCountMap[selectedServer.server_id] || 0}
+                        </div>
                       </div>
 
                       <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                         <button disabled={serverBusy[selectedServer.server_id]} onClick={() => runServerAction(selectedServer, "start")} className={cn("flex items-center justify-center gap-2 rounded-2xl bg-emerald-400/15 px-4 py-3 text-emerald-300 disabled:opacity-60 transition-all duration-300 hover:bg-emerald-400/25 hover:shadow-lg hover:shadow-emerald-400/20", popClass())}><Play className="h-4 w-4" /> Start</button>
                         <button disabled={serverBusy[selectedServer.server_id]} onClick={() => runServerAction(selectedServer, "stop")} className={cn("flex items-center justify-center gap-2 rounded-2xl bg-rose-400/15 px-4 py-3 text-rose-300 disabled:opacity-60 transition-all duration-300 hover:bg-rose-400/25 hover:shadow-lg hover:shadow-rose-400/20", popClass())}><Square className="h-4 w-4" /> Stop</button>
-                        <button disabled={serverBusy[selectedServer.server_id]} onClick={() => fetchStats(selectedServer)} className={cn("flex items-center justify-center gap-2 rounded-2xl bg-sky-400/15 px-4 py-3 text-sky-300 disabled:opacity-60 transition-all duration-300 hover:bg-sky-400/25 hover:shadow-lg hover:shadow-sky-400/20", popClass())}><Activity className="h-4 w-4" /> Stats</button>
+                        <button
+                          disabled={selectedServer.status !== "online"}
+                          onClick={() => setConsoleWindowOpen(true)}
+                          className={cn("flex items-center justify-center gap-2 rounded-2xl bg-cyan-400/15 px-4 py-3 text-cyan-200 disabled:opacity-50 transition-all duration-300 hover:bg-cyan-400/25 hover:shadow-lg hover:shadow-cyan-400/20", popClass())}
+                        >
+                          <TerminalSquare className="h-4 w-4" /> Open Console
+                        </button>
                         <button disabled={serverBusy[selectedServer.server_id]} onClick={() => createBackup(selectedServer)} className={cn("flex items-center justify-center gap-2 rounded-2xl bg-violet-400/15 px-4 py-3 text-violet-300 disabled:opacity-60 transition-all duration-300 hover:bg-violet-400/25 hover:shadow-lg hover:shadow-violet-400/20", popClass())}><HardDrive className="h-4 w-4" /> Create Backup</button>
                         <button disabled={serverBusy[selectedServer.server_id]} onClick={() => runServerAction(selectedServer, "delete")} className={cn("flex items-center justify-center gap-2 rounded-2xl bg-rose-500/20 px-4 py-3 text-rose-200 disabled:opacity-60 transition-all duration-300 hover:bg-rose-500/30 hover:shadow-lg hover:shadow-rose-500/20", popClass())}><Trash2 className="h-4 w-4" /> Delete</button>
                       </div>
@@ -1061,6 +1117,7 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                             <div className="flex justify-between"><span className="text-slate-400">CPU cores</span><span className="text-white">{selectedServer.cores}</span></div>
                             <div className="flex justify-between"><span className="text-slate-400">Software</span><span className="text-white">{selectedServer.software} {selectedServer.version}</span></div>
                             <div className="flex justify-between"><span className="text-slate-400">Port</span><span className="text-white">{selectedServer.port || "—"}</span></div>
+                            <div className="flex justify-between"><span className="text-slate-400">Players online</span><span className="text-cyan-200 font-semibold">{playerCountMap[selectedServer.server_id] || 0}</span></div>
                             <div className="flex justify-between"><span className="text-slate-400">Backups</span><span className="text-white">{selectedServer.backupCount || 0}</span></div>
                           </div>
                         </div>
@@ -1128,6 +1185,58 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                   )}
                 </GlassCard>
               </div>
+
+              <Modal
+                open={consoleWindowOpen && Boolean(selectedServer)}
+                onClose={() => setConsoleWindowOpen(false)}
+                title={selectedServer ? `${selectedServer.name} Console` : "Server Console"}
+                subtitle={selectedServer?.status === "online" ? "Live output and command input" : "Start the server to use the console"}
+              >
+                {selectedServer?.status !== "online" ? (
+                  <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm text-amber-100">
+                    The console becomes interactive after the server is started.
+                  </div>
+                ) : (
+                  <>
+                    <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                      <div className="rounded-full px-3 py-1 text-xs bg-cyan-400/10 text-cyan-200">Players online: {playerCountMap[selectedServer.server_id] || 0}</div>
+                      <div className={cn(
+                        "rounded-full px-3 py-1 text-xs",
+                        consoleStateMap[selectedServer.server_id] === "live"
+                          ? "bg-emerald-400/10 text-emerald-300"
+                          : consoleStateMap[selectedServer.server_id] === "error"
+                            ? "bg-rose-400/10 text-rose-300"
+                            : "bg-amber-400/10 text-amber-200",
+                      )}>
+                        {consoleStateMap[selectedServer.server_id] || "connecting"}
+                      </div>
+                    </div>
+                    <pre className="max-h-[50vh] overflow-auto whitespace-pre-wrap rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-slate-200">{consoleTextMap[selectedServer.server_id] || "Waiting for console output..."}</pre>
+                    <div className="mt-4 flex gap-2">
+                      <input
+                        value={consoleCommand}
+                        onChange={(event) => setConsoleCommand(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" && !consoleSending) {
+                            event.preventDefault();
+                            sendConsoleCommand();
+                          }
+                        }}
+                        placeholder="Type command (example: say Hello players)"
+                        className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none"
+                      />
+                      <button
+                        type="button"
+                        disabled={consoleSending || !consoleCommand.trim()}
+                        onClick={sendConsoleCommand}
+                        className={cn("rounded-2xl bg-gradient-to-r from-cyan-300 to-blue-500 px-5 py-3 font-semibold text-slate-950 disabled:opacity-60", popClass())}
+                      >
+                        Send
+                      </button>
+                    </div>
+                  </>
+                )}
+              </Modal>
             </>
           )}
 

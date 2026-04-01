@@ -3,6 +3,7 @@ module github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service
 go 1.25
 
 require (
+	github.com/gorilla/websocket v1.5.3
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	google.golang.org/grpc v1.79.3
 	google.golang.org/protobuf v1.36.11

@@ -54,3 +54,8 @@ type BackupItem struct {
 	ServerID string `json:"server_id"`
 	UserID   string `json:"user_id"`
 }
+
+type ConsoleCommandRequest struct {
+	ServerID string `json:"server_id"`
+	Command  string `json:"command"`
+}

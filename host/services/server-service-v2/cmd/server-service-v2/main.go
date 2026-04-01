@@ -47,6 +47,8 @@ func main() {
 	mux.HandleFunc("/server-service/stop", h.StopServer)
 	mux.HandleFunc("/server-service/delete", h.DeleteServer)
 	mux.HandleFunc("/server-service/getServerStats", h.GetServerStats)
+	mux.HandleFunc("/server-service/console", h.GetServerConsole)
+	mux.HandleFunc("/server-service/console/command", h.SendServerConsoleCommand)
 
 	mux.HandleFunc("/server-service/backup/create", h.CreateBackup)
 	mux.HandleFunc("/server-service/backup/get", h.Getbackup)
