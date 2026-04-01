@@ -36,6 +36,12 @@ func ServerConsoleWS(w http.ResponseWriter, r *http.Request) {
 	}
 	token := parts[1]
 
+	targetIP, resolveErr := core.ResolveServerTarget(serverID)
+	if resolveErr != nil {
+		http.Error(w, resolveErr.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	conn, err := consoleUpgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return
@@ -62,7 +68,7 @@ func ServerConsoleWS(w http.ResponseWriter, r *http.Request) {
 	defer ticker.Stop()
 
 	for {
-		snapshot, snapErr := core.GetServerConsoleSnapshot(serverID, token, 250)
+		snapshot, snapErr := core.GetServerConsoleSnapshotFromTarget(targetIP, serverID, token, 250)
 		if snapErr != nil {
 			msg, _ := json.Marshal(map[string]any{"error": snapErr.Error()})
 			if err = conn.WriteMessage(websocket.TextMessage, msg); err != nil {

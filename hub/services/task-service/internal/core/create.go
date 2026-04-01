@@ -68,16 +68,19 @@ func CreateServer(version, token, bundleKey, userID string) (string, int, error)
 	if err != nil {
 		return "", 0, err
 	}
+	defer hostClient.Close()
 
 	networkClient, err := client.NewNetworkClient()
 	if err != nil {
 		return "", 0, err
 	}
+	defer networkClient.Close()
 
 	bundleClient, err := client.NewBundleClient()
 	if err != nil {
 		return "", 0, err
 	}
+	defer bundleClient.Close()
 
 	serversResp, err := hostClient.GetAllHostServers(&host.GetAllHostServersRequest{})
 	if err != nil {

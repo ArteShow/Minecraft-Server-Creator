@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   Boxes,
@@ -737,6 +737,8 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
   const [consoleWindowOpen, setConsoleWindowOpen] = useState(false);
   const [consoleCommand, setConsoleCommand] = useState("");
   const [consoleSending, setConsoleSending] = useState(false);
+  const [consoleRefreshTick, setConsoleRefreshTick] = useState(0);
+  const consoleOutputRef = useRef(null);
 
   const ownedServers = useMemo(
     () => servers.filter((server) => server.ownerId === currentUser.ownerKey),
@@ -771,7 +773,6 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
           token,
         });
         updateServer(server.server_id, () => ({ status: "online" }));
-        setConsoleWindowOpen(true);
       }
       if (action === "stop") {
         await apiFetch("/server/stop", { method: "POST", body: { server_id: server.server_id }, token });
@@ -789,8 +790,21 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
     }
   };
 
+  const refreshServerInfo = async () => {
+    if (!selectedServer) return;
+    await loadBackups(selectedServer);
+    setConsoleRefreshTick((value) => value + 1);
+    pushNotice("success", "Server info refreshed.");
+  };
+
   useEffect(() => {
-    if (active !== "servers" || !selectedServer?.server_id || !token) return undefined;
+    if (
+      active !== "servers"
+      || !selectedServer?.server_id
+      || !token
+      || !consoleWindowOpen
+      || selectedServer.status !== "online"
+    ) return undefined;
 
     let socket = null;
     let reconnectTimer = null;
@@ -837,7 +851,15 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
       if (reconnectTimer) window.clearTimeout(reconnectTimer);
       if (socket) socket.close();
     };
-  }, [active, selectedServer?.server_id, token]);
+  }, [active, selectedServer?.server_id, token, consoleWindowOpen, selectedServer?.status, consoleRefreshTick]);
+
+  useEffect(() => {
+    if (!consoleWindowOpen) return;
+    const element = consoleOutputRef.current;
+    if (element) {
+      element.scrollTop = element.scrollHeight;
+    }
+  }, [consoleWindowOpen, selectedServer?.server_id, consoleTextMap]);
 
   const createBackup = async (server) => {
     setBusy(server.server_id, true);
@@ -1109,7 +1131,17 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
 
                       <div className="mt-6">
                         <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-4">
-                          <div className="mb-4 flex items-center gap-2 text-white"><Database className="h-4 w-4 text-cyan-300" /> Server Details</div>
+                          <div className="mb-4 flex items-center justify-between gap-2 text-white">
+                            <div className="flex items-center gap-2"><Database className="h-4 w-4 text-cyan-300" /> Server Details</div>
+                            <button
+                              type="button"
+                              onClick={refreshServerInfo}
+                              disabled={backupBusy[selectedServer.server_id]}
+                              className={cn("rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white disabled:opacity-60", popClass())}
+                            >
+                              Refresh Info
+                            </button>
+                          </div>
                           <div className="space-y-2 text-sm text-slate-300">
                             <div className="flex justify-between"><span className="text-slate-400">Plan</span><span className="text-white">{selectedServer.bundleName}</span></div>
                             <div className="flex justify-between"><span className="text-slate-400">RAM</span><span className="text-white">{selectedServer.ram} GB</span></div>
@@ -1211,7 +1243,7 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                         {consoleStateMap[selectedServer.server_id] || "connecting"}
                       </div>
                     </div>
-                    <pre className="max-h-[50vh] overflow-auto whitespace-pre-wrap rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-slate-200">{consoleTextMap[selectedServer.server_id] || "Waiting for console output..."}</pre>
+                    <pre ref={consoleOutputRef} className="max-h-[50vh] overflow-auto whitespace-pre-wrap rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-slate-200">{consoleTextMap[selectedServer.server_id] || "Waiting for console output..."}</pre>
                     <div className="mt-4 flex gap-2">
                       <input
                         value={consoleCommand}

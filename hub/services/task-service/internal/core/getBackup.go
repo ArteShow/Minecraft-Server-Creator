@@ -24,6 +24,7 @@ func GetBackup(serverID, backupID, token string) ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
+	defer hostClient.Close()
 
 	hosts, err := hostClient.GetAllHostServers(&host.GetAllHostServersRequest{})
 	if err != nil {
@@ -39,6 +40,7 @@ func GetBackup(serverID, backupID, token string) ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
+	defer networkClient.Close()
 
 	ip, err := networkClient.GetServerMetadata(&network.GetServerMetadataRequest{ServerId: hostID})
 	if err != nil {

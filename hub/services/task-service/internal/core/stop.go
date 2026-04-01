@@ -22,6 +22,7 @@ func StopServer(serverID, token, ownerID string) error {
 	if err != nil {
 		return err
 	}
+	defer hostClient.Close()
 
 	hosts, err := hostClient.GetAllHostServers(&host.GetAllHostServersRequest{})
 	if err != nil {
@@ -37,6 +38,7 @@ func StopServer(serverID, token, ownerID string) error {
 	if err != nil {
 		return err
 	}
+	defer networkClient.Close()
 
 	ip, err := networkClient.GetServerMetadata(&network.GetServerMetadataRequest{ServerId: hostID})
 	if err != nil {

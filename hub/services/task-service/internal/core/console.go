@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/client"
@@ -20,43 +21,51 @@ type ConsoleSnapshot struct {
 
 var (
 	joinedPattern = regexp.MustCompile(`(?i)\]:\s([^\s]+) joined the game`)
+	loginPattern  = regexp.MustCompile(`(?i)\]:\s([^\s\[]+)\[.*logged in with entity id`)
 	leftPattern   = regexp.MustCompile(`(?i)\]:\s([^\s]+) left the game`)
+	listPattern   = regexp.MustCompile(`(?i)there are\s+(\d+)\s+of a max`)
 )
 
-func GetServerConsoleSnapshot(serverID, token string, tail int) (*ConsoleSnapshot, error) {
-	cfg, err := config.Read()
-	if err != nil {
-		return nil, err
-	}
-
+func ResolveServerTarget(serverID string) (string, error) {
 	hostClient, err := client.NewHostClient()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
+	defer hostClient.Close()
 
 	hosts, err := hostClient.GetAllHostServers(&host.GetAllHostServersRequest{})
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	hostID := SelecthostIDByServerID(serverID, hosts)
 	if hostID == "" {
-		return nil, fmt.Errorf("server %s is not mapped to a host", serverID)
+		return "", fmt.Errorf("server %s is not mapped to a host", serverID)
 	}
 
 	networkClient, err := client.NewNetworkClient()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
+	defer networkClient.Close()
 
 	serverMetadata, err := networkClient.GetServerMetadata(&network.GetServerMetadataRequest{ServerId: hostID})
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	targetIP := normalizeHostIP(serverMetadata.Ip)
 	if targetIP == "" {
-		return nil, fmt.Errorf("host metadata returned empty IP for host %s", hostID)
+		return "", fmt.Errorf("host metadata returned empty IP for host %s", hostID)
+	}
+
+	return targetIP, nil
+}
+
+func GetServerConsoleSnapshotFromTarget(targetIP, serverID, token string, tail int) (*ConsoleSnapshot, error) {
+	cfg, err := config.Read()
+	if err != nil {
+		return nil, err
 	}
 
 	url := fmt.Sprintf("http://%s:%s/server-service/console?server_id=%s&tail=%d", targetIP, cfg.DefaultHostServerPort, serverID, tail)
@@ -93,12 +102,30 @@ func GetServerConsoleSnapshot(serverID, token string, tail int) (*ConsoleSnapsho
 	}, nil
 }
 
+func GetServerConsoleSnapshot(serverID, token string, tail int) (*ConsoleSnapshot, error) {
+	targetIP, err := ResolveServerTarget(serverID)
+	if err != nil {
+		return nil, err
+	}
+
+	return GetServerConsoleSnapshotFromTarget(targetIP, serverID, token, tail)
+}
+
 func countOnlinePlayers(console string) int {
 	online := map[string]struct{}{}
 	lines := strings.Split(console, "\n")
+	lastKnown := -1
 
 	for _, line := range lines {
+		if match := listPattern.FindStringSubmatch(line); len(match) == 2 {
+			if parsed, err := strconv.Atoi(match[1]); err == nil {
+				lastKnown = parsed
+			}
+		}
 		if match := joinedPattern.FindStringSubmatch(line); len(match) == 2 {
+			online[match[1]] = struct{}{}
+		}
+		if match := loginPattern.FindStringSubmatch(line); len(match) == 2 {
 			online[match[1]] = struct{}{}
 		}
 		if match := leftPattern.FindStringSubmatch(line); len(match) == 2 {
@@ -106,5 +133,11 @@ func countOnlinePlayers(console string) int {
 		}
 	}
 
-	return len(online)
+	if len(online) > 0 {
+		return len(online)
+	}
+	if lastKnown >= 0 {
+		return lastKnown
+	}
+	return 0
 }

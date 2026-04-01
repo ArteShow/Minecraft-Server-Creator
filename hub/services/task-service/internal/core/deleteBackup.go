@@ -24,11 +24,13 @@ func DeleteBackup(serverID, token, backupID string) error {
 	if err != nil {
 		return err
 	}
+	defer hostClient.Close()
 
 	backupClient, err := client.NewBackupClient()
 	if err != nil {
 		return err
 	}
+	defer backupClient.Close()
 
 	hosts, err := hostClient.GetAllHostServers(&host.GetAllHostServersRequest{})
 	if err != nil {
@@ -44,6 +46,7 @@ func DeleteBackup(serverID, token, backupID string) error {
 	if err != nil {
 		return err
 	}
+	defer networkClient.Close()
 
 	ip, err := networkClient.GetServerMetadata(&network.GetServerMetadataRequest{ServerId: hostID})
 	if err != nil {

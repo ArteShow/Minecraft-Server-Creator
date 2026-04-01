@@ -23,6 +23,7 @@ func GetServerStats(key, serverID, token string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer hostClient.Close()
 
 	hosts, err := hostClient.GetAllHostServers(&host.GetAllHostServersRequest{})
 	if err != nil {
@@ -38,6 +39,7 @@ func GetServerStats(key, serverID, token string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer networkClient.Close()
 
 	serverMetadata, err := networkClient.GetServerMetadata(&network.GetServerMetadataRequest{ServerId: hostID})
 	if err != nil {
