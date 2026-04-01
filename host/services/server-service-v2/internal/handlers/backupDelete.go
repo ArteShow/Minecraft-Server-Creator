@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func (h *Handler) DeleteBackup(w http.ResponseWriter, r * http.Request) {
+func (h *Handler) DeleteBackup(w http.ResponseWriter, r *http.Request) {
 	var req DeleteBackupRequest
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -20,9 +20,22 @@ func (h *Handler) DeleteBackup(w http.ResponseWriter, r * http.Request) {
 		return
 	}
 
-	if err = h.Server.DockerService.DeleteBackup(req.ServerID, "mc_backup_"+req.ServerID); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	backupName := "mc_backup_" + req.ServerID
+	if req.BackupID != "" {
+		backupName += "_" + req.BackupID
+	}
+
+	if err = h.Server.DockerService.DeleteBackup(req.ServerID, backupName); err != nil {
+		if req.BackupID == "" {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// Backward compatibility for backups created before backup_id naming.
+		if fallbackErr := h.Server.DockerService.DeleteBackup(req.ServerID, "mc_backup_"+req.ServerID); fallbackErr != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusCreated)

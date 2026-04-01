@@ -32,10 +32,12 @@ type GetServerStatsRequest struct {
 type CreateBackupRequest struct {
 	ServerID string `json:"server_id"`
 	Bundle   string `json:"bundle"`
+	BackupID string `json:"backup_id,omitempty"`
 }
 
 type GetBackupRequest struct {
 	ServerID string `json:"server_id"`
+	BackupID string `json:"backup_id,omitempty"`
 }
 
 type DeleteBackupRequest struct {

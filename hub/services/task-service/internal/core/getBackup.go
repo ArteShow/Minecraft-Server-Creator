@@ -9,11 +9,12 @@ import (
 
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/client"
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/config"
+	backup "github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/proto/backup-service"
 	host "github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/proto/host-metadata-service"
 	network "github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/proto/network-service"
 )
 
-func GetBackup(serverID, token string) ([]byte, error) {
+func GetBackup(serverID, backupID, token string) ([]byte, error) {
 	cfg, err := config.Read()
 	if err != nil {
 		return []byte{}, err
@@ -49,7 +50,24 @@ func GetBackup(serverID, token string) ([]byte, error) {
 		return []byte{}, fmt.Errorf("host metadata returned empty IP for host %s", hostID)
 	}
 
-	requestBody := map[string]string{"server_id": serverID}
+	if backupID == "" {
+		backupClient, clientErr := client.NewBackupClient()
+		if clientErr != nil {
+			return []byte{}, clientErr
+		}
+		defer backupClient.Close()
+
+		resp, clientErr := backupClient.GetBackup(&backup.GetBackupRequest{ServerID: serverID})
+		if clientErr != nil {
+			return []byte{}, clientErr
+		}
+		if len(resp.GetBackups()) == 0 {
+			return []byte{}, fmt.Errorf("no backups found for server %s", serverID)
+		}
+		backupID = resp.GetBackups()[0].GetBackup()
+	}
+
+	requestBody := map[string]string{"server_id": serverID, "backup_id": backupID}
 	jsonBody, err := json.Marshal(requestBody)
 	if err != nil {
 		return []byte{}, err

@@ -731,6 +731,7 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
   const [serverBusy, setServerBusy] = useState({});
   const [backupBusy, setBackupBusy] = useState({});
   const [backupListMap, setBackupListMap] = useState({});
+  const [selectedBackupMap, setSelectedBackupMap] = useState({});
 
   const ownedServers = useMemo(
     () => servers.filter((server) => server.ownerId === currentUser.ownerKey),
@@ -827,12 +828,22 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
     }
   };
 
-  const downloadBackup = async (server) => {
+  const downloadBackup = async (server, backupID) => {
+    if (!backupID) {
+      pushNotice("error", "Select a backup first.");
+      return;
+    }
+
     setBusy(server.server_id, true);
     try {
-      const blob = await apiFetchBlob("/server/backup/get", { method: "POST", body: { server_id: server.server_id }, token });
-      downloadBlob(blob, `${server.name || server.server_id}-backup.tar.gz`);
-      pushNotice("success", `Downloaded backup for ${server.name}.`);
+      const blob = await apiFetchBlob("/server/backup/get", {
+        method: "POST",
+        body: { server_id: server.server_id, backup_id: backupID },
+        token,
+      });
+      const suffix = String(backupID).slice(0, 8) || "selected";
+      downloadBlob(blob, `${server.name || server.server_id}-backup-${suffix}.tar.gz`);
+      pushNotice("success", `Downloaded backup ${backupID}.`);
     } catch (error) {
       pushNotice("error", error.message);
     } finally {
@@ -848,7 +859,14 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
         body: { server_id: server.server_id },
         token,
       });
-      setBackupListMap((previous) => ({ ...previous, [server.server_id]: Array.isArray(data.backups) ? data.backups : [] }));
+      const nextBackups = Array.isArray(data.backups) ? data.backups : [];
+      setBackupListMap((previous) => ({ ...previous, [server.server_id]: nextBackups }));
+      setSelectedBackupMap((previous) => {
+        const existing = previous[server.server_id];
+        const hasExisting = nextBackups.some((entry) => entry.backup_id === existing);
+        const nextSelected = hasExisting ? existing : nextBackups[0]?.backup_id || "";
+        return { ...previous, [server.server_id]: nextSelected };
+      });
     } catch (error) {
       pushNotice("error", error.message);
     } finally {
@@ -1030,7 +1048,13 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                         <button disabled={serverBusy[selectedServer.server_id]} onClick={() => runServerAction(selectedServer, "stop")} className={cn("flex items-center justify-center gap-2 rounded-2xl bg-rose-400/15 px-4 py-3 text-rose-300 disabled:opacity-60", popClass())}><Square className="h-4 w-4" /> Stop</button>
                         <button disabled={serverBusy[selectedServer.server_id]} onClick={() => fetchStats(selectedServer)} className={cn("flex items-center justify-center gap-2 rounded-2xl bg-sky-400/15 px-4 py-3 text-sky-300 disabled:opacity-60", popClass())}><Activity className="h-4 w-4" /> Stats</button>
                         <button disabled={serverBusy[selectedServer.server_id]} onClick={() => createBackup(selectedServer)} className={cn("flex items-center justify-center gap-2 rounded-2xl bg-violet-400/15 px-4 py-3 text-violet-300 disabled:opacity-60", popClass())}><HardDrive className="h-4 w-4" /> Create Backup</button>
-                        <button disabled={serverBusy[selectedServer.server_id]} onClick={() => downloadBackup(selectedServer)} className={cn("flex items-center justify-center gap-2 rounded-2xl bg-white/8 px-4 py-3 text-white disabled:opacity-60", popClass())}><Download className="h-4 w-4" /> Download Backup</button>
+                        <button
+                          disabled={serverBusy[selectedServer.server_id] || !(selectedBackupMap[selectedServer.server_id] || "")}
+                          onClick={() => downloadBackup(selectedServer, selectedBackupMap[selectedServer.server_id])}
+                          className={cn("flex items-center justify-center gap-2 rounded-2xl bg-white/8 px-4 py-3 text-white disabled:opacity-60", popClass())}
+                        >
+                          <Download className="h-4 w-4" /> Download Selected Backup
+                        </button>
                         <button disabled={serverBusy[selectedServer.server_id]} onClick={() => runServerAction(selectedServer, "delete")} className={cn("flex items-center justify-center gap-2 rounded-2xl bg-rose-500/20 px-4 py-3 text-rose-200 disabled:opacity-60", popClass())}><Trash2 className="h-4 w-4" /> Delete</button>
                       </div>
 
@@ -1070,15 +1094,36 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                           <div className="space-y-2">
                             {(backupListMap[selectedServer.server_id] || []).map((entry) => (
                               <div key={entry.backup_id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2">
-                                <div className="min-w-0 text-sm text-slate-300">{entry.backup_id}</div>
                                 <button
                                   type="button"
-                                  disabled={backupBusy[selectedServer.server_id]}
-                                  onClick={() => deleteBackup(selectedServer, entry.backup_id)}
-                                  className={cn("rounded-lg border border-rose-400/25 bg-rose-400/10 px-2.5 py-1 text-xs font-semibold text-rose-200 disabled:opacity-60", popClass())}
+                                  onClick={() => setSelectedBackupMap((previous) => ({ ...previous, [selectedServer.server_id]: entry.backup_id }))}
+                                  className={cn(
+                                    "min-w-0 rounded-lg border px-2.5 py-1 text-left text-sm",
+                                    selectedBackupMap[selectedServer.server_id] === entry.backup_id
+                                      ? "border-cyan-300/35 bg-cyan-400/10 text-cyan-200"
+                                      : "border-white/10 bg-white/5 text-slate-300",
+                                  )}
                                 >
-                                  Delete
+                                  {entry.backup_id}
                                 </button>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    disabled={serverBusy[selectedServer.server_id]}
+                                    onClick={() => downloadBackup(selectedServer, entry.backup_id)}
+                                    className={cn("rounded-lg border border-cyan-400/25 bg-cyan-400/10 px-2.5 py-1 text-xs font-semibold text-cyan-200 disabled:opacity-60", popClass())}
+                                  >
+                                    Download
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={backupBusy[selectedServer.server_id]}
+                                    onClick={() => deleteBackup(selectedServer, entry.backup_id)}
+                                    className={cn("rounded-lg border border-rose-400/25 bg-rose-400/10 px-2.5 py-1 text-xs font-semibold text-rose-200 disabled:opacity-60", popClass())}
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -1940,8 +1985,28 @@ export default function App({ initialScreen = "landing" }) {
       <PurchaseFlow open={Boolean(purchasePlan)} plan={purchasePlan} onClose={() => setPurchasePlan(null)} currentUser={currentUser} onRequireAuth={() => setScreen("signin")} onComplete={completePurchase} />
       <ToastStack notices={notices} setNotices={setNotices} />
 
-      <footer className="border-t border-white/10 px-4 py-8 text-center text-sm text-slate-400 sm:px-6 lg:px-16">
-        easy2host &mdash; Minecraft hosting made simple.
+      <footer className="border-t border-white/10 bg-slate-950/70 px-4 py-10 sm:px-6 lg:px-16">
+        <div className="mx-auto grid max-w-7xl gap-6 md:grid-cols-3 md:items-end">
+          <div>
+            <div className="display-font text-xl font-bold text-white">easy2host</div>
+            <p className="mt-2 max-w-md text-sm leading-6 text-slate-400">
+              Reliable Minecraft hosting control panel with clean workflows for provisioning, backups, and infrastructure management.
+            </p>
+          </div>
+          <div className="text-sm text-slate-300 md:text-center">
+            <div className="font-semibold text-white">Quick Links</div>
+            <div className="mt-2 flex flex-wrap items-center gap-3 md:justify-center">
+              <button type="button" onClick={() => openPage("landing")} className="text-slate-300 transition hover:text-cyan-200">Home</button>
+              <button type="button" onClick={() => openLandingSection("plans")} className="text-slate-300 transition hover:text-cyan-200">Plans</button>
+              <button type="button" onClick={() => openLandingSection("features")} className="text-slate-300 transition hover:text-cyan-200">Features</button>
+              <button type="button" onClick={() => openLandingSection("faq")} className="text-slate-300 transition hover:text-cyan-200">FAQ</button>
+            </div>
+          </div>
+          <div className="text-left text-sm text-slate-400 md:text-right">
+            <div>Minecraft control plane</div>
+            <div className="mt-2">Copyright {new Date().getFullYear()} easy2host</div>
+          </div>
+        </div>
       </footer>
     </div>
   );

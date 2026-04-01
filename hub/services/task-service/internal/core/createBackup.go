@@ -90,9 +90,43 @@ func CreateBackup(serverID, token, userID, bundle string) error {
 		return fmt.Errorf("host metadata returned empty IP for host %s", hostID)
 	}
 
-	requestBody := map[string]string{"server_id": serverID}
+	knownBackupIDs := map[string]struct{}{}
+	for _, item := range backups.GetBackups() {
+		if item.GetUserID() == userID {
+			knownBackupIDs[item.GetBackup()] = struct{}{}
+		}
+	}
+
+	_, err = backupClient.CreateBackup(&backup.CreateBackupRequest{ServerID: serverID, UserID: userID})
+	if err != nil {
+		return err
+	}
+
+	createdList, err := backupClient.GetBackup(&backup.GetBackupRequest{ServerID: serverID})
+	if err != nil {
+		return err
+	}
+
+	backupID := ""
+	for _, item := range createdList.GetBackups() {
+		if item.GetUserID() != userID {
+			continue
+		}
+		if _, exists := knownBackupIDs[item.GetBackup()]; exists {
+			continue
+		}
+		backupID = item.GetBackup()
+		break
+	}
+
+	if backupID == "" {
+		return fmt.Errorf("failed to resolve created backup id for server %s", serverID)
+	}
+
+	requestBody := map[string]string{"server_id": serverID, "backup_id": backupID}
 	jsonBody, err := json.Marshal(requestBody)
 	if err != nil {
+		_, _ = backupClient.DeleteBackup(&backup.DeleteBackupRequest{BackupID: backupID})
 		return err
 	}
 
@@ -102,6 +136,7 @@ func CreateBackup(serverID, token, userID, bundle string) error {
 		bytes.NewReader(jsonBody),
 	)
 	if err != nil {
+		_, _ = backupClient.DeleteBackup(&backup.DeleteBackupRequest{BackupID: backupID})
 		return err
 	}
 
@@ -111,21 +146,18 @@ func CreateBackup(serverID, token, userID, bundle string) error {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
+		_, _ = backupClient.DeleteBackup(&backup.DeleteBackupRequest{BackupID: backupID})
 		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated {
 		body, _ := io.ReadAll(resp.Body)
+		_, _ = backupClient.DeleteBackup(&backup.DeleteBackupRequest{BackupID: backupID})
 		if len(body) > 0 {
 			return fmt.Errorf("host backup create failed, status %d: %s", resp.StatusCode, string(body))
 		}
 		return fmt.Errorf("host backup create failed, status %d", resp.StatusCode)
-	}
-
-	_, err = backupClient.CreateBackup(&backup.CreateBackupRequest{ServerID: serverID, UserID: userID})
-	if err != nil {
-		return err
 	}
 
 	return nil

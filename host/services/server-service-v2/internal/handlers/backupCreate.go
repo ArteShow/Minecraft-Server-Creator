@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func (h *Handler)CreateBackup(w http.ResponseWriter, r * http.Request) {
+func (h *Handler) CreateBackup(w http.ResponseWriter, r *http.Request) {
 	var req CreateBackupRequest
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -20,7 +20,12 @@ func (h *Handler)CreateBackup(w http.ResponseWriter, r * http.Request) {
 		return
 	}
 
-	if err = h.Server.DockerService.CreateBackup(req.ServerID, "mc_backup_"+req.ServerID); err != nil {
+	backupName := "mc_backup_" + req.ServerID
+	if req.BackupID != "" {
+		backupName += "_" + req.BackupID
+	}
+
+	if err = h.Server.DockerService.CreateBackup(req.ServerID, backupName); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

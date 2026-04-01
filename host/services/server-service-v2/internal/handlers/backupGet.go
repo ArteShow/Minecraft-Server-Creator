@@ -21,7 +21,16 @@ func (h *Handler) Getbackup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	backup, err := h.Server.DockerService.DownloadBackup(req.ServerID, "mc_backup_"+req.ServerID)
+	backupName := "mc_backup_" + req.ServerID
+	if req.BackupID != "" {
+		backupName += "_" + req.BackupID
+	}
+
+	backup, err := h.Server.DockerService.DownloadBackup(req.ServerID, backupName)
+	if err != nil && req.BackupID != "" {
+		// Backward compatibility for older backups created before backup_id naming.
+		backup, err = h.Server.DockerService.DownloadBackup(req.ServerID, "mc_backup_"+req.ServerID)
+	}
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

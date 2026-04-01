@@ -55,7 +55,7 @@ func DeleteBackup(serverID, token, backupID string) error {
 		return fmt.Errorf("host metadata returned empty IP for host %s", hostID)
 	}
 
-	requestBody := map[string]string{"server_id": serverID}
+	requestBody := map[string]string{"server_id": serverID, "backup_id": backupID}
 	jsonBody, err := json.Marshal(requestBody)
 	if err != nil {
 		return err

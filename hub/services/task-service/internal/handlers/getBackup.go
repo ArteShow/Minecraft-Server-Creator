@@ -31,7 +31,7 @@ func GetBackup(w http.ResponseWriter, r *http.Request) {
 
 	token := parts[1]
 
-	var req CreateBackupRequest
+	var req GetBackupRequest
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -44,7 +44,7 @@ func GetBackup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tar, err := core.GetBackup(req.ServerID, token)
+	tar, err := core.GetBackup(req.ServerID, req.BackupID, token)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
