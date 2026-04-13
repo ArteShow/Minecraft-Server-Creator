@@ -14,6 +14,7 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/stdcopy"
 )
 
 type DockerService struct {
@@ -29,6 +30,106 @@ func NewDockerService() (*DockerService, error) {
 		return nil, err
 	}
 	return &DockerService{client: cli}, nil
+}
+
+func (d *DockerService) ExecuteCommandInVolume(volName string, command []string) (string, error) {
+	if volName == "" {
+		return "", errors.New("volName is required")
+	}
+	if len(command) == 0 {
+		return "", errors.New("command is required")
+	}
+
+	ctx := context.Background()
+
+	resp, err := d.client.ContainerCreate(
+		ctx,
+		&container.Config{
+			Image:        "alpine:3.19",
+			Cmd:          command,
+			AttachStdout: true,
+			AttachStderr: true,
+		},
+		&container.HostConfig{
+			AutoRemove: true,
+			Mounts: []mount.Mount{
+				{
+					Type:   mount.TypeVolume,
+					Source: volName,
+					Target: "/data",
+				},
+			},
+		},
+		nil,
+		nil,
+		"",
+	)
+	if err != nil {
+		return "", err
+	}
+
+	containerID := resp.ID
+	defer func() {
+		_ = d.client.ContainerRemove(ctx, containerID, container.RemoveOptions{Force: true})
+	}()
+
+	if err := d.client.ContainerStart(ctx, containerID, container.StartOptions{}); err != nil {
+		return "", err
+	}
+
+	statusCh, errCh := d.client.ContainerWait(ctx, containerID, container.WaitConditionNotRunning)
+	select {
+	case waitErr := <-errCh:
+		if waitErr != nil {
+			return "", waitErr
+		}
+	case status := <-statusCh:
+		if status.Error != nil && status.Error.Message != "" {
+			return "", fmt.Errorf("command failed in volume %s: %s", volName, status.Error.Message)
+		}
+		if status.StatusCode != 0 {
+			logs, _ := d.getContainerLogs(ctx, containerID)
+			if logs != "" {
+				return logs, fmt.Errorf("command failed in volume %s with exit code %d", volName, status.StatusCode)
+			}
+			return "", fmt.Errorf("command failed in volume %s with exit code %d", volName, status.StatusCode)
+		}
+	}
+
+	logs, err := d.getContainerLogs(ctx, containerID)
+	if err != nil {
+		return "", err
+	}
+
+	return logs, nil
+}
+
+func (d *DockerService) getContainerLogs(ctx context.Context, containerID string) (string, error) {
+	reader, err := d.client.ContainerLogs(ctx, containerID, container.LogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+	})
+	if err != nil {
+		return "", err
+	}
+	defer reader.Close()
+
+	stdout := new(bytes.Buffer)
+	stderr := new(bytes.Buffer)
+	_, err = stdcopy.StdCopy(stdout, stderr, reader)
+	if err != nil {
+		return "", err
+	}
+
+	if stderr.Len() == 0 {
+		return stdout.String(), nil
+	}
+
+	if stdout.Len() == 0 {
+		return stderr.String(), nil
+	}
+
+	return stdout.String() + "\n" + stderr.String(), nil
 }
 
 func (d *DockerService) UploadToVolume(

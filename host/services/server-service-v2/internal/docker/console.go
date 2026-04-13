@@ -34,7 +34,6 @@ func (ds *DockerService) GetConsoleLogs(serverID string, tail int) (string, erro
 		return "", err
 	}
 
-	// TTY containers emit plain logs; trim accidental NULs to keep output readable.
 	clean := strings.ReplaceAll(string(content), "\x00", "")
 	return strings.TrimSpace(clean), nil
 }

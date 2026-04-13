@@ -47,3 +47,8 @@ type DeleteBackupRequest struct {
 	ServerID string `json:"server_id"`
 	BackupID string `json:"backup_id,omitempty"`
 }
+
+type UploadBackup struct {
+	ServerID   string `json:"server_id"`
+	BackupName string `json:"file_name"`
+}

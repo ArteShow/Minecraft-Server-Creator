@@ -28,7 +28,6 @@ func (d *DockerService) resolveServerVolume(serverID string) (string, error) {
 		return "", fmt.Errorf("server container %s has no /data volume mount", containerName)
 	}
 
-	// Fallback for cases where container is not currently inspectable but volume still exists.
 	fallback := volumeName(serverID)
 	exists, existsErr := d.VolumeExists(serverID)
 	if existsErr != nil {

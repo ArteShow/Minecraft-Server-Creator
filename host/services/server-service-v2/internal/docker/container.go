@@ -81,7 +81,6 @@ func (ds *DockerService) waitContainerStopped(ctx context.Context, containerID s
 	return errors.New("timeout waiting for container to stop gracefully")
 }
 
-// parseRAM converts RAM string like "1G", "512M" to bytes
 func parseRAM(ramStr string) (int64, error) {
 	ramStr = strings.TrimSpace(ramStr)
 	if ramStr == "" {
@@ -130,20 +129,16 @@ func (ds *DockerService) StartServerContainer(
 	ctx := context.Background()
 	port := nat.Port(fmt.Sprintf("%d/tcp", containerPort))
 
-	// Parse RAM string to bytes
 	memoryBytes, err := parseRAM(RAM)
 	if err != nil {
 		return "", fmt.Errorf("invalid RAM value: %w", err)
 	}
 
-	// Calculate NanoCPUs (1 core = 1e9 nanoseconds)
 	nanoCPUs := int64(cores) * 1e9
 
-	// Convert memory bytes to megabytes for Java heap settings
 	memoryMB := memoryBytes / (1024 * 1024)
 	javaHeap := fmt.Sprintf("%dM", memoryMB)
 
-	// Build Java command with RAM
 	javaCmd := fmt.Sprintf(`
 				while [ ! -f server.jar ]; do
 					echo "waiting for server.jar..."
