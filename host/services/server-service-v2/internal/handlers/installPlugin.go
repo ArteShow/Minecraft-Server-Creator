@@ -3,6 +3,7 @@ package handlers
 import (
 	"io"
 	"net/http"
+	"strings"
 )
 
 func (h *Handler) InstallPlugin(w http.ResponseWriter, r *http.Request) {
@@ -30,6 +31,10 @@ func (h *Handler) InstallPlugin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.Server.InstallPlugin(serverID, header.Filename, data); err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "already installed") {
+			http.Error(w, "plugin install failed: "+err.Error(), http.StatusConflict)
+			return
+		}
 		http.Error(w, "plugin install failed: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

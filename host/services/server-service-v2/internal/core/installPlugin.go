@@ -27,6 +27,16 @@ func (s *Server) InstallPlugin(serverID, filename string, data []byte) error {
 		return err
 	}
 
+	plugins, err := s.ListPlugins(serverID)
+	if err != nil {
+		return fmt.Errorf("check existing plugins: %w", err)
+	}
+	for _, existing := range plugins {
+		if strings.EqualFold(strings.TrimSpace(existing), strings.TrimSpace(filename)) {
+			return fmt.Errorf("plugin %q is already installed", filename)
+		}
+	}
+
 	if err := s.DockerService.UploadToVolume(serverID, "/data/plugins", filename, data); err != nil {
 		return fmt.Errorf("upload plugin to volume: %w", err)
 	}

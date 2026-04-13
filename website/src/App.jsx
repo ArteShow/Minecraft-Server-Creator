@@ -114,6 +114,23 @@ function extractErrorMessage(rawText, fallbackMessage) {
   return trimmed;
 }
 
+function normalizePluginToken(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\.jar$/i, "")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function isPluginAlreadyInstalled(plugin, installedFiles) {
+  const nameToken = normalizePluginToken(plugin?.name);
+  const slugToken = normalizePluginToken(plugin?.slug);
+
+  return (installedFiles || []).some((fileName) => {
+    const fileToken = normalizePluginToken(fileName);
+    return (nameToken && fileToken.includes(nameToken)) || (slugToken && fileToken.includes(slugToken));
+  });
+}
+
 async function searchModrinthPlugins(query, page = 0) {
   const url = new URL("https://api.modrinth.com/v2/search");
   url.searchParams.set("query", (query || "").trim());
@@ -1287,6 +1304,11 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
     setPluginInstalling((previous) => ({ ...previous, [plugin.id]: true }));
     try {
       const file = await fetchLatestPluginFile(plugin.id, server.version);
+      const existingPlugins = installedPluginsMap[server.server_id] || [];
+      if (existingPlugins.some((name) => String(name || "").toLowerCase() === String(file.name || "").toLowerCase())) {
+        throw new Error(`${plugin.name} is already installed.`);
+      }
+
       const formData = new FormData();
       formData.append("server_id", server.server_id);
       formData.append("file", file);
@@ -1713,39 +1735,43 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                               </div>
                             ) : (
                               <div className="grid gap-3 xl:grid-cols-2">
-                                {pluginResults.map((plugin) => (
-                                  <div key={plugin.id} className="rounded-xl border border-white/10 bg-black/20 p-4">
-                                    <div className="flex items-start justify-between gap-3">
-                                      <div className="flex min-w-0 items-start gap-3">
-                                        {plugin.iconUrl ? (
-                                          <img
-                                            src={plugin.iconUrl}
-                                            alt={`${plugin.name} icon`}
-                                            className="h-10 w-10 shrink-0 rounded-lg border border-white/10 object-cover bg-slate-900"
-                                            loading="lazy"
-                                          />
-                                        ) : (
-                                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-slate-900 text-xs font-semibold text-cyan-200">
-                                            {String(plugin.name || "P").charAt(0).toUpperCase()}
+                                {pluginResults.map((plugin) => {
+                                  const installedFiles = installedPluginsMap[selectedServer.server_id] || [];
+                                  const alreadyInstalled = isPluginAlreadyInstalled(plugin, installedFiles);
+                                  return (
+                                    <div key={plugin.id} className="rounded-xl border border-white/10 bg-black/20 p-4">
+                                      <div className="flex items-start justify-between gap-3">
+                                        <div className="flex min-w-0 items-start gap-3">
+                                          {plugin.iconUrl ? (
+                                            <img
+                                              src={plugin.iconUrl}
+                                              alt={`${plugin.name} icon`}
+                                              className="h-10 w-10 shrink-0 rounded-lg border border-white/10 object-cover bg-slate-900"
+                                              loading="lazy"
+                                            />
+                                          ) : (
+                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-slate-900 text-xs font-semibold text-cyan-200">
+                                              {String(plugin.name || "P").charAt(0).toUpperCase()}
+                                            </div>
+                                          )}
+                                          <div className="min-w-0">
+                                            <div className="truncate font-semibold text-white">{plugin.name}</div>
+                                            <div className="mt-1 text-xs text-slate-400">by {plugin.author} · {typeof plugin.downloads === "number" ? plugin.downloads.toLocaleString() : plugin.downloads || 0} downloads</div>
                                           </div>
-                                        )}
-                                        <div className="min-w-0">
-                                          <div className="truncate font-semibold text-white">{plugin.name}</div>
-                                          <div className="mt-1 text-xs text-slate-400">by {plugin.author} · {typeof plugin.downloads === "number" ? plugin.downloads.toLocaleString() : plugin.downloads || 0} downloads</div>
                                         </div>
+                                        <button
+                                          type="button"
+                                          onClick={() => installPlugin(selectedServer, plugin)}
+                                          disabled={pluginInstalling[plugin.id] || alreadyInstalled}
+                                          className={cn("rounded-lg border border-cyan-400/25 bg-cyan-400/10 px-3 py-1.5 text-xs font-semibold text-cyan-200 disabled:opacity-60", popClass())}
+                                        >
+                                          {pluginInstalling[plugin.id] ? "Installing..." : alreadyInstalled ? "Installed" : "Install"}
+                                        </button>
                                       </div>
-                                      <button
-                                        type="button"
-                                        onClick={() => installPlugin(selectedServer, plugin)}
-                                        disabled={pluginInstalling[plugin.id]}
-                                        className={cn("rounded-lg border border-cyan-400/25 bg-cyan-400/10 px-3 py-1.5 text-xs font-semibold text-cyan-200 disabled:opacity-60", popClass())}
-                                      >
-                                        {pluginInstalling[plugin.id] ? "Installing..." : "Install"}
-                                      </button>
+                                      <p className="mt-3 text-sm leading-6 text-slate-300">{plugin.description}</p>
                                     </div>
-                                    <p className="mt-3 text-sm leading-6 text-slate-300">{plugin.description}</p>
-                                  </div>
-                                ))}
+                                  );
+                                })}
                               </div>
                             )}
 
