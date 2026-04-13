@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import {
   Boxes,
   Check,
+  ChevronLeft,
   ChevronRight,
   Copy,
   CreditCard,
@@ -53,6 +54,7 @@ const addOns = [
 const versions = ["1.8.9", "1.12.2", "1.16.5", "1.20.6", "1.21.1", "1.21.2"];
 const softwareOptions = ["Vanilla", "Spigot", "Paper"];
 const pluginCapableServerTypes = new Set(["Spigot", "Paper"]);
+const PLUGIN_PAGE_SIZE = 12;
 
 const fallbackMods = [
   {
@@ -112,11 +114,12 @@ function extractErrorMessage(rawText, fallbackMessage) {
   return trimmed;
 }
 
-async function searchModrinthPlugins(query) {
+async function searchModrinthPlugins(query, page = 0) {
   const url = new URL("https://api.modrinth.com/v2/search");
-  url.searchParams.set("query", query || "server");
-  url.searchParams.set("limit", "12");
-  url.searchParams.set("index", "relevance");
+  url.searchParams.set("query", (query || "").trim());
+  url.searchParams.set("limit", String(PLUGIN_PAGE_SIZE));
+  url.searchParams.set("offset", String(Math.max(page, 0) * PLUGIN_PAGE_SIZE));
+  url.searchParams.set("index", "downloads");
   url.searchParams.set("facets", JSON.stringify([["project_type:plugin"]]));
 
   const response = await fetch(url.toString());
@@ -125,14 +128,20 @@ async function searchModrinthPlugins(query) {
   }
 
   const data = await response.json();
-  return (data.hits || []).map((item) => ({
+  const items = (data.hits || []).map((item) => ({
     id: item.project_id,
     name: item.title,
     description: item.description,
     author: item.author,
     downloads: item.downloads,
     slug: item.slug,
+    iconUrl: item.icon_url || "",
   }));
+
+  return {
+    items,
+    hasMore: items.length === PLUGIN_PAGE_SIZE,
+  };
 }
 
 async function fetchLatestPluginFile(projectId, serverVersion) {
@@ -148,7 +157,11 @@ async function fetchLatestPluginFile(projectId, serverVersion) {
   }
 
   const versionsData = await response.json();
-  const version = versionsData.find((entry) => Array.isArray(entry.files) && entry.files.length > 0);
+  const hasFiles = (entry) => Array.isArray(entry.files) && entry.files.length > 0;
+  const releaseVersion = versionsData.find((entry) => entry.version_type === "release" && hasFiles(entry));
+  const betaVersion = versionsData.find((entry) => entry.version_type === "beta" && hasFiles(entry));
+  const alphaVersion = versionsData.find((entry) => entry.version_type === "alpha" && hasFiles(entry));
+  const version = releaseVersion || betaVersion || alphaVersion || versionsData.find(hasFiles);
   if (!version) {
     throw new Error("No compatible plugin file found for this server version.");
   }
@@ -242,6 +255,13 @@ async function apiFetchBlob(path, { method = "GET", body, token } = {}) {
 
 function popClass() {
   return "transition-all duration-200 motion-safe:hover:-translate-y-0.5 sm:motion-safe:hover:-translate-y-1 sm:motion-safe:hover:scale-[1.01]";
+}
+
+function clampPercent(value) {
+  if (!Number.isFinite(value)) return 0;
+  if (value < 0) return 0;
+  if (value > 100) return 100;
+  return value;
 }
 
 function makeTicketId() {
@@ -447,7 +467,9 @@ function PurchaseFlow({ open, plan, onClose, currentUser, onRequireAuth, onCompl
       setStep((value) => value + 1);
       return;
     }
+
     setCreating(true);
+    onClose();
     onComplete({ plan, addons: selected, setup, billing }, setCreateStep).finally(() => setCreating(false));
   };
 
@@ -819,9 +841,16 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
   const [uploadBackupModalOpen, setUploadBackupModalOpen] = useState(false);
   const [uploadWorldModalOpen, setUploadWorldModalOpen] = useState(false);
   const [pluginSearch, setPluginSearch] = useState("");
+  const [pluginPage, setPluginPage] = useState(0);
+  const [pluginHasMore, setPluginHasMore] = useState(false);
   const [pluginResults, setPluginResults] = useState([]);
   const [pluginLoading, setPluginLoading] = useState(false);
   const [pluginInstalling, setPluginInstalling] = useState({});
+  const [installedPluginsMap, setInstalledPluginsMap] = useState({});
+  const [installedPluginsLoading, setInstalledPluginsLoading] = useState({});
+  const [pluginDeleting, setPluginDeleting] = useState({});
+  const [powerUsageMap, setPowerUsageMap] = useState({});
+  const [powerUsageLoading, setPowerUsageLoading] = useState({});
   const uploadBackupFileRef = useRef(null);
   const uploadWorldFileRef = useRef(null);
   const consoleOutputRef = useRef(null);
@@ -953,6 +982,7 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
     if (!selectedServer) return;
     await refreshOwnedServers({ silent: true });
     await loadBackups(selectedServer);
+    await loadPowerUsage(selectedServer, { silent: true });
     setConsoleRefreshTick((value) => value + 1);
     pushNotice("success", "Server info refreshed.");
   };
@@ -973,7 +1003,6 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
       || !selectedServer?.server_id
       || !token
       || !consoleWindowOpen
-      || selectedServer.status !== "online"
     ) return undefined;
 
     let socket = null;
@@ -1210,17 +1239,34 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
     }
   };
 
+  const loadPowerUsage = async (server, { silent = false } = {}) => {
+    if (!server) return;
+
+    setPowerUsageLoading((previous) => ({ ...previous, [server.server_id]: true }));
+    try {
+      const usage = await apiFetch(`/server/power/usage?server_id=${encodeURIComponent(server.server_id)}`, { token });
+      setPowerUsageMap((previous) => ({ ...previous, [server.server_id]: usage }));
+    } catch (error) {
+      if (!silent) pushNotice("error", `Could not load live resource usage: ${error.message}`);
+    } finally {
+      setPowerUsageLoading((previous) => ({ ...previous, [server.server_id]: false }));
+    }
+  };
+
   useEffect(() => {
     if (!selectedServer || !pluginCapableServerTypes.has(selectedServer.software)) {
       setPluginResults([]);
+      setPluginPage(0);
+      setPluginHasMore(false);
       return;
     }
 
     const timer = setTimeout(async () => {
       setPluginLoading(true);
       try {
-        const results = await searchModrinthPlugins(pluginSearch);
-        setPluginResults(results);
+        const result = await searchModrinthPlugins(pluginSearch, pluginPage);
+        setPluginResults(result.items);
+        setPluginHasMore(result.hasMore);
       } catch (error) {
         pushNotice("error", `Plugin search failed: ${error.message}`);
       } finally {
@@ -1229,7 +1275,11 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
     }, 350);
 
     return () => clearTimeout(timer);
-  }, [pluginSearch, selectedServer?.server_id, selectedServer?.software]);
+  }, [pluginSearch, pluginPage, selectedServer?.server_id, selectedServer?.software]);
+
+  useEffect(() => {
+    setPluginPage(0);
+  }, [pluginSearch, selectedServer?.server_id]);
 
   const installPlugin = async (server, plugin) => {
     if (!server) return;
@@ -1253,6 +1303,7 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
       }
 
       pushNotice("success", `${plugin.name} installed for ${server.name}. Restart the server if it is already running.`);
+      await loadInstalledPlugins(server);
     } catch (error) {
       pushNotice("error", `Plugin install failed: ${error.message}`);
     } finally {
@@ -1260,10 +1311,58 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
     }
   };
 
+    const loadInstalledPlugins = async (server) => {
+    if (!server) return;
+    setInstalledPluginsLoading((previous) => ({ ...previous, [server.server_id]: true }));
+    try {
+      const response = await apiFetch(`/server/plugin/list?server_id=${encodeURIComponent(server.server_id)}`, { token });
+      setInstalledPluginsMap((previous) => ({ ...previous, [server.server_id]: Array.isArray(response.plugins) ? response.plugins : [] }));
+    } catch (error) {
+      pushNotice("error", `Could not load installed plugins: ${error.message}`);
+    } finally {
+      setInstalledPluginsLoading((previous) => ({ ...previous, [server.server_id]: false }));
+    }
+    };
+
+    const deleteInstalledPlugin = async (server, fileName) => {
+    if (!server || !fileName) return;
+    const key = `${server.server_id}:${fileName}`;
+    setPluginDeleting((previous) => ({ ...previous, [key]: true }));
+    try {
+      await apiFetch("/server/plugin/delete", {
+        method: "POST",
+        body: { server_id: server.server_id, file_name: fileName },
+        token,
+      });
+      pushNotice("success", `${fileName} removed from ${server.name}.`);
+      await loadInstalledPlugins(server);
+    } catch (error) {
+      pushNotice("error", `Plugin delete failed: ${error.message}`);
+    } finally {
+      setPluginDeleting((previous) => ({ ...previous, [key]: false }));
+    }
+    };
+
+    useEffect(() => {
+    if (!selectedServer || !pluginCapableServerTypes.has(selectedServer.software) || !token) return;
+    loadInstalledPlugins(selectedServer);
+    }, [selectedServer?.server_id, selectedServer?.software, token]);
+
   useEffect(() => {
     if (!selectedServer || !token) return;
     loadBackups(selectedServer);
   }, [selectedServer?.server_id, token]);
+
+  useEffect(() => {
+    if (active !== "servers" || !selectedServer || !token) return undefined;
+
+    loadPowerUsage(selectedServer, { silent: true });
+    const timer = window.setInterval(() => {
+      loadPowerUsage(selectedServer, { silent: true });
+    }, 7000);
+
+    return () => window.clearInterval(timer);
+  }, [active, selectedServer?.server_id, token]);
 
   const menu = [
     { key: "servers", label: "My Servers", icon: Server },
@@ -1419,9 +1518,8 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                         <button disabled={serverBusy[selectedServer.server_id]} onClick={() => runServerAction(selectedServer, "start")} className={cn("flex items-center justify-center gap-2 rounded-2xl bg-emerald-400/15 px-4 py-3 text-emerald-300 disabled:opacity-60 transition-all duration-300 hover:bg-emerald-400/25 hover:shadow-lg hover:shadow-emerald-400/20", popClass())}><Play className="h-4 w-4" /> Start</button>
                         <button disabled={serverBusy[selectedServer.server_id]} onClick={() => runServerAction(selectedServer, "stop")} className={cn("flex items-center justify-center gap-2 rounded-2xl bg-rose-400/15 px-4 py-3 text-rose-300 disabled:opacity-60 transition-all duration-300 hover:bg-rose-400/25 hover:shadow-lg hover:shadow-rose-400/20", popClass())}><Square className="h-4 w-4" /> Stop</button>
                         <button
-                          disabled={selectedServer.status !== "online"}
                           onClick={() => setConsoleWindowOpen(true)}
-                          className={cn("flex items-center justify-center gap-2 rounded-2xl bg-cyan-400/15 px-4 py-3 text-cyan-200 disabled:opacity-50 transition-all duration-300 hover:bg-cyan-400/25 hover:shadow-lg hover:shadow-cyan-400/20", popClass())}
+                          className={cn("flex items-center justify-center gap-2 rounded-2xl bg-cyan-400/15 px-4 py-3 text-cyan-200 transition-all duration-300 hover:bg-cyan-400/25 hover:shadow-lg hover:shadow-cyan-400/20", popClass())}
                         >
                           <TerminalSquare className="h-4 w-4" /> Open Console
                         </button>
@@ -1453,6 +1551,58 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                             <div className="flex justify-between"><span className="text-slate-400">Port</span><span className="text-white">{selectedServer.port || "—"}</span></div>
                             <div className="flex justify-between"><span className="text-slate-400">Players online</span><span className="text-cyan-200 font-semibold">{playerCountMap[selectedServer.server_id] || 0}</span></div>
                             <div className="flex justify-between"><span className="text-slate-400">Backups</span><span className="text-white">{selectedServer.backupCount || 0}</span></div>
+                          </div>
+
+                          <div className="mt-4 rounded-xl border border-white/10 bg-black/20 p-3">
+                            <div className="mb-2 flex items-center justify-between gap-2">
+                              <div className="text-sm font-semibold text-white">Live Power Usage</div>
+                              {powerUsageLoading[selectedServer.server_id] && <div className="text-xs text-slate-400">Updating...</div>}
+                            </div>
+
+                            {(() => {
+                              const usage = powerUsageMap[selectedServer.server_id] || {};
+                              const cpuPercent = clampPercent(Number(usage.cpu_percent) || 0);
+                              const ramPercent = clampPercent(Number(usage.ram_percent) || 0);
+                              const ramUsedMB = Number(usage.ram_used_mb) || 0;
+                              const ramLimitMB = Number(usage.ram_limit_mb) || 0;
+                              const online = Boolean(usage.online);
+
+                              return (
+                                <div className="space-y-3">
+                                  <div className="text-xs text-slate-400">
+                                    {online ? "Live usage from the running container" : "Server is offline. Usage will appear after start."}
+                                  </div>
+
+                                  <div>
+                                    <div className="mb-1 flex justify-between text-xs text-slate-300">
+                                      <span>CPU</span>
+                                      <span>{cpuPercent.toFixed(1)}%</span>
+                                    </div>
+                                    <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+                                      <div
+                                        className="h-full rounded-full bg-[repeating-linear-gradient(45deg,rgba(56,189,248,0.95),rgba(56,189,248,0.95)_8px,rgba(14,116,144,0.95)_8px,rgba(14,116,144,0.95)_16px)] transition-all duration-700"
+                                        style={{ width: `${cpuPercent}%` }}
+                                      />
+                                    </div>
+                                  </div>
+
+                                  <div>
+                                    <div className="mb-1 flex justify-between text-xs text-slate-300">
+                                      <span>RAM</span>
+                                      <span>
+                                        {ramUsedMB.toFixed(0)} MB / {ramLimitMB > 0 ? `${ramLimitMB.toFixed(0)} MB` : "n/a"} ({ramPercent.toFixed(1)}%)
+                                      </span>
+                                    </div>
+                                    <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+                                      <div
+                                        className="h-full rounded-full bg-[repeating-linear-gradient(45deg,rgba(74,222,128,0.95),rgba(74,222,128,0.95)_8px,rgba(22,163,74,0.95)_8px,rgba(22,163,74,0.95)_16px)] transition-all duration-700"
+                                        style={{ width: `${ramPercent}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </div>
                         </div>
 
@@ -1531,6 +1681,28 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                               </div>
                             </div>
 
+                            <div className="mb-4 flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setPluginPage((previous) => Math.max(previous - 1, 0))}
+                                disabled={pluginLoading || pluginPage === 0}
+                                className={cn("rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-200 disabled:opacity-50", popClass())}
+                                aria-label="Previous plugin page"
+                              >
+                                <ChevronLeft className="h-4 w-4" />
+                              </button>
+                              <div className="text-xs text-slate-400">Page {pluginPage + 1}</div>
+                              <button
+                                type="button"
+                                onClick={() => setPluginPage((previous) => previous + 1)}
+                                disabled={pluginLoading || !pluginHasMore}
+                                className={cn("rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-200 disabled:opacity-50", popClass())}
+                                aria-label="Next plugin page"
+                              >
+                                <ChevronRight className="h-4 w-4" />
+                              </button>
+                            </div>
+
                             {pluginLoading ? (
                               <div className="rounded-xl border border-dashed border-white/10 bg-black/20 px-3 py-3 text-sm text-slate-400">
                                 Loading plugins...
@@ -1544,9 +1716,23 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                                 {pluginResults.map((plugin) => (
                                   <div key={plugin.id} className="rounded-xl border border-white/10 bg-black/20 p-4">
                                     <div className="flex items-start justify-between gap-3">
-                                      <div>
-                                        <div className="font-semibold text-white">{plugin.name}</div>
-                                        <div className="mt-1 text-xs text-slate-400">by {plugin.author} · {typeof plugin.downloads === "number" ? plugin.downloads.toLocaleString() : plugin.downloads || 0} downloads</div>
+                                      <div className="flex min-w-0 items-start gap-3">
+                                        {plugin.iconUrl ? (
+                                          <img
+                                            src={plugin.iconUrl}
+                                            alt={`${plugin.name} icon`}
+                                            className="h-10 w-10 shrink-0 rounded-lg border border-white/10 object-cover bg-slate-900"
+                                            loading="lazy"
+                                          />
+                                        ) : (
+                                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-slate-900 text-xs font-semibold text-cyan-200">
+                                            {String(plugin.name || "P").charAt(0).toUpperCase()}
+                                          </div>
+                                        )}
+                                        <div className="min-w-0">
+                                          <div className="truncate font-semibold text-white">{plugin.name}</div>
+                                          <div className="mt-1 text-xs text-slate-400">by {plugin.author} · {typeof plugin.downloads === "number" ? plugin.downloads.toLocaleString() : plugin.downloads || 0} downloads</div>
+                                        </div>
                                       </div>
                                       <button
                                         type="button"
@@ -1562,6 +1748,45 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                                 ))}
                               </div>
                             )}
+
+                            <div className="mt-4 rounded-xl border border-white/10 bg-black/20 p-3">
+                              <div className="mb-2 flex items-center justify-between gap-2">
+                                <div className="text-sm font-semibold text-white">Installed Plugins</div>
+                                <button
+                                  type="button"
+                                  onClick={() => loadInstalledPlugins(selectedServer)}
+                                  disabled={installedPluginsLoading[selectedServer.server_id]}
+                                  className={cn("rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-slate-200 disabled:opacity-60", popClass())}
+                                >
+                                  Refresh
+                                </button>
+                              </div>
+
+                              {installedPluginsLoading[selectedServer.server_id] ? (
+                                <div className="text-xs text-slate-400">Loading installed plugins...</div>
+                              ) : (installedPluginsMap[selectedServer.server_id] || []).length === 0 ? (
+                                <div className="text-xs text-slate-400">No installed plugins found.</div>
+                              ) : (
+                                <div className="space-y-2">
+                                  {(installedPluginsMap[selectedServer.server_id] || []).map((fileName) => {
+                                    const deleteKey = `${selectedServer.server_id}:${fileName}`;
+                                    return (
+                                      <div key={fileName} className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-slate-900/40 px-2.5 py-2">
+                                        <div className="min-w-0 truncate text-xs text-slate-200">{fileName}</div>
+                                        <button
+                                          type="button"
+                                          onClick={() => deleteInstalledPlugin(selectedServer, fileName)}
+                                          disabled={pluginDeleting[deleteKey]}
+                                          className={cn("rounded-lg border border-rose-400/25 bg-rose-400/10 px-2 py-1 text-xs font-semibold text-rose-200 disabled:opacity-60", popClass())}
+                                        >
+                                          {pluginDeleting[deleteKey] ? "Deleting..." : "Delete"}
+                                        </button>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -1576,14 +1801,10 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                 open={consoleWindowOpen && Boolean(selectedServer)}
                 onClose={() => setConsoleWindowOpen(false)}
                 title={selectedServer ? `${selectedServer.name} Console` : "Server Console"}
-                subtitle={selectedServer?.status === "online" ? "Live output and command input" : "Start the server to use the console"}
+                subtitle="Live output and command input"
               >
-                {selectedServer?.status !== "online" ? (
-                  <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm text-amber-100">
-                    The console becomes interactive after the server is started.
-                  </div>
-                ) : (
-                  <>
+                {selectedServer ? (
+                <>
                     <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                       <div className="rounded-full px-3 py-1 text-xs bg-cyan-400/10 text-cyan-200">Players online: {playerCountMap[selectedServer.server_id] || 0}</div>
                       <div className={cn(
@@ -1620,8 +1841,8 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                         Send
                       </button>
                     </div>
-                  </>
-                )}
+                </>
+                ) : null}
               </Modal>
             </>
           )}
@@ -1647,6 +1868,10 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                   <div className="flex gap-2 pt-2">
                     <button
                       onClick={async () => {
+                        if (!selectedServer) {
+                          pushNotice({ type: "error", message: "No server selected" });
+                          return;
+                        }
                         const file = uploadBackupFileRef.current?.files?.[0];
                         if (!file) {
                           pushNotice({ type: "error", message: "Please select a backup file" });
@@ -1697,6 +1922,10 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                   <div className="flex gap-2 pt-2">
                     <button
                       onClick={() => {
+                        if (!selectedServer) {
+                          pushNotice("error", "No server selected");
+                          return;
+                        }
                         const file = uploadWorldFileRef.current?.files?.[0];
                         if (!file) {
                           pushNotice("error", "Please select a world file");
@@ -2436,6 +2665,7 @@ export default function App({ initialScreen = "landing" }) {
 
     try {
       const bundleName = order.plan.name;
+      pushNotice("info", `Creating your server \"${order.setup.name}\"...`);
 
       setCreateStep && setCreateStep("Step 1/3 — Generating bundle key…");
       const bundleKeyResponse = await apiFetch("/bundle/create", {
@@ -2666,6 +2896,11 @@ function UserSupportPanel({ currentUser, tickets, setTickets, pushNotice }) {
     pushNotice("success", `Ticket ${ticketID} closed.`);
   };
 
+  const deleteTicket = (ticketID) => {
+    setTickets((previous) => previous.filter((ticket) => ticket.id !== ticketID));
+    pushNotice("success", `Ticket ${ticketID} deleted.`);
+  };
+
   return (
     <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
       <GlassCard className="p-6">
@@ -2741,13 +2976,31 @@ function UserSupportPanel({ currentUser, tickets, setTickets, pushNotice }) {
                 </div>
               )}
               {ticket.status !== "resolved" && (
-                <div className="mt-3 flex justify-end">
+                <div className="mt-3 flex justify-end gap-2">
                   <button
                     type="button"
                     onClick={() => closeTicket(ticket.id)}
                     className={cn("rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-2 text-sm font-semibold text-emerald-200", popClass())}
                   >
                     Close Ticket
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteTicket(ticket.id)}
+                    className={cn("rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-2 text-sm font-semibold text-rose-200", popClass())}
+                  >
+                    Delete Ticket
+                  </button>
+                </div>
+              )}
+              {ticket.status === "resolved" && (
+                <div className="mt-3 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => deleteTicket(ticket.id)}
+                    className={cn("rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-2 text-sm font-semibold text-rose-200", popClass())}
+                  >
+                    Delete Ticket
                   </button>
                 </div>
               )}

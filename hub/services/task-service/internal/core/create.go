@@ -38,6 +38,12 @@ func SelecthostIDByServerID(serverID string, servers *host.GetAllHostServersResp
 			}
 		}
 	}
+
+	// Fallback for single-host setups where server mapping can be temporarily missing.
+	if len(servers.GetHosts()) == 1 {
+		return servers.GetHosts()[0].GetId()
+	}
+
 	return ""
 }
 

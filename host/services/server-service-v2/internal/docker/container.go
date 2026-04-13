@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -206,4 +207,61 @@ func (ds *DockerService) StartServerContainer(
 	}
 
 	return resp.ID, nil
+}
+
+func (ds *DockerService) GetContainerResourceUsage(containerID string) (float64, uint64, uint64, error) {
+	ctx := context.Background()
+	statsResp, err := ds.client.ContainerStats(ctx, containerID, false)
+	if err != nil {
+		return 0, 0, 0, err
+	}
+	defer statsResp.Body.Close()
+
+	var payload struct {
+		CPUStats struct {
+			CPUUsage struct {
+				TotalUsage uint64 `json:"total_usage"`
+			} `json:"cpu_usage"`
+			SystemUsage uint64 `json:"system_cpu_usage"`
+			OnlineCPUs  uint32 `json:"online_cpus"`
+		} `json:"cpu_stats"`
+		PreCPUStats struct {
+			CPUUsage struct {
+				TotalUsage uint64 `json:"total_usage"`
+			} `json:"cpu_usage"`
+			SystemUsage uint64 `json:"system_cpu_usage"`
+		} `json:"precpu_stats"`
+		MemoryStats struct {
+			Usage uint64            `json:"usage"`
+			Limit uint64            `json:"limit"`
+			Stats map[string]uint64 `json:"stats"`
+		} `json:"memory_stats"`
+	}
+
+	if err = json.NewDecoder(statsResp.Body).Decode(&payload); err != nil {
+		return 0, 0, 0, err
+	}
+
+	usedMemory := payload.MemoryStats.Usage
+	if payload.MemoryStats.Stats != nil {
+		if inactive, ok := payload.MemoryStats.Stats["inactive_file"]; ok && usedMemory > inactive {
+			usedMemory -= inactive
+		} else if cache, ok := payload.MemoryStats.Stats["cache"]; ok && usedMemory > cache {
+			usedMemory -= cache
+		}
+	}
+
+	cpuDelta := payload.CPUStats.CPUUsage.TotalUsage - payload.PreCPUStats.CPUUsage.TotalUsage
+	systemDelta := payload.CPUStats.SystemUsage - payload.PreCPUStats.SystemUsage
+	onlineCPUs := payload.CPUStats.OnlineCPUs
+	if onlineCPUs == 0 {
+		onlineCPUs = 1
+	}
+
+	cpuPercent := 0.0
+	if systemDelta > 0 && cpuDelta > 0 {
+		cpuPercent = (float64(cpuDelta) / float64(systemDelta)) * float64(onlineCPUs) * 100.0
+	}
+
+	return cpuPercent, usedMemory, payload.MemoryStats.Limit, nil
 }

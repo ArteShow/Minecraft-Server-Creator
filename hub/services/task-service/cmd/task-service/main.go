@@ -43,6 +43,7 @@ func main() {
 	mux.HandleFunc("/task-service/delete", handlers.DeleteServer)
 	mux.HandleFunc("/task-service/getStats", handlers.GetServerStats)
 	mux.HandleFunc("/task-service/getServerStats", handlers.GetServerStats)
+	mux.HandleFunc("/task-service/power/usage", handlers.GetPowerUsage)
 	mux.HandleFunc("/task-service/console/ws", handlers.ServerConsoleWS)
 	mux.HandleFunc("/task-service/console/command", handlers.SendServerConsoleCommand)
 
@@ -54,6 +55,8 @@ func main() {
 
 	mux.HandleFunc("/task-service/world/upload", handlers.UploadWorld)
 	mux.HandleFunc("/task-service/plugin/install", handlers.InstallPlugin)
+	mux.HandleFunc("/task-service/plugin/list", handlers.ListPlugins)
+	mux.HandleFunc("/task-service/plugin/delete", handlers.DeletePlugin)
 
 	srv := &http.Server{
 		Addr:         cfg.Port,

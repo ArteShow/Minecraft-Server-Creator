@@ -43,6 +43,7 @@ func main() {
 	stopServerProxy := proxy.NewProxy("http://task-service:8013", "/task-service/stop")
 	deleteServerProxy := proxy.NewProxy("http://task-service:8013", "/task-service/delete")
 	getServerStatsProxy := proxy.NewProxy("http://task-service:8013", "/task-service/getStats")
+	getPowerUsageProxy := proxy.NewProxy("http://task-service:8013", "/task-service/power/usage")
 	serverConsoleWSProxy := proxy.NewProxy("http://task-service:8013", "/task-service/console/ws")
 	sendServerConsoleCommandProxy := proxy.NewProxy("http://task-service:8013", "/task-service/console/command")
 
@@ -53,6 +54,8 @@ func main() {
 	uploadBackupProxy := proxy.NewProxy("http://task-service:8013", "/task-service/backup/upload")
 	uploadWorldProxy := proxy.NewProxy("http://task-service:8013", "/task-service/world/upload")
 	installPluginProxy := proxy.NewProxy("http://task-service:8013", "/task-service/plugin/install")
+	listPluginsProxy := proxy.NewProxy("http://task-service:8013", "/task-service/plugin/list")
+	deletePluginProxy := proxy.NewProxy("http://task-service:8013", "/task-service/plugin/delete")
 
 	registerUserProxy := proxy.NewProxy("http://auth-service:8014", "/auth-service/user/register")
 	loginUserProxy := proxy.NewProxy("http://auth-service:8014", "/auth-service/user/login")
@@ -84,6 +87,7 @@ func main() {
 	handler.Handle("/api/"+cfg.APIVersion+"/server/stop", middleware.LoggingMiddleware(middleware.AuthMiddleware(stopServerProxy)))
 	handler.Handle("/api/"+cfg.APIVersion+"/server/delete", middleware.LoggingMiddleware(middleware.AuthMiddleware(deleteServerProxy)))
 	handler.Handle("/api/"+cfg.APIVersion+"/server/getStats", middleware.LoggingMiddleware(middleware.AuthMiddleware(getServerStatsProxy)))
+	handler.Handle("/api/"+cfg.APIVersion+"/server/power/usage", middleware.LoggingMiddleware(middleware.AuthMiddleware(getPowerUsageProxy)))
 	handler.Handle("/api/"+cfg.APIVersion+"/server/console/ws", middleware.LoggingMiddleware(middleware.AuthMiddleware(serverConsoleWSProxy)))
 	handler.Handle("/api/"+cfg.APIVersion+"/server/console/command", middleware.LoggingMiddleware(middleware.AuthMiddleware(sendServerConsoleCommandProxy)))
 
@@ -94,6 +98,8 @@ func main() {
 	handler.Handle("/api/"+cfg.APIVersion+"/server/backup/upload", middleware.LoggingMiddleware(middleware.AuthMiddleware(uploadBackupProxy)))
 	handler.Handle("/api/"+cfg.APIVersion+"/server/world/upload", middleware.LoggingMiddleware(middleware.AuthMiddleware(uploadWorldProxy)))
 	handler.Handle("/api/"+cfg.APIVersion+"/server/plugin/install", middleware.LoggingMiddleware(middleware.AuthMiddleware(installPluginProxy)))
+	handler.Handle("/api/"+cfg.APIVersion+"/server/plugin/list", middleware.LoggingMiddleware(middleware.AuthMiddleware(listPluginsProxy)))
+	handler.Handle("/api/"+cfg.APIVersion+"/server/plugin/delete", middleware.LoggingMiddleware(middleware.AuthMiddleware(deletePluginProxy)))
 
 	handler.Handle("/api/"+cfg.APIVersion+"/auth/user/register", middleware.LoggingMiddleware(registerUserProxy))
 	handler.Handle("/api/"+cfg.APIVersion+"/auth/user/login", middleware.LoggingMiddleware(loginUserProxy))

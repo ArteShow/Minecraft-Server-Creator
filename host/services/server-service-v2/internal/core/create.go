@@ -40,6 +40,17 @@ func (s *Server) CreateServer(version, serverType, ownerID string, port int) (st
 		return "", err
 	}
 
+	if isPluginCapableServerType(serverType) {
+		if err := s.DockerService.UploadToVolume(
+			id,
+			"/data",
+			"plugins/.keep",
+			[]byte{},
+		); err != nil {
+			return "", fmt.Errorf("create plugins folder: %w", err)
+		}
+	}
+
 	eulaTxt, err := eula.Accept()
 	if err != nil {
 		return "", err
@@ -72,4 +83,13 @@ func (s *Server) CreateServer(version, serverType, ownerID string, port int) (st
 	}
 
 	return id, nil
+}
+
+func isPluginCapableServerType(serverType string) bool {
+	switch serverType {
+	case "Paper", "Spigot":
+		return true
+	default:
+		return false
+	}
 }

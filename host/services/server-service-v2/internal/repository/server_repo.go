@@ -112,6 +112,29 @@ func GetServersPort(serverID string) (int, error) {
 	return int(port.Int64), nil
 }
 
+func GetServerContainerID(serverID string) (string, error) {
+	db, err := database.Connect()
+	if err != nil {
+		return "", err
+	}
+	defer db.Close()
+
+	var containerID sql.NullString
+	err = db.QueryRow(`SELECT container_id FROM servers WHERE id = $1`, serverID).Scan(&containerID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", nil
+		}
+		return "", err
+	}
+
+	if !containerID.Valid {
+		return "", nil
+	}
+
+	return containerID.String, nil
+}
+
 func IsContainerOwnedByUser(containerID, ownerID string) (bool, error) {
 	db, err := database.Connect()
 	if err != nil {

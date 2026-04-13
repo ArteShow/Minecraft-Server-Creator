@@ -47,6 +47,7 @@ func main() {
 	mux.HandleFunc("/server-service/stop", h.StopServer)
 	mux.HandleFunc("/server-service/delete", h.DeleteServer)
 	mux.HandleFunc("/server-service/getServerStats", h.GetServerStats)
+	mux.HandleFunc("/server-service/power/usage", h.GetPowerUsage)
 	mux.HandleFunc("/server-service/console", h.GetServerConsole)
 	mux.HandleFunc("/server-service/console/command", h.SendServerConsoleCommand)
 
@@ -57,6 +58,8 @@ func main() {
 
 	mux.HandleFunc("/server-service/world/upload", h.UploadWorld)
 	mux.HandleFunc("/server-service/plugin/install", h.InstallPlugin)
+	mux.HandleFunc("/server-service/plugin/list", h.ListPlugins)
+	mux.HandleFunc("/server-service/plugin/delete", h.DeletePlugin)
 
 	srv := &http.Server{
 		Addr:         cfg.Port,

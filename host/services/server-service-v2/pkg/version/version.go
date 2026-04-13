@@ -32,6 +32,12 @@ type paperBuildsResponse struct {
 	Builds []int `json:"builds"`
 }
 
+type paperBuildsObjectResponse struct {
+	Builds []struct {
+		Build int `json:"build"`
+	} `json:"builds"`
+}
+
 func GetServerJar(version string) ([]byte, error) {
 	if err := os.MkdirAll(cacheDir, os.ModePerm); err != nil {
 		return nil, err
@@ -112,15 +118,20 @@ func GetPaperJar(version string) ([]byte, error) {
 		return nil, fmt.Errorf("paper builds API: %s", resp.Status)
 	}
 
-	var builds paperBuildsResponse
-	if err := json.NewDecoder(resp.Body).Decode(&builds); err != nil {
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
 		return nil, err
 	}
-	if len(builds.Builds) == 0 {
+
+	buildNumbers, err := parsePaperBuildNumbers(body)
+	if err != nil {
+		return nil, err
+	}
+	if len(buildNumbers) == 0 {
 		return nil, fmt.Errorf("no Paper builds found for version %s", version)
 	}
 
-	latestBuild := builds.Builds[len(builds.Builds)-1]
+	latestBuild := buildNumbers[len(buildNumbers)-1]
 	buildStr := strconv.Itoa(latestBuild)
 	jarName := "paper-" + version + "-" + buildStr + ".jar"
 	downloadURL := "https://api.papermc.io/v2/projects/paper/versions/" + version + "/builds/" + buildStr + "/downloads/" + jarName
@@ -170,4 +181,26 @@ func downloadAndCacheFile(downloadURL, destinationPath string) ([]byte, error) {
 	}
 
 	return data, nil
+}
+
+func parsePaperBuildNumbers(body []byte) ([]int, error) {
+	var numeric paperBuildsResponse
+	if err := json.Unmarshal(body, &numeric); err == nil && len(numeric.Builds) > 0 {
+		return numeric.Builds, nil
+	}
+
+	var object paperBuildsObjectResponse
+	if err := json.Unmarshal(body, &object); err == nil && len(object.Builds) > 0 {
+		result := make([]int, 0, len(object.Builds))
+		for _, item := range object.Builds {
+			if item.Build > 0 {
+				result = append(result, item.Build)
+			}
+		}
+		if len(result) > 0 {
+			return result, nil
+		}
+	}
+
+	return nil, fmt.Errorf("unexpected Paper builds response format")
 }
