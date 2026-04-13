@@ -59,3 +59,8 @@ type ConsoleCommandRequest struct {
 	ServerID string `json:"server_id"`
 	Command  string `json:"command"`
 }
+
+type UploadBackupRequest struct {
+	ServerID   string `json:"server_id"`
+	BackupName string `json:"file_name"`
+}

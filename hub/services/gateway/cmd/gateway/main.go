@@ -50,6 +50,7 @@ func main() {
 	listBackupProxy := proxy.NewProxy("http://task-service:8013", "/task-service/backup/list")
 	getBackupProxy := proxy.NewProxy("http://task-service:8013", "/task-service/backup/get")
 	deleteBackupProxy := proxy.NewProxy("http://task-service:8013", "/task-service/backup/delete")
+	uploadBackupProxy := proxy.NewProxy("http://task-service:8013", "/task-service/backup/upload")
 
 	registerUserProxy := proxy.NewProxy("http://auth-service:8014", "/auth-service/user/register")
 	loginUserProxy := proxy.NewProxy("http://auth-service:8014", "/auth-service/user/login")
@@ -88,6 +89,7 @@ func main() {
 	handler.Handle("/api/"+cfg.APIVersion+"/server/backup/list", middleware.LoggingMiddleware(middleware.AuthMiddleware(listBackupProxy)))
 	handler.Handle("/api/"+cfg.APIVersion+"/server/backup/get", middleware.LoggingMiddleware(middleware.AuthMiddleware(getBackupProxy)))
 	handler.Handle("/api/"+cfg.APIVersion+"/server/backup/delete", middleware.LoggingMiddleware(middleware.AuthMiddleware(deleteBackupProxy)))
+	handler.Handle("/api/"+cfg.APIVersion+"/server/backup/upload", middleware.LoggingMiddleware(middleware.AuthMiddleware(uploadBackupProxy)))
 
 	handler.Handle("/api/"+cfg.APIVersion+"/auth/user/register", middleware.LoggingMiddleware(registerUserProxy))
 	handler.Handle("/api/"+cfg.APIVersion+"/auth/user/login", middleware.LoggingMiddleware(loginUserProxy))
