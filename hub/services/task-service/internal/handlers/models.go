@@ -1,8 +1,9 @@
 package handlers
 
 type CreateServerRequest struct {
-	Version string `json:"version"`
-	Bundle  string `json:"bundle"`
+	Version    string `json:"version"`
+	Bundle     string `json:"bundle"`
+	ServerType string `json:"server_type"`
 }
 
 type CreateServerResponse struct {

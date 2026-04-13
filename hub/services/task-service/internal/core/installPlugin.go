@@ -13,7 +13,7 @@ import (
 	network "github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/proto/network-service"
 )
 
-func UploadWorld(serverID, token string, world []byte) error {
+func InstallPlugin(serverID, token string, filename string, data []byte) error {
 	cfg, err := config.Read()
 	if err != nil {
 		return err
@@ -56,32 +56,28 @@ func UploadWorld(serverID, token string, world []byte) error {
 
 	writer.WriteField("server_id", serverID)
 
-	part, err := writer.CreateFormFile("file", "world.tar.gz")
+	part, err := writer.CreateFormFile("file", filename)
 	if err != nil {
 		return err
 	}
-
-	_, err = io.Copy(part, bytes.NewReader(world))
-	if err != nil {
+	if _, err = io.Copy(part, bytes.NewReader(data)); err != nil {
 		return err
 	}
-
 	writer.Close()
 
 	req, err := http.NewRequest(
 		"POST",
-		"http://"+targetIP+":"+cfg.DefaultHostServerPort+"/server-service/world/upload",
+		"http://"+targetIP+":"+cfg.DefaultHostServerPort+"/server-service/plugin/install",
 		body,
 	)
 	if err != nil {
 		return err
 	}
-
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	req.Header.Set("Authorization", "Bearer "+token)
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	c := &http.Client{}
+	resp, err := c.Do(req)
 	if err != nil {
 		return err
 	}
@@ -90,9 +86,9 @@ func UploadWorld(serverID, token string, world []byte) error {
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
 		if len(respBody) > 0 {
-			return fmt.Errorf("host world upload failed, status %d: %s", resp.StatusCode, string(respBody))
+			return fmt.Errorf("host plugin install failed, status %d: %s", resp.StatusCode, string(respBody))
 		}
-		return fmt.Errorf("host world upload failed, status %d", resp.StatusCode)
+		return fmt.Errorf("host plugin install failed, status %d", resp.StatusCode)
 	}
 
 	return nil

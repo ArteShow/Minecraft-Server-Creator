@@ -3,6 +3,7 @@ package docker
 import (
 	"archive/tar"
 	"bytes"
+	"compress/gzip"
 	"context"
 	"errors"
 	"fmt"
@@ -217,6 +218,11 @@ func (d *DockerService) UploadFolderToVolume(
 		return errors.New("folderArchive data is required")
 	}
 
+	tarStream, err := decompressIfGzip(folderArchive)
+	if err != nil {
+		return fmt.Errorf("decompress world archive: %w", err)
+	}
+
 	ctx := context.Background()
 
 	resp, err := d.client.ContainerCreate(
@@ -252,39 +258,13 @@ func (d *DockerService) UploadFolderToVolume(
 		return err
 	}
 
-	buf := new(bytes.Buffer)
-	tw := tar.NewWriter(buf)
-
-	hdr := &tar.Header{
-		Name: "folder.tar.gz",
-		Mode: 0644,
-		Size: int64(len(folderArchive)),
-	}
-	if err := tw.WriteHeader(hdr); err != nil {
-		return err
-	}
-	if _, err := tw.Write(folderArchive); err != nil {
-		return err
-	}
-	if err := tw.Close(); err != nil {
-		return err
-	}
-
-	if err := d.client.CopyToContainer(
+	return d.client.CopyToContainer(
 		ctx,
 		containerID,
 		targetPath,
-		buf,
+		bytes.NewReader(tarStream),
 		container.CopyToContainerOptions{},
-	); err != nil {
-		return err
-	}
-
-	_, err = d.ExecuteCommandInVolume(
-		volumeName(serverID),
-		[]string{"sh", "-c", "cd " + targetPath + " && tar -xzf folder.tar.gz && rm folder.tar.gz"},
 	)
-	return err
 }
 
 func (d *DockerService) GetFileFromVolume(
@@ -485,6 +465,70 @@ func (d *DockerService) DeleteFolderFromVolume(
 	return nil
 }
 
+func (d *DockerService) CreateVolume(name string) error {
+	_, err := d.client.VolumeCreate(context.Background(), volume.CreateOptions{
+		Name: volumeName(name),
+		Labels: map[string]string{
+			"project": "minecraft-server",
+		},
+	})
+	return err
+}
+
+func (d *DockerService) VolumeExists(name string) (bool, error) {
+	vols, err := d.client.VolumeList(context.Background(), volume.ListOptions{})
+	if err != nil {
+		return false, err
+	}
+
+	for _, currentVolume := range vols.Volumes {
+		if currentVolume.Name == volumeName(name) {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func (d *DockerService) ListVolumes() ([]string, error) {
+	args := filters.NewArgs()
+	args.Add("label", "project=minecraft-server")
+
+	vols, err := d.client.VolumeList(context.Background(), volume.ListOptions{Filters: args})
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]string, 0, len(vols.Volumes))
+	for _, currentVolume := range vols.Volumes {
+		result = append(result, currentVolume.Name)
+	}
+
+	return result, nil
+}
+
+func (d *DockerService) DeleteVolume(name string) error {
+	return d.client.VolumeRemove(
+		context.Background(),
+		volumeName(name),
+		true,
+	)
+}
+
+func decompressIfGzip(data []byte) ([]byte, error) {
+	if len(data) < 2 || data[0] != 0x1f || data[1] != 0x8b {
+		return data, nil
+	}
+
+	reader, err := gzip.NewReader(bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+	defer reader.Close()
+
+	return io.ReadAll(reader)
+}
+
 func readFileFromTar(reader io.Reader, fileName string) ([]byte, error) {
 	tr := tar.NewReader(reader)
 
@@ -517,54 +561,4 @@ func readFileFromTar(reader io.Reader, fileName string) ([]byte, error) {
 
 func volumeName(name string) string {
 	return "mc_" + name
-}
-
-func (d *DockerService) CreateVolume(name string) error {
-	_, err := d.client.VolumeCreate(context.Background(), volume.CreateOptions{
-		Name: volumeName(name),
-		Labels: map[string]string{
-			"project": "minecraft-server",
-		},
-	})
-	return err
-}
-
-func (d *DockerService) VolumeExists(name string) (bool, error) {
-	vols, err := d.client.VolumeList(context.Background(), volume.ListOptions{})
-	if err != nil {
-		return false, err
-	}
-
-	for _, v := range vols.Volumes {
-		if v.Name == volumeName(name) {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
-func (d *DockerService) ListVolumes() ([]string, error) {
-	args := filters.NewArgs()
-	args.Add("label", "project=minecraft-server")
-
-	vols, err := d.client.VolumeList(context.Background(), volume.ListOptions{
-		Filters: args,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	names := make([]string, 0, len(vols.Volumes))
-	for _, v := range vols.Volumes {
-		names = append(names, v.Name)
-	}
-	return names, nil
-}
-
-func (d *DockerService) DeleteVolume(name string) error {
-	return d.client.VolumeRemove(
-		context.Background(),
-		volumeName(name),
-		true,
-	)
 }

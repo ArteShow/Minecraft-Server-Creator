@@ -53,6 +53,7 @@ func main() {
 	mux.HandleFunc("/task-service/backup/upload", handlers.UploadBackup)
 
 	mux.HandleFunc("/task-service/world/upload", handlers.UploadWorld)
+	mux.HandleFunc("/task-service/plugin/install", handlers.InstallPlugin)
 
 	srv := &http.Server{
 		Addr:         cfg.Port,

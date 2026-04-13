@@ -1,21 +1,24 @@
 package core
 
+import "fmt"
+
 func (s *Server) UploadBackup(backup []byte, filename, serverID string) error {
-	if err := s.DockerService.DeleteVolume("mc_" + serverID); err != nil {
-		return err
+	if filename == "" {
+		filename = "backup.tar.gz"
 	}
 
-	if err := s.DockerService.CreateVolume("mc_" + serverID); err != nil {
-		return err
+	volumeName := "mc_" + serverID
+
+	// Upload the backup archive to the volume
+	if err := s.DockerService.UploadToVolume(serverID, "/data", filename, backup); err != nil {
+		return fmt.Errorf("failed to upload backup file: %w", err)
 	}
 
-	if err := s.DockerService.UploadToVolume("mc_"+serverID, "data/", filename, backup); err != nil {
-		return err
-	}
-
-	_, err := s.DockerService.ExecuteCommandInVolume("mc_"+serverID, []string{"sh", "-c", "tar -xvf /data/filename.tar -C /data"})
+	// Extract the backup archive to /data (replacing existing world data)
+	cmd := fmt.Sprintf("cd /data && tar -xzf %s && rm %s", filename, filename)
+	_, err := s.DockerService.ExecuteCommandInVolume(volumeName, []string{"sh", "-c", cmd})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to extract backup: %w", err)
 	}
 
 	return nil

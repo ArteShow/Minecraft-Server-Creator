@@ -56,6 +56,7 @@ func main() {
 	mux.HandleFunc("/server-service/backup/upload", h.UploadBackup)
 
 	mux.HandleFunc("/server-service/world/upload", h.UploadWorld)
+	mux.HandleFunc("/server-service/plugin/install", h.InstallPlugin)
 
 	srv := &http.Server{
 		Addr:         cfg.Port,

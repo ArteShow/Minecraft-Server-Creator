@@ -10,14 +10,23 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *Server) CreateServer(version, ownerID string, port int) (string, error) {
+func (s *Server) CreateServer(version, serverType, ownerID string, port int) (string, error) {
 	id := uuid.NewString()
 
 	if err := s.DockerService.CreateVolume(id); err != nil {
 		return "", err
 	}
 
-	jar, err := get_version.GetServerJar(version)
+	var jar []byte
+	var err error
+	switch serverType {
+	case "Paper":
+		jar, err = get_version.GetPaperJar(version)
+	case "Spigot":
+		jar, err = get_version.GetSpigotJar(version)
+	default:
+		jar, err = get_version.GetServerJar(version)
+	}
 	if err != nil {
 		return "", fmt.Errorf("failed to download jar: %w", err)
 	}
@@ -31,7 +40,7 @@ func (s *Server) CreateServer(version, ownerID string, port int) (string, error)
 		return "", err
 	}
 
-	eula, err := eula.Accept()
+	eulaTxt, err := eula.Accept()
 	if err != nil {
 		return "", err
 	}
@@ -40,7 +49,7 @@ func (s *Server) CreateServer(version, ownerID string, port int) (string, error)
 		id,
 		"/data",
 		"eula.txt",
-		eula,
+		eulaTxt,
 	); err != nil {
 		return "", err
 	}

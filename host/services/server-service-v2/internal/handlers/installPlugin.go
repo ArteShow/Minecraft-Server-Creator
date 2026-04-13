@@ -5,14 +5,14 @@ import (
 	"net/http"
 )
 
-func (h *Handler) UploadWorld(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) InstallPlugin(w http.ResponseWriter, r *http.Request) {
 	serverID := r.FormValue("server_id")
 	if serverID == "" {
 		http.Error(w, "server_id is required", http.StatusBadRequest)
 		return
 	}
 
-	file, _, err := r.FormFile("file")
+	file, header, err := r.FormFile("file")
 	if err != nil {
 		http.Error(w, "file is required", http.StatusBadRequest)
 		return
@@ -24,14 +24,13 @@ func (h *Handler) UploadWorld(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to read file: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	if len(data) == 0 {
 		http.Error(w, "file is empty", http.StatusBadRequest)
 		return
 	}
 
-	if err = h.Server.UploadWorld(data, serverID); err != nil {
-		http.Error(w, "world upload failed: "+err.Error(), http.StatusInternalServerError)
+	if err := h.Server.InstallPlugin(serverID, header.Filename, data); err != nil {
+		http.Error(w, "plugin install failed: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 

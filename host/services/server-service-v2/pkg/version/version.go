@@ -3,10 +3,12 @@ package get_version
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 )
 
 const cacheDir = ".cache/versions"
@@ -26,13 +28,16 @@ type VersionJSON struct {
 	} `json:"downloads"`
 }
 
+type paperBuildsResponse struct {
+	Builds []int `json:"builds"`
+}
+
 func GetServerJar(version string) ([]byte, error) {
 	if err := os.MkdirAll(cacheDir, os.ModePerm); err != nil {
 		return nil, err
 	}
 
 	jarPath := filepath.Join(cacheDir, version+".jar")
-
 	if _, err := os.Stat(jarPath); err == nil {
 		return os.ReadFile(jarPath)
 	}
@@ -53,9 +58,9 @@ func GetServerJar(version string) ([]byte, error) {
 	}
 
 	var versionURL string
-	for _, v := range manifest.Versions {
-		if v.ID == version {
-			versionURL = v.URL
+	for _, versionEntry := range manifest.Versions {
+		if versionEntry.ID == version {
+			versionURL = versionEntry.URL
 			break
 		}
 	}
@@ -73,33 +78,93 @@ func GetServerJar(version string) ([]byte, error) {
 		return nil, errors.New("failed to get version JSON: " + resp2.Status)
 	}
 
-	var vjson VersionJSON
-	if err := json.NewDecoder(resp2.Body).Decode(&vjson); err != nil {
+	var versionJSON VersionJSON
+	if err := json.NewDecoder(resp2.Body).Decode(&versionJSON); err != nil {
 		return nil, err
 	}
 
-	jarURL := vjson.Downloads.Server.URL
+	jarURL := versionJSON.Downloads.Server.URL
 	if jarURL == "" {
 		return nil, errors.New("server.jar URL not found for version " + version)
 	}
 
-	resp3, err := http.Get(jarURL)
+	return downloadAndCacheFile(jarURL, jarPath)
+}
+
+func GetPaperJar(version string) ([]byte, error) {
+	if err := os.MkdirAll(cacheDir, os.ModePerm); err != nil {
+		return nil, err
+	}
+
+	jarPath := filepath.Join(cacheDir, "paper-"+version+".jar")
+	if _, err := os.Stat(jarPath); err == nil {
+		return os.ReadFile(jarPath)
+	}
+
+	buildsURL := "https://api.papermc.io/v2/projects/paper/versions/" + version + "/builds"
+	resp, err := http.Get(buildsURL)
 	if err != nil {
 		return nil, err
 	}
-	defer resp3.Body.Close()
+	defer resp.Body.Close()
 
-	if resp3.StatusCode != http.StatusOK {
-		return nil, errors.New("failed to download server.jar: " + resp3.Status)
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("paper builds API: %s", resp.Status)
 	}
 
-	out, err := os.Create(jarPath)
+	var builds paperBuildsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&builds); err != nil {
+		return nil, err
+	}
+	if len(builds.Builds) == 0 {
+		return nil, fmt.Errorf("no Paper builds found for version %s", version)
+	}
+
+	latestBuild := builds.Builds[len(builds.Builds)-1]
+	buildStr := strconv.Itoa(latestBuild)
+	jarName := "paper-" + version + "-" + buildStr + ".jar"
+	downloadURL := "https://api.papermc.io/v2/projects/paper/versions/" + version + "/builds/" + buildStr + "/downloads/" + jarName
+
+	return downloadAndCacheFile(downloadURL, jarPath)
+}
+
+func GetSpigotJar(version string) ([]byte, error) {
+	if err := os.MkdirAll(cacheDir, os.ModePerm); err != nil {
+		return nil, err
+	}
+
+	jarPath := filepath.Join(cacheDir, "spigot-"+version+".jar")
+	if _, err := os.Stat(jarPath); err == nil {
+		return os.ReadFile(jarPath)
+	}
+
+	downloadURL := "https://download.getbukkit.org/spigot/spigot-" + version + ".jar"
+	data, err := downloadAndCacheFile(downloadURL, jarPath)
+	if err == nil {
+		return data, nil
+	}
+
+	return GetPaperJar(version)
+}
+
+func downloadAndCacheFile(downloadURL, destinationPath string) ([]byte, error) {
+	resp, err := http.Get(downloadURL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("download failed: %s", resp.Status)
+	}
+
+	out, err := os.Create(destinationPath)
 	if err != nil {
 		return nil, err
 	}
 	defer out.Close()
 
-	data, err := io.ReadAll(io.TeeReader(resp3.Body, out))
+	data, err := io.ReadAll(io.TeeReader(resp.Body, out))
 	if err != nil {
 		return nil, err
 	}

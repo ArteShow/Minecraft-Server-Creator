@@ -51,14 +51,14 @@ func main() {
 	getBackupProxy := proxy.NewProxy("http://task-service:8013", "/task-service/backup/get")
 	deleteBackupProxy := proxy.NewProxy("http://task-service:8013", "/task-service/backup/delete")
 	uploadBackupProxy := proxy.NewProxy("http://task-service:8013", "/task-service/backup/upload")
+	uploadWorldProxy := proxy.NewProxy("http://task-service:8013", "/task-service/world/upload")
+	installPluginProxy := proxy.NewProxy("http://task-service:8013", "/task-service/plugin/install")
 
 	registerUserProxy := proxy.NewProxy("http://auth-service:8014", "/auth-service/user/register")
 	loginUserProxy := proxy.NewProxy("http://auth-service:8014", "/auth-service/user/login")
 
 	getBundlekeyProxy := proxy.NewProxy("http://bundle-service:8015", "/bundle-service/create")
 	addBundleProxy := proxy.NewProxy("http://bundle-service:8015", "/bundle-service/add")
-
-	uploadWorldProxy := proxy.NewProxy("http://task-service:8013", "/task-service/world/upload")
 
 	handler := http.NewServeMux()
 	handler.Handle(
@@ -92,14 +92,14 @@ func main() {
 	handler.Handle("/api/"+cfg.APIVersion+"/server/backup/get", middleware.LoggingMiddleware(middleware.AuthMiddleware(getBackupProxy)))
 	handler.Handle("/api/"+cfg.APIVersion+"/server/backup/delete", middleware.LoggingMiddleware(middleware.AuthMiddleware(deleteBackupProxy)))
 	handler.Handle("/api/"+cfg.APIVersion+"/server/backup/upload", middleware.LoggingMiddleware(middleware.AuthMiddleware(uploadBackupProxy)))
+	handler.Handle("/api/"+cfg.APIVersion+"/server/world/upload", middleware.LoggingMiddleware(middleware.AuthMiddleware(uploadWorldProxy)))
+	handler.Handle("/api/"+cfg.APIVersion+"/server/plugin/install", middleware.LoggingMiddleware(middleware.AuthMiddleware(installPluginProxy)))
 
 	handler.Handle("/api/"+cfg.APIVersion+"/auth/user/register", middleware.LoggingMiddleware(registerUserProxy))
 	handler.Handle("/api/"+cfg.APIVersion+"/auth/user/login", middleware.LoggingMiddleware(loginUserProxy))
 
 	handler.Handle("/api/"+cfg.APIVersion+"/bundle/create", middleware.LoggingMiddleware(middleware.AuthMiddleware(getBundlekeyProxy)))
 	handler.Handle("/api/"+cfg.APIVersion+"/bundle/add", middleware.LoggingMiddleware(middleware.AuthMiddleware(addBundleProxy)))
-
-	handler.Handle("/api/"+cfg.APIVersion+"/server/world/upload", middleware.LoggingMiddleware(middleware.AuthMiddleware(uploadWorldProxy)))
 
 	proxy.StartProxy(nil)
 

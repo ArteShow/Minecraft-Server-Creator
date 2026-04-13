@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"io"
 	"net/http"
 	"strings"
@@ -10,19 +9,11 @@ import (
 )
 
 func UploadWorld(w http.ResponseWriter, r *http.Request) {
-	data, err := io.ReadAll(r.Body)
-	if err != nil {
+	userID := r.Header.Get("X-User-ID")
+	if userID == "" {
+		http.Error(w, "userID header missing", http.StatusBadRequest)
 		return
 	}
-	defer r.Body.Close()
-
-	_ = data
-
-	userID := r.Header.Get("X-User-ID")
-    if userID == "" {
-        http.Error(w, "userID header missing", http.StatusBadRequest)
-        return
-    }
 
 	auth := r.Header.Get("Authorization")
 	if auth == "" {
@@ -37,24 +28,33 @@ func UploadWorld(w http.ResponseWriter, r *http.Request) {
 	}
 
 	token := parts[1]
+	serverID := strings.TrimSpace(r.FormValue("server_id"))
+	if serverID == "" {
+		http.Error(w, "server_id is required", http.StatusBadRequest)
+		return
+	}
 
-	var req UploadWorldRequest
-	body, err := io.ReadAll(r.Body)
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "file is required", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	data, err := io.ReadAll(file)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	defer r.Body.Close()
+	if len(data) == 0 {
+		http.Error(w, "file is empty", http.StatusBadRequest)
+		return
+	}
 
-	if err = json.Unmarshal(body, &req); err != nil {
+	if err = core.UploadWorld(serverID, token, data); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if err = core.UploadWorld(req.ServerID, token, data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 }

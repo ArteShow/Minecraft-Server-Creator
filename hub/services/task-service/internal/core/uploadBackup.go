@@ -55,7 +55,7 @@ func UploadBackup(serverID, token, backupName string, backup []byte) error {
 	writer := multipart.NewWriter(body)
 
 	writer.WriteField("server_id", serverID)
-	writer.WriteField("file_name", backupName)
+	writer.WriteField("backup_name", backupName)
 
 	part, err := writer.CreateFormFile("file", backupName)
 	if err != nil {

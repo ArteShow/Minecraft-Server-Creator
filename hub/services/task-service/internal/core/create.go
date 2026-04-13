@@ -53,7 +53,7 @@ func GetNextPort(servers *host.GetAllHostServersResponse) int {
 	return highestPort + 1
 }
 
-func CreateServer(version, token, bundleKey, userID string) (string, int, error) {
+func CreateServer(version, serverType, token, bundleKey, userID string) (string, int, error) {
 	cfg, err := config.Read()
 	if err != nil {
 		return "", 0, err
@@ -140,7 +140,7 @@ func CreateServer(version, token, bundleKey, userID string) (string, int, error)
 	}
 
 	nextPort := GetNextPort(serversResp)
-	bodyBytes, err := json.Marshal(map[string]interface{}{"version": version, "port": nextPort})
+	bodyBytes, err := json.Marshal(map[string]interface{}{"version": version, "port": nextPort, "server_type": serverType})
 	if err != nil {
 		return "", 0, err
 	}

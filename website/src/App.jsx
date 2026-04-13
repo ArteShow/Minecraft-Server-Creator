@@ -18,6 +18,7 @@ import {
   MessageSquare,
   Play,
   Plus,
+  RefreshCw,
   Search,
   Server,
   Settings,
@@ -50,7 +51,8 @@ const addOns = [
 ];
 
 const versions = ["1.8.9", "1.12.2", "1.16.5", "1.20.6", "1.21.1", "1.21.2"];
-const softwareOptions = ["Vanilla", "Fabric", "Bukkit", "Paper"];
+const softwareOptions = ["Vanilla", "Spigot", "Paper"];
+const pluginCapableServerTypes = new Set(["Spigot", "Paper"]);
 
 const fallbackMods = [
   {
@@ -90,6 +92,79 @@ function safeJsonParse(value, fallback) {
   } catch {
     return fallback;
   }
+}
+
+function extractErrorMessage(rawText, fallbackMessage) {
+  const trimmed = String(rawText || "").trim();
+  if (!trimmed) return fallbackMessage;
+
+  if (trimmed.startsWith("<")) {
+    const titleMatch = trimmed.match(/<title>(.*?)<\/title>/i);
+    const headingMatch = trimmed.match(/<h1>(.*?)<\/h1>/i);
+    return titleMatch?.[1] || headingMatch?.[1] || fallbackMessage;
+  }
+
+  const parsed = safeJsonParse(trimmed, null);
+  if (parsed && typeof parsed === "object") {
+    return parsed.message || parsed.error || parsed.raw || trimmed;
+  }
+
+  return trimmed;
+}
+
+async function searchModrinthPlugins(query) {
+  const url = new URL("https://api.modrinth.com/v2/search");
+  url.searchParams.set("query", query || "server");
+  url.searchParams.set("limit", "12");
+  url.searchParams.set("index", "relevance");
+  url.searchParams.set("facets", JSON.stringify([["project_type:plugin"]]));
+
+  const response = await fetch(url.toString());
+  if (!response.ok) {
+    throw new Error(`Modrinth search failed with status ${response.status}`);
+  }
+
+  const data = await response.json();
+  return (data.hits || []).map((item) => ({
+    id: item.project_id,
+    name: item.title,
+    description: item.description,
+    author: item.author,
+    downloads: item.downloads,
+    slug: item.slug,
+  }));
+}
+
+async function fetchLatestPluginFile(projectId, serverVersion) {
+  const url = new URL(`https://api.modrinth.com/v2/project/${projectId}/version`);
+  url.searchParams.set("loaders", JSON.stringify(["paper", "spigot", "bukkit", "purpur"]));
+  if (serverVersion) {
+    url.searchParams.set("game_versions", JSON.stringify([serverVersion]));
+  }
+
+  const response = await fetch(url.toString());
+  if (!response.ok) {
+    throw new Error(`Modrinth versions failed with status ${response.status}`);
+  }
+
+  const versionsData = await response.json();
+  const version = versionsData.find((entry) => Array.isArray(entry.files) && entry.files.length > 0);
+  if (!version) {
+    throw new Error("No compatible plugin file found for this server version.");
+  }
+
+  const primaryFile = version.files.find((file) => file.primary) || version.files[0];
+  if (!primaryFile?.url) {
+    throw new Error("Plugin version has no downloadable file.");
+  }
+
+  const fileResponse = await fetch(primaryFile.url);
+  if (!fileResponse.ok) {
+    throw new Error(`Plugin download failed with status ${fileResponse.status}`);
+  }
+
+  const blob = await fileResponse.blob();
+  return new File([blob], primaryFile.filename || `${projectId}.jar`, { type: blob.type || "application/java-archive" });
 }
 
 function decodeJwt(token) {
@@ -316,6 +391,8 @@ function ToastStack({ notices, setNotices }) {
             "flex items-start justify-between gap-3 rounded-2xl border px-4 py-3 text-sm shadow-2xl backdrop-blur-xl",
             notice.type === "error"
               ? "border-rose-400/20 bg-slate-950/95 text-rose-200"
+              : notice.type === "info"
+              ? "border-sky-400/20 bg-slate-950/95 text-sky-200"
               : "border-emerald-400/20 bg-slate-950/95 text-emerald-200",
           )}
         >
@@ -537,9 +614,9 @@ function PurchaseFlow({ open, plan, onClose, currentUser, onRequireAuth, onCompl
             </datalist>
             <div className="text-xs text-slate-400">You can type any version manually, for example 1.21.11.</div>
           </div>
-          <div className="rounded-2xl border border-dashed border-cyan-300/25 bg-cyan-400/5 px-4 py-3 text-slate-300">
-              Pick the Minecraft version and server software for your new server. You can change these later from the dashboard.
-          </div>
+            <div className="rounded-2xl border border-dashed border-cyan-300/25 bg-cyan-400/5 px-4 py-3 text-slate-300">
+              Pick the Minecraft version and server software for your new server. Plugin installs are available for Spigot and Paper servers.
+            </div>
         </div>
       )}
 
@@ -671,7 +748,7 @@ function AuthScreen({ mode, busy, error, onSubmit, setScreen }) {
                 [Server, "Full server control", "Start, stop, and manage your Minecraft server from one clean dashboard."],
                 [HardDrive, "Backup anytime", "Create and download backups directly from your dashboard whenever you need."],
                 [Shield, "Your servers stay yours", "Each account only sees and controls its own servers. Nothing shared."],
-                [Settings, "Your choice of software", "Pick Vanilla, Fabric, Bukkit, or Paper — and any supported Minecraft version."],
+                [Settings, "Your choice of software", "Pick Vanilla, Spigot, or Paper — and any supported Minecraft version."],
               ].map(([Icon, title, text]) => (
                 <div key={title} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
                   <Icon className="mt-0.5 h-5 w-5 shrink-0 text-cyan-300" />
@@ -729,6 +806,7 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
   const [search, setSearch] = useState("");
   const [serverBusy, setServerBusy] = useState({});
   const [backupBusy, setBackupBusy] = useState({});
+  const [serversRefreshing, setServersRefreshing] = useState(false);
   const [backupListMap, setBackupListMap] = useState({});
   const [selectedBackupMap, setSelectedBackupMap] = useState({});
   const [consoleTextMap, setConsoleTextMap] = useState({});
@@ -738,6 +816,14 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
   const [consoleCommand, setConsoleCommand] = useState("");
   const [consoleSending, setConsoleSending] = useState(false);
   const [consoleRefreshTick, setConsoleRefreshTick] = useState(0);
+  const [uploadBackupModalOpen, setUploadBackupModalOpen] = useState(false);
+  const [uploadWorldModalOpen, setUploadWorldModalOpen] = useState(false);
+  const [pluginSearch, setPluginSearch] = useState("");
+  const [pluginResults, setPluginResults] = useState([]);
+  const [pluginLoading, setPluginLoading] = useState(false);
+  const [pluginInstalling, setPluginInstalling] = useState({});
+  const uploadBackupFileRef = useRef(null);
+  const uploadWorldFileRef = useRef(null);
   const consoleOutputRef = useRef(null);
 
   const ownedServers = useMemo(
@@ -761,6 +847,79 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
 
   const updateServer = (serverId, updater) => {
     setServers((previous) => previous.map((server) => (server.server_id === serverId ? { ...server, ...updater(server) } : server)));
+  };
+
+  const refreshOwnedServers = async ({ silent = false } = {}) => {
+    if (!token || !currentUser?.ownerKey) return;
+
+    const trackedServers = servers.filter((server) => server.ownerId === currentUser.ownerKey);
+    if (trackedServers.length === 0) {
+      if (!silent) pushNotice("success", "No tracked servers to refresh.");
+      return;
+    }
+
+    setServersRefreshing(true);
+    try {
+      const results = await Promise.allSettled(
+        trackedServers.map(async (server) => {
+          const response = await apiFetch("/server/getStats", {
+            method: "POST",
+            body: { server_id: server.server_id, key: "Online" },
+            token,
+          });
+
+          return {
+            serverId: server.server_id,
+            status: String(response?.value).toLowerCase() === "true" ? "online" : "offline",
+          };
+        }),
+      );
+
+      const nextStatusMap = new Map();
+      const removedIds = [];
+      let failedCount = 0;
+
+      results.forEach((result, index) => {
+        const server = trackedServers[index];
+        if (result.status === "fulfilled") {
+          nextStatusMap.set(server.server_id, result.value.status);
+          return;
+        }
+
+        const errorMessage = result.reason?.message || "";
+        if (/not mapped to a host|key .* not found|no such file|not found/i.test(errorMessage)) {
+          removedIds.push(server.server_id);
+          return;
+        }
+
+        failedCount += 1;
+      });
+
+      if (nextStatusMap.size > 0 || removedIds.length > 0) {
+        setServers((previous) => previous
+          .filter((server) => !removedIds.includes(server.server_id))
+          .map((server) => {
+            const nextStatus = nextStatusMap.get(server.server_id);
+            return nextStatus ? { ...server, status: nextStatus } : server;
+          }));
+      }
+
+      if (selectedServer && !removedIds.includes(selectedServer.server_id)) {
+        await loadBackups(selectedServer);
+      }
+
+      if (!silent) {
+        if (removedIds.length > 0) {
+          pushNotice("success", `Removed ${removedIds.length} stale server${removedIds.length === 1 ? "" : "s"} from the dashboard.`);
+        } else if (failedCount > 0) {
+          pushNotice("error", "Some servers could not be refreshed right now.");
+        } else {
+          pushNotice("success", "Server list refreshed.");
+        }
+      }
+    } finally {
+      setServersRefreshing(false);
+    }
   };
 
   const runServerAction = async (server, action) => {
@@ -792,10 +951,21 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
 
   const refreshServerInfo = async () => {
     if (!selectedServer) return;
+    await refreshOwnedServers({ silent: true });
     await loadBackups(selectedServer);
     setConsoleRefreshTick((value) => value + 1);
     pushNotice("success", "Server info refreshed.");
   };
+
+  useEffect(() => {
+    if (active !== "servers" || !token || !currentUser?.ownerKey) return undefined;
+
+    const timer = window.setInterval(() => {
+      refreshOwnedServers({ silent: true });
+    }, 30000);
+
+    return () => window.clearInterval(timer);
+  }, [active, token, currentUser?.ownerKey, servers]);
 
   useEffect(() => {
     if (
@@ -961,6 +1131,75 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
     }
   };
 
+  const uploadBackup = async (server, file) => {
+    if (!file) {
+      pushNotice("error", "Please select a backup file");
+      return;
+    }
+    setBusy(server.server_id, true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("server_id", server.server_id);
+      formData.append("backup_name", file.name);
+
+      const response = await fetch(`${API_BASE}/server/backup/upload`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        if (response.status === 413) {
+          throw new Error("Upload file is too large for the web gateway. Try a smaller archive or increase the upload limit.");
+        }
+        throw new Error(extractErrorMessage(errorData, `Upload failed with status ${response.status}`));
+      }
+
+      pushNotice("success", `Backup uploaded for ${server.name}`);
+      updateServer(server.server_id, (current) => ({ backupCount: (current.backupCount || 0) + 1 }));
+      await loadBackups(server);
+    } catch (error) {
+      pushNotice("error", `Backup upload failed: ${error.message}`);
+    } finally {
+      setBusy(server.server_id, false);
+    }
+  };
+
+  const uploadWorld = async (server, file) => {
+    if (!file) {
+      pushNotice("error", "Please select a world folder archive");
+      return;
+    }
+    setBusy(server.server_id, true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("server_id", server.server_id);
+
+      const response = await fetch(`${API_BASE}/server/world/upload`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        if (response.status === 413) {
+          throw new Error("Upload file is too large for the web gateway. Try a smaller archive or increase the upload limit.");
+        }
+        throw new Error(extractErrorMessage(errorData, `Upload failed with status ${response.status}`));
+      }
+
+      pushNotice("success", `World uploaded for ${server.name}. Server will use the new world data.`);
+    } catch (error) {
+      pushNotice("error", `World upload failed: ${error.message}`);
+    } finally {
+      setBusy(server.server_id, false);
+    }
+  };
+
   const copyJoinAddress = async (server) => {
     const address = `localhost:${server.port || FIRST_SERVER_PORT}`;
     try {
@@ -968,6 +1207,56 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
       pushNotice("success", `Join address copied: ${address}`);
     } catch {
       pushNotice("error", `Could not copy. Join address: ${address}`);
+    }
+  };
+
+  useEffect(() => {
+    if (!selectedServer || !pluginCapableServerTypes.has(selectedServer.software)) {
+      setPluginResults([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setPluginLoading(true);
+      try {
+        const results = await searchModrinthPlugins(pluginSearch);
+        setPluginResults(results);
+      } catch (error) {
+        pushNotice("error", `Plugin search failed: ${error.message}`);
+      } finally {
+        setPluginLoading(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [pluginSearch, selectedServer?.server_id, selectedServer?.software]);
+
+  const installPlugin = async (server, plugin) => {
+    if (!server) return;
+
+    setPluginInstalling((previous) => ({ ...previous, [plugin.id]: true }));
+    try {
+      const file = await fetchLatestPluginFile(plugin.id, server.version);
+      const formData = new FormData();
+      formData.append("server_id", server.server_id);
+      formData.append("file", file);
+
+      const response = await fetch(`${API_BASE}/server/plugin/install`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(extractErrorMessage(errorData, `Plugin install failed with status ${response.status}`));
+      }
+
+      pushNotice("success", `${plugin.name} installed for ${server.name}. Restart the server if it is already running.`);
+    } catch (error) {
+      pushNotice("error", `Plugin install failed: ${error.message}`);
+    } finally {
+      setPluginInstalling((previous) => ({ ...previous, [plugin.id]: false }));
     }
   };
 
@@ -1055,7 +1344,18 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                 <GlassCard className="p-5">
                   <div className="mb-4 flex items-center justify-between gap-4">
                     <h2 className="display-font text-xl font-semibold text-white">My Servers</h2>
-                    <div className="text-sm text-slate-400">Your servers across all plans</div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => refreshOwnedServers()}
+                        disabled={serversRefreshing}
+                        className={cn("inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white disabled:opacity-60", popClass())}
+                      >
+                        <RefreshCw className={cn("h-4 w-4", serversRefreshing && "animate-spin")} />
+                        Refresh Servers
+                      </button>
+                      <div className="text-sm text-slate-400">Your servers across all plans</div>
+                    </div>
                   </div>
                   <div className="space-y-3">
                     {ownedServers.length === 0 && (
@@ -1126,6 +1426,8 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                           <TerminalSquare className="h-4 w-4" /> Open Console
                         </button>
                         <button disabled={serverBusy[selectedServer.server_id]} onClick={() => createBackup(selectedServer)} className={cn("flex items-center justify-center gap-2 rounded-2xl bg-violet-400/15 px-4 py-3 text-violet-300 disabled:opacity-60 transition-all duration-300 hover:bg-violet-400/25 hover:shadow-lg hover:shadow-violet-400/20", popClass())}><HardDrive className="h-4 w-4" /> Create Backup</button>
+                          <button disabled={serverBusy[selectedServer.server_id]} onClick={() => setUploadBackupModalOpen(true)} className={cn("flex items-center justify-center gap-2 rounded-2xl bg-amber-400/15 px-4 py-3 text-amber-300 disabled:opacity-60 transition-all duration-300 hover:bg-amber-400/25 hover:shadow-lg hover:shadow-amber-400/20", popClass())}><Download className="h-4 w-4" /> Upload Backup</button>
+                          <button disabled={serverBusy[selectedServer.server_id]} onClick={() => setUploadWorldModalOpen(true)} className={cn("flex items-center justify-center gap-2 rounded-2xl bg-sky-400/15 px-4 py-3 text-sky-300 disabled:opacity-60 transition-all duration-300 hover:bg-sky-400/25 hover:shadow-lg hover:shadow-sky-400/20", popClass())}><HardDrive className="h-4 w-4" /> Upload World</button>
                         <button disabled={serverBusy[selectedServer.server_id]} onClick={() => runServerAction(selectedServer, "delete")} className={cn("flex items-center justify-center gap-2 rounded-2xl bg-rose-500/20 px-4 py-3 text-rose-200 disabled:opacity-60 transition-all duration-300 hover:bg-rose-500/30 hover:shadow-lg hover:shadow-rose-500/20", popClass())}><Trash2 className="h-4 w-4" /> Delete</button>
                       </div>
 
@@ -1210,6 +1512,58 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
                             ))}
                           </div>
                         </div>
+
+                        {pluginCapableServerTypes.has(selectedServer.software) && (
+                          <div className="mt-4 rounded-2xl border border-white/10 bg-slate-950/40 p-4">
+                            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                              <div>
+                                <div className="flex items-center gap-2 text-white"><Boxes className="h-4 w-4 text-cyan-300" /> Plugins</div>
+                                <p className="mt-1 text-sm text-slate-400">Browse Modrinth plugins compatible with {selectedServer.software} and install them with one click.</p>
+                              </div>
+                              <div className="relative w-full max-w-sm">
+                                <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                                <input
+                                  value={pluginSearch}
+                                  onChange={(event) => setPluginSearch(event.target.value)}
+                                  className="w-full rounded-2xl border border-white/10 bg-white/5 py-3 pl-11 pr-4 text-white outline-none"
+                                  placeholder="Search Modrinth plugins"
+                                />
+                              </div>
+                            </div>
+
+                            {pluginLoading ? (
+                              <div className="rounded-xl border border-dashed border-white/10 bg-black/20 px-3 py-3 text-sm text-slate-400">
+                                Loading plugins...
+                              </div>
+                            ) : pluginResults.length === 0 ? (
+                              <div className="rounded-xl border border-dashed border-white/10 bg-black/20 px-3 py-3 text-sm text-slate-400">
+                                No plugins found.
+                              </div>
+                            ) : (
+                              <div className="grid gap-3 xl:grid-cols-2">
+                                {pluginResults.map((plugin) => (
+                                  <div key={plugin.id} className="rounded-xl border border-white/10 bg-black/20 p-4">
+                                    <div className="flex items-start justify-between gap-3">
+                                      <div>
+                                        <div className="font-semibold text-white">{plugin.name}</div>
+                                        <div className="mt-1 text-xs text-slate-400">by {plugin.author} · {typeof plugin.downloads === "number" ? plugin.downloads.toLocaleString() : plugin.downloads || 0} downloads</div>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => installPlugin(selectedServer, plugin)}
+                                        disabled={pluginInstalling[plugin.id]}
+                                        className={cn("rounded-lg border border-cyan-400/25 bg-cyan-400/10 px-3 py-1.5 text-xs font-semibold text-cyan-200 disabled:opacity-60", popClass())}
+                                      >
+                                        {pluginInstalling[plugin.id] ? "Installing..." : "Install"}
+                                      </button>
+                                    </div>
+                                    <p className="mt-3 text-sm leading-6 text-slate-300">{plugin.description}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </>
                   ) : (
@@ -1273,6 +1627,106 @@ function CustomerDashboard({ currentUser, token, servers, setServers, notices, s
           )}
 
           {active === "catalog" && SHOW_PLUGIN_CATALOG && <PluginCatalogPanel search={search} setSearch={setSearch} />}
+              <Modal
+                open={uploadBackupModalOpen && Boolean(selectedServer)}
+                onClose={() => setUploadBackupModalOpen(false)}
+                title={selectedServer ? `${selectedServer.name} - Upload Backup` : "Upload Backup"}
+                subtitle="Select a .tar.gz or .tar backup file from Easy2Host"
+              >
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-slate-300">Backup File</label>
+                    <input
+                      type="file"
+                      ref={uploadBackupFileRef}
+                      accept=".tar,.tar.gz,.tgz"
+                      className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-cyan-400/20 file:text-cyan-300 hover:file:bg-cyan-400/30"
+                    />
+                    <p className="text-xs text-slate-400">Supported formats: .tar, .tar.gz, .tgz</p>
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      onClick={async () => {
+                        const file = uploadBackupFileRef.current?.files?.[0];
+                        if (!file) {
+                          pushNotice({ type: "error", message: "Please select a backup file" });
+                          return;
+                        }
+                        if (!file.name.endsWith('.tar') && !file.name.endsWith('.tar.gz') && !file.name.endsWith('.tgz')) {
+                          pushNotice({ type: "error", message: "File must be .tar, .tar.gz, or .tgz" });
+                          return;
+                        }
+                        await uploadBackup(selectedServer, file);
+                        setUploadBackupModalOpen(false);
+                        uploadBackupFileRef.current.value = '';
+                      }}
+                      className="flex-1 rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 px-4 py-2 font-semibold text-slate-950 hover:opacity-90 transition-opacity"
+                    >
+                      Upload Backup
+                    </button>
+                    <button
+                      onClick={() => {
+                        setUploadBackupModalOpen(false);
+                        uploadBackupFileRef.current.value = '';
+                      }}
+                      className="flex-1 rounded-lg border border-slate-500 px-4 py-2 font-semibold text-slate-300 hover:bg-slate-500/10 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </Modal>
+
+              <Modal
+                open={uploadWorldModalOpen && Boolean(selectedServer)}
+                onClose={() => setUploadWorldModalOpen(false)}
+                title={selectedServer ? `${selectedServer.name} - Upload World` : "Upload World"}
+                subtitle="Select a world folder archive (.tar.gz or .tar)"
+              >
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-slate-300">World Folder Archive</label>
+                    <input
+                      type="file"
+                      ref={uploadWorldFileRef}
+                      accept=".tar,.tar.gz,.tgz"
+                      className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-sky-400/20 file:text-sky-300 hover:file:bg-sky-400/30"
+                    />
+                    <p className="text-xs text-slate-400">Supported formats: .tar, .tar.gz, .tgz - folder will replace existing world</p>
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      onClick={() => {
+                        const file = uploadWorldFileRef.current?.files?.[0];
+                        if (!file) {
+                          pushNotice("error", "Please select a world file");
+                          return;
+                        }
+                        if (!file.name.endsWith('.tar') && !file.name.endsWith('.tar.gz') && !file.name.endsWith('.tgz')) {
+                          pushNotice("error", "File must be .tar, .tar.gz, or .tgz");
+                          return;
+                        }
+                        setUploadWorldModalOpen(false);
+                        uploadWorldFileRef.current.value = '';
+                        pushNotice("info", `Uploading world for ${selectedServer.name}...`);
+                        uploadWorld(selectedServer, file);
+                      }}
+                      className="flex-1 rounded-lg bg-gradient-to-r from-sky-400 to-blue-500 px-4 py-2 font-semibold text-slate-950 hover:opacity-90 transition-opacity"
+                    >
+                      Upload World
+                    </button>
+                    <button
+                      onClick={() => {
+                        setUploadWorldModalOpen(false);
+                        uploadWorldFileRef.current.value = '';
+                      }}
+                      className="flex-1 rounded-lg border border-slate-500 px-4 py-2 font-semibold text-slate-300 hover:bg-slate-500/10 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </Modal>
 
           {active === "support" && (
             <UserSupportPanel
@@ -1584,7 +2038,7 @@ function LandingPage({ apiHealthy, currentUser, setScreen, startPurchase }) {
         [Server, "Easy server control", "Start, stop, back up, and inspect your server from one page."],
         [Boxes, "Plugins and mods", "Live catalog support is already preserved in code for later rollout."],
         [Shield, "Account-based access", "Each account only sees and manages its own infrastructure."],
-        [Settings, "Version and software choice", "Pick Vanilla, Fabric, Bukkit, or Paper with the Minecraft version you want."],
+        [Settings, "Version and software choice", "Pick Vanilla, Spigot, or Paper with the Minecraft version you want."],
         [CreditCard, "Simple purchase flow", "Bundle, billing, and provisioning move through one sequence."],
       ]
     : [
@@ -1592,13 +2046,13 @@ function LandingPage({ apiHealthy, currentUser, setScreen, startPurchase }) {
         [Server, "Full server control", "Start, stop, back up, and monitor from one clean page."],
         [HardDrive, "Backup anytime", "Create a backup and download a copy directly from your dashboard."],
         [Shield, "Your servers, your data", "Each account only sees and controls its own Minecraft servers."],
-        [Settings, "Version and software choice", "Pick Vanilla, Fabric, Bukkit, or Paper with any supported Minecraft version."],
+        [Settings, "Version and software choice", "Pick Vanilla, Spigot, or Paper with any supported Minecraft version."],
         [Crown, "Admin oversight", "Admin accounts give access to infrastructure management through the same sign-in."],
       ];
 
   const faqItems = [
     ["How fast can I create a server?", "Once your account is ready, you can choose a plan, finish checkout, and provision through the existing backend in a few steps."],
-    ["Which server software can I choose?", "You can choose Vanilla, Fabric, Bukkit, or Paper during setup while still selecting the exact Minecraft version."],
+    ["Which server software can I choose?", "You can choose Vanilla, Spigot, or Paper during setup while still selecting the exact Minecraft version."],
     ["Can I add extra resources?", "Yes. During checkout you can add extra RAM and SSD upgrades before the server is created."],
     ["Will other users be able to see my server?", "No. Your dashboard only tracks the servers associated with your signed-in account."],
     ["Can I install plugins and mods?", "Plugin and mod support is coming soon. We're curating a marketplace of essential additions for your server."],
@@ -1996,7 +2450,7 @@ export default function App({ initialScreen = "landing" }) {
       setCreateStep && setCreateStep("Step 3/3 — Provisioning Minecraft server…");
       const created = await apiFetch("/server/create", {
         method: "POST",
-        body: { version: order.setup.version, bundle: bundleKeyResponse.key },
+        body: { version: order.setup.version, bundle: bundleKeyResponse.key, server_type: order.setup.software },
         token,
       });
 

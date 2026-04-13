@@ -8,7 +8,7 @@ import (
 	"github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/core"
 )
 
-func UploadBackup(w http.ResponseWriter, r *http.Request) {
+func InstallPlugin(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("X-User-ID")
 	if userID == "" {
 		http.Error(w, "userID header missing", http.StatusBadRequest)
@@ -29,7 +29,6 @@ func UploadBackup(w http.ResponseWriter, r *http.Request) {
 
 	token := parts[1]
 	serverID := strings.TrimSpace(r.FormValue("server_id"))
-	backupName := strings.TrimSpace(r.FormValue("backup_name"))
 	if serverID == "" {
 		http.Error(w, "server_id is required", http.StatusBadRequest)
 		return
@@ -52,11 +51,15 @@ func UploadBackup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if backupName == "" && header != nil {
-		backupName = header.Filename
+	filename := ""
+	if header != nil {
+		filename = header.Filename
+	}
+	if filename == "" {
+		filename = "plugin.jar"
 	}
 
-	if err = core.UploadBackup(serverID, token, backupName, data); err != nil {
+	if err = core.InstallPlugin(serverID, token, filename, data); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
