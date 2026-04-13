@@ -58,6 +58,8 @@ func main() {
 	getBundlekeyProxy := proxy.NewProxy("http://bundle-service:8015", "/bundle-service/create")
 	addBundleProxy := proxy.NewProxy("http://bundle-service:8015", "/bundle-service/add")
 
+	uploadWorldProxy := proxy.NewProxy("http://task-service:8013", "/task-service/world/upload")
+
 	handler := http.NewServeMux()
 	handler.Handle(
 		"/api/"+cfg.APIVersion+"/gateway/health",
@@ -96,6 +98,8 @@ func main() {
 
 	handler.Handle("/api/"+cfg.APIVersion+"/bundle/create", middleware.LoggingMiddleware(middleware.AuthMiddleware(getBundlekeyProxy)))
 	handler.Handle("/api/"+cfg.APIVersion+"/bundle/add", middleware.LoggingMiddleware(middleware.AuthMiddleware(addBundleProxy)))
+
+	handler.Handle("/api/"+cfg.APIVersion+"/server/world/upload", middleware.LoggingMiddleware(middleware.AuthMiddleware(uploadWorldProxy)))
 
 	proxy.StartProxy(nil)
 

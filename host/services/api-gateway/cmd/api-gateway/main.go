@@ -43,6 +43,8 @@ func main() {
 	deleteBackupProxy := proxy.NewProxy("http://server-service-v2:8003", "/server-service/backup/delete")
 	uploadBackupProxy := proxy.NewProxy("http://server-service-v2:8003", "/server-service/backup/upload")
 
+	uploadWorldProxy := proxy.NewProxy("http://server-service-v2:8003", "/server-service/world/upload")
+
 	handler := http.NewServeMux()
 	handler.Handle(
 		"/api-gateway/health",
@@ -67,6 +69,8 @@ func main() {
 	handler.Handle("/server/backup/get", middleware.LoggingMiddleware(getBackupProxy))
 	handler.Handle("/server/backup/delete", middleware.LoggingMiddleware(deleteBackupProxy))
 	handler.Handle("/server/backup/upload", middleware.LoggingMiddleware(uploadBackupProxy))
+
+	handler.Handle("/server/world/upload", middleware.LoggingMiddleware(uploadWorldProxy))
 
 	srv := &http.Server{
 		Addr:         cfg.Port,

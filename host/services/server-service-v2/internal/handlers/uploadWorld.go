@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func (h *Handler) UploadBackup(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UploadWorld(w http.ResponseWriter, r *http.Request) {
 	file, _, err := r.FormFile("file")
 	if err != nil {
 		return
@@ -20,7 +20,7 @@ func (h *Handler) UploadBackup(w http.ResponseWriter, r *http.Request) {
 
 	_ = data
 
-	var req UploadBackupRequest
+	var req UploadWorldRequest
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -33,7 +33,7 @@ func (h *Handler) UploadBackup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = h.Server.UploadBackup(data, req.BackupName, req.ServerID); err != nil {
+	if err = h.Server.UploadWorld(data, req.ServerID); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

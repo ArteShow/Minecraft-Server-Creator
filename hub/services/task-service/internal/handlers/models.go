@@ -64,3 +64,7 @@ type UploadBackupRequest struct {
 	ServerID   string `json:"server_id"`
 	BackupName string `json:"file_name"`
 }
+
+type UploadWorldRequest struct {
+	ServerID string `json:"server_id"`
+}

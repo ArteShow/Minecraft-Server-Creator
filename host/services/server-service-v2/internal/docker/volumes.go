@@ -202,6 +202,91 @@ func (d *DockerService) UploadToVolume(
 	)
 }
 
+func (d *DockerService) UploadFolderToVolume(
+	serverID string,
+	targetPath string,
+	folderArchive []byte,
+) error {
+	if serverID == "" {
+		return errors.New("serverID is required")
+	}
+	if targetPath == "" {
+		return errors.New("targetPath is required")
+	}
+	if len(folderArchive) == 0 {
+		return errors.New("folderArchive data is required")
+	}
+
+	ctx := context.Background()
+
+	resp, err := d.client.ContainerCreate(
+		ctx,
+		&container.Config{
+			Image: "alpine:3.19",
+			Cmd:   []string{"sleep", "20"},
+		},
+		&container.HostConfig{
+			AutoRemove: true,
+			Mounts: []mount.Mount{
+				{
+					Type:   mount.TypeVolume,
+					Source: volumeName(serverID),
+					Target: "/data",
+				},
+			},
+		},
+		nil,
+		nil,
+		"",
+	)
+	if err != nil {
+		return err
+	}
+
+	containerID := resp.ID
+	defer func() {
+		_ = d.client.ContainerRemove(ctx, containerID, container.RemoveOptions{Force: true})
+	}()
+
+	if err := d.client.ContainerStart(ctx, containerID, container.StartOptions{}); err != nil {
+		return err
+	}
+
+	buf := new(bytes.Buffer)
+	tw := tar.NewWriter(buf)
+
+	hdr := &tar.Header{
+		Name: "folder.tar.gz",
+		Mode: 0644,
+		Size: int64(len(folderArchive)),
+	}
+	if err := tw.WriteHeader(hdr); err != nil {
+		return err
+	}
+	if _, err := tw.Write(folderArchive); err != nil {
+		return err
+	}
+	if err := tw.Close(); err != nil {
+		return err
+	}
+
+	if err := d.client.CopyToContainer(
+		ctx,
+		containerID,
+		targetPath,
+		buf,
+		container.CopyToContainerOptions{},
+	); err != nil {
+		return err
+	}
+
+	_, err = d.ExecuteCommandInVolume(
+		volumeName(serverID),
+		[]string{"sh", "-c", "cd " + targetPath + " && tar -xzf folder.tar.gz && rm folder.tar.gz"},
+	)
+	return err
+}
+
 func (d *DockerService) GetFileFromVolume(
 	serverID string,
 	targetPath string,
@@ -330,6 +415,70 @@ func (d *DockerService) DeleteFileFromVolume(
 		}
 		if status.StatusCode != 0 {
 			return fmt.Errorf("delete %s from volume %s failed with exit code %d", filePath, volumeName(serverID), status.StatusCode)
+		}
+	}
+
+	return nil
+}
+
+func (d *DockerService) DeleteFolderFromVolume(
+	serverID string,
+	folderPath string,
+) error {
+	if serverID == "" {
+		return errors.New("serverID is required")
+	}
+	if folderPath == "" {
+		return errors.New("folderPath is required")
+	}
+
+	ctx := context.Background()
+
+	resp, err := d.client.ContainerCreate(
+		ctx,
+		&container.Config{
+			Image: "alpine:3.19",
+			Cmd:   []string{"rm", "-rf", folderPath},
+		},
+		&container.HostConfig{
+			AutoRemove: true,
+			Mounts: []mount.Mount{
+				{
+					Type:   mount.TypeVolume,
+					Source: volumeName(serverID),
+					Target: "/data",
+				},
+			},
+		},
+		nil,
+		nil,
+		"",
+	)
+	if err != nil {
+		return err
+	}
+
+	containerID := resp.ID
+	defer func() {
+		_ = d.client.ContainerRemove(ctx, containerID, container.RemoveOptions{Force: true})
+	}()
+
+	if err := d.client.ContainerStart(ctx, containerID, container.StartOptions{}); err != nil {
+		return err
+	}
+
+	statusCh, errCh := d.client.ContainerWait(ctx, containerID, container.WaitConditionNotRunning)
+	select {
+	case waitErr := <-errCh:
+		if waitErr != nil {
+			return waitErr
+		}
+	case status := <-statusCh:
+		if status.Error != nil && status.Error.Message != "" {
+			return fmt.Errorf("delete folder %s from volume %s: %s", folderPath, volumeName(serverID), status.Error.Message)
+		}
+		if status.StatusCode != 0 {
+			return fmt.Errorf("delete folder %s from volume %s failed with exit code %d", folderPath, volumeName(serverID), status.StatusCode)
 		}
 	}
 

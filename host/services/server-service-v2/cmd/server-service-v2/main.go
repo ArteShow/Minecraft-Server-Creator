@@ -55,6 +55,8 @@ func main() {
 	mux.HandleFunc("/server-service/backup/delete", h.DeleteBackup)
 	mux.HandleFunc("/server-service/backup/upload", h.UploadBackup)
 
+	mux.HandleFunc("/server-service/world/upload", h.UploadWorld)
+
 	srv := &http.Server{
 		Addr:         cfg.Port,
 		Handler:      mux,

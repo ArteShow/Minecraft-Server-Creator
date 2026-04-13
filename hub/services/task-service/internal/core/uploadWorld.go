@@ -13,7 +13,7 @@ import (
 	network "github.com/ArteShow/Minecraft-Server-Creator/hub/services/task-service/internal/proto/network-service"
 )
 
-func UploadBackup(serverID, token, backupName string, backup []byte) error {
+func UploadWorld(serverID, token string, world []byte) error {
 	cfg, err := config.Read()
 	if err != nil {
 		return err
@@ -55,14 +55,13 @@ func UploadBackup(serverID, token, backupName string, backup []byte) error {
 	writer := multipart.NewWriter(body)
 
 	writer.WriteField("server_id", serverID)
-	writer.WriteField("file_name", backupName)
 
-	part, err := writer.CreateFormFile("file", backupName)
+	part, err := writer.CreateFormFile("file", string(world))
 	if err != nil {
 		return err
 	}
 
-	_, err = io.Copy(part, bytes.NewReader(backup))
+	_, err = io.Copy(part, bytes.NewReader(world))
 	if err != nil {
 		return err
 	}
@@ -71,7 +70,7 @@ func UploadBackup(serverID, token, backupName string, backup []byte) error {
 
 	req, err := http.NewRequest(
 		"POST",
-		"http://"+targetIP+":"+cfg.DefaultHostServerPort+"/server-service/backup/upload",
+		"http://"+targetIP+":"+cfg.DefaultHostServerPort+"/server-service/world/upload",
 		body,
 	)
 	if err != nil {
@@ -91,9 +90,9 @@ func UploadBackup(serverID, token, backupName string, backup []byte) error {
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
 		if len(respBody) > 0 {
-			return fmt.Errorf("host backup upload failed, status %d: %s", resp.StatusCode, string(respBody))
+			return fmt.Errorf("host world upload failed, status %d: %s", resp.StatusCode, string(respBody))
 		}
-		return fmt.Errorf("host backup upload failed, status %d", resp.StatusCode)
+		return fmt.Errorf("host world upload failed, status %d", resp.StatusCode)
 	}
 
 	return nil
